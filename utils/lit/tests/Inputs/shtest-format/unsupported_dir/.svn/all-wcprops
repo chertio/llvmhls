@@ -1,0 +1,17 @@
+K 25
+svn:wc:ra_dav:version-url
+V 113
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/utils/lit/tests/Inputs/shtest-format/unsupported_dir
+END
+some-test.txt
+K 25
+svn:wc:ra_dav:version-url
+V 127
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/utils/lit/tests/Inputs/shtest-format/unsupported_dir/some-test.txt
+END
+lit.local.cfg
+K 25
+svn:wc:ra_dav:version-url
+V 127
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/utils/lit/tests/Inputs/shtest-format/unsupported_dir/lit.local.cfg
+END

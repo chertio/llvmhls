@@ -1,0 +1,11 @@
+K 25
+svn:wc:ra_dav:version-url
+V 110
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/utils/lit/tests/Inputs/exec-discovery-in-tree/obj
+END
+lit.site.cfg
+K 25
+svn:wc:ra_dav:version-url
+V 123
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/utils/lit/tests/Inputs/exec-discovery-in-tree/obj/lit.site.cfg
+END

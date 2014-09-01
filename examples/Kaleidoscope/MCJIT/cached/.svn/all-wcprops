@@ -1,0 +1,41 @@
+K 25
+svn:wc:ra_dav:version-url
+V 95
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/examples/Kaleidoscope/MCJIT/cached
+END
+toy.cpp
+K 25
+svn:wc:ra_dav:version-url
+V 103
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/examples/Kaleidoscope/MCJIT/cached/toy.cpp
+END
+Makefile
+K 25
+svn:wc:ra_dav:version-url
+V 104
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/examples/Kaleidoscope/MCJIT/cached/Makefile
+END
+genk-timing.py
+K 25
+svn:wc:ra_dav:version-url
+V 110
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/examples/Kaleidoscope/MCJIT/cached/genk-timing.py
+END
+toy-jit.cpp
+K 25
+svn:wc:ra_dav:version-url
+V 107
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/examples/Kaleidoscope/MCJIT/cached/toy-jit.cpp
+END
+split-lib.py
+K 25
+svn:wc:ra_dav:version-url
+V 108
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/examples/Kaleidoscope/MCJIT/cached/split-lib.py
+END
+README.txt
+K 25
+svn:wc:ra_dav:version-url
+V 106
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/examples/Kaleidoscope/MCJIT/cached/README.txt
+END

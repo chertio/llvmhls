@@ -1,0 +1,95 @@
+K 25
+svn:wc:ra_dav:version-url
+V 75
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/include/llvm-c
+END
+Disassembler.h
+K 25
+svn:wc:ra_dav:version-url
+V 90
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/include/llvm-c/Disassembler.h
+END
+LinkTimeOptimizer.h
+K 25
+svn:wc:ra_dav:version-url
+V 95
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/include/llvm-c/LinkTimeOptimizer.h
+END
+Analysis.h
+K 25
+svn:wc:ra_dav:version-url
+V 86
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/include/llvm-c/Analysis.h
+END
+Linker.h
+K 25
+svn:wc:ra_dav:version-url
+V 84
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/include/llvm-c/Linker.h
+END
+Target.h
+K 25
+svn:wc:ra_dav:version-url
+V 84
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/include/llvm-c/Target.h
+END
+Initialization.h
+K 25
+svn:wc:ra_dav:version-url
+V 92
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/include/llvm-c/Initialization.h
+END
+Core.h
+K 25
+svn:wc:ra_dav:version-url
+V 82
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/include/llvm-c/Core.h
+END
+ExecutionEngine.h
+K 25
+svn:wc:ra_dav:version-url
+V 93
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/include/llvm-c/ExecutionEngine.h
+END
+IRReader.h
+K 25
+svn:wc:ra_dav:version-url
+V 86
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/include/llvm-c/IRReader.h
+END
+lto.h
+K 25
+svn:wc:ra_dav:version-url
+V 81
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/include/llvm-c/lto.h
+END
+BitReader.h
+K 25
+svn:wc:ra_dav:version-url
+V 87
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/include/llvm-c/BitReader.h
+END
+Object.h
+K 25
+svn:wc:ra_dav:version-url
+V 84
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/include/llvm-c/Object.h
+END
+TargetMachine.h
+K 25
+svn:wc:ra_dav:version-url
+V 91
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/include/llvm-c/TargetMachine.h
+END
+BitWriter.h
+K 25
+svn:wc:ra_dav:version-url
+V 87
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/include/llvm-c/BitWriter.h
+END
+Support.h
+K 25
+svn:wc:ra_dav:version-url
+V 85
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/include/llvm-c/Support.h
+END

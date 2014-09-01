@@ -1,0 +1,53 @@
+K 25
+svn:wc:ra_dav:version-url
+V 81
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/Transforms/SROA
+END
+vector-conversion.ll
+K 25
+svn:wc:ra_dav:version-url
+V 102
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/Transforms/SROA/vector-conversion.ll
+END
+vector-promotion.ll
+K 25
+svn:wc:ra_dav:version-url
+V 101
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/Transforms/SROA/vector-promotion.ll
+END
+vectors-of-pointers.ll
+K 25
+svn:wc:ra_dav:version-url
+V 104
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/Transforms/SROA/vectors-of-pointers.ll
+END
+fca.ll
+K 25
+svn:wc:ra_dav:version-url
+V 88
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/Transforms/SROA/fca.ll
+END
+big-endian.ll
+K 25
+svn:wc:ra_dav:version-url
+V 95
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/Transforms/SROA/big-endian.ll
+END
+phi-and-select.ll
+K 25
+svn:wc:ra_dav:version-url
+V 99
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/Transforms/SROA/phi-and-select.ll
+END
+alignment.ll
+K 25
+svn:wc:ra_dav:version-url
+V 94
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/Transforms/SROA/alignment.ll
+END
+basictest.ll
+K 25
+svn:wc:ra_dav:version-url
+V 94
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/Transforms/SROA/basictest.ll
+END

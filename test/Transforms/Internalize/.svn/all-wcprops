@@ -1,0 +1,29 @@
+K 25
+svn:wc:ra_dav:version-url
+V 88
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/Transforms/Internalize
+END
+used.ll
+K 25
+svn:wc:ra_dav:version-url
+V 96
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/Transforms/Internalize/used.ll
+END
+apifile
+K 25
+svn:wc:ra_dav:version-url
+V 96
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/Transforms/Internalize/apifile
+END
+2009-01-05-InternalizeAliases.ll
+K 25
+svn:wc:ra_dav:version-url
+V 121
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/Transforms/Internalize/2009-01-05-InternalizeAliases.ll
+END
+lists.ll
+K 25
+svn:wc:ra_dav:version-url
+V 97
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/Transforms/Internalize/lists.ll
+END

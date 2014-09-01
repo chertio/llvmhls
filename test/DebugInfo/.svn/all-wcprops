@@ -1,0 +1,293 @@
+K 25
+svn:wc:ra_dav:version-url
+V 75
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/DebugInfo
+END
+2010-01-05-DbgScope.ll
+K 25
+svn:wc:ra_dav:version-url
+V 98
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/DebugInfo/2010-01-05-DbgScope.ll
+END
+member-pointers.ll
+K 25
+svn:wc:ra_dav:version-url
+V 94
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/DebugInfo/member-pointers.ll
+END
+2009-10-16-Phi.ll
+K 25
+svn:wc:ra_dav:version-url
+V 93
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/DebugInfo/2009-10-16-Phi.ll
+END
+2010-10-01-crash.ll
+K 25
+svn:wc:ra_dav:version-url
+V 95
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/DebugInfo/2010-10-01-crash.ll
+END
+2010-03-24-MemberFn.ll
+K 25
+svn:wc:ra_dav:version-url
+V 98
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/DebugInfo/2010-03-24-MemberFn.ll
+END
+dwarfdump-test.test
+K 25
+svn:wc:ra_dav:version-url
+V 95
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/DebugInfo/dwarfdump-test.test
+END
+llvm-symbolizer.test
+K 25
+svn:wc:ra_dav:version-url
+V 96
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/DebugInfo/llvm-symbolizer.test
+END
+dwarf-public-names.ll
+K 25
+svn:wc:ra_dav:version-url
+V 97
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/DebugInfo/dwarf-public-names.ll
+END
+2010-03-30-InvalidDbgInfoCrash.ll
+K 25
+svn:wc:ra_dav:version-url
+V 109
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/DebugInfo/2010-03-30-InvalidDbgInfoCrash.ll
+END
+member-order.ll
+K 25
+svn:wc:ra_dav:version-url
+V 91
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/DebugInfo/member-order.ll
+END
+2010-06-29-InlinedFnLocalVar.ll
+K 25
+svn:wc:ra_dav:version-url
+V 107
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/DebugInfo/2010-06-29-InlinedFnLocalVar.ll
+END
+inlined-arguments.ll
+K 25
+svn:wc:ra_dav:version-url
+V 96
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/DebugInfo/inlined-arguments.ll
+END
+2010-05-03-DisableFramePtr.ll
+K 25
+svn:wc:ra_dav:version-url
+V 105
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/DebugInfo/2010-05-03-DisableFramePtr.ll
+END
+2009-11-06-NamelessGlobalVariable.ll
+K 25
+svn:wc:ra_dav:version-url
+V 112
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/DebugInfo/2009-11-06-NamelessGlobalVariable.ll
+END
+2010-03-12-llc-crash.ll
+K 25
+svn:wc:ra_dav:version-url
+V 99
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/DebugInfo/2010-03-12-llc-crash.ll
+END
+bug_null_debuginfo.ll
+K 25
+svn:wc:ra_dav:version-url
+V 97
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/DebugInfo/bug_null_debuginfo.ll
+END
+inheritance.ll
+K 25
+svn:wc:ra_dav:version-url
+V 90
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/DebugInfo/inheritance.ll
+END
+inline-debug-info.ll
+K 25
+svn:wc:ra_dav:version-url
+V 96
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/DebugInfo/inline-debug-info.ll
+END
+2010-05-03-OriginDIE.ll
+K 25
+svn:wc:ra_dav:version-url
+V 99
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/DebugInfo/2010-05-03-OriginDIE.ll
+END
+2009-11-10-CurrentFn.ll
+K 25
+svn:wc:ra_dav:version-url
+V 99
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/DebugInfo/2009-11-10-CurrentFn.ll
+END
+2010-07-19-Crash.ll
+K 25
+svn:wc:ra_dav:version-url
+V 95
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/DebugInfo/2010-07-19-Crash.ll
+END
+dwarfdump-zlib.test
+K 25
+svn:wc:ra_dav:version-url
+V 95
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/DebugInfo/dwarfdump-zlib.test
+END
+two-cus-from-same-file.ll
+K 25
+svn:wc:ra_dav:version-url
+V 101
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/DebugInfo/two-cus-from-same-file.ll
+END
+2010-03-19-DbgDeclare.ll
+K 25
+svn:wc:ra_dav:version-url
+V 100
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/DebugInfo/2010-03-19-DbgDeclare.ll
+END
+enum.ll
+K 25
+svn:wc:ra_dav:version-url
+V 83
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/DebugInfo/enum.ll
+END
+dwarfdump-inlining.test
+K 25
+svn:wc:ra_dav:version-url
+V 99
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/DebugInfo/dwarfdump-inlining.test
+END
+2010-04-19-FramePtr.ll
+K 25
+svn:wc:ra_dav:version-url
+V 98
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/DebugInfo/2010-04-19-FramePtr.ll
+END
+dwarfdump-pubnames.test
+K 25
+svn:wc:ra_dav:version-url
+V 99
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/DebugInfo/dwarfdump-pubnames.test
+END
+tu-member-pointer.ll
+K 25
+svn:wc:ra_dav:version-url
+V 96
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/DebugInfo/tu-member-pointer.ll
+END
+2010-01-19-DbgScope.ll
+K 25
+svn:wc:ra_dav:version-url
+V 98
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/DebugInfo/2010-01-19-DbgScope.ll
+END
+2009-11-05-DeadGlobalVariable.ll
+K 25
+svn:wc:ra_dav:version-url
+V 108
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/DebugInfo/2009-11-05-DeadGlobalVariable.ll
+END
+array.ll
+K 25
+svn:wc:ra_dav:version-url
+V 84
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/DebugInfo/array.ll
+END
+template-recursive-void.ll
+K 25
+svn:wc:ra_dav:version-url
+V 102
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/DebugInfo/template-recursive-void.ll
+END
+dwarfdump-type-units.test
+K 25
+svn:wc:ra_dav:version-url
+V 101
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/DebugInfo/dwarfdump-type-units.test
+END
+debuglineinfo.test
+K 25
+svn:wc:ra_dav:version-url
+V 94
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/DebugInfo/debuglineinfo.test
+END
+2010-04-06-NestedFnDbgInfo.ll
+K 25
+svn:wc:ra_dav:version-url
+V 105
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/DebugInfo/2010-04-06-NestedFnDbgInfo.ll
+END
+2009-11-03-InsertExtractValue.ll
+K 25
+svn:wc:ra_dav:version-url
+V 108
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/DebugInfo/2009-11-03-InsertExtractValue.ll
+END
+version.ll
+K 25
+svn:wc:ra_dav:version-url
+V 86
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/DebugInfo/version.ll
+END
+dwarfdump-debug-loc-simple.test
+K 25
+svn:wc:ra_dav:version-url
+V 107
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/DebugInfo/dwarfdump-debug-loc-simple.test
+END
+tu-composite.ll
+K 25
+svn:wc:ra_dav:version-url
+V 91
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/DebugInfo/tu-composite.ll
+END
+debuginfofinder-multiple-cu.ll
+K 25
+svn:wc:ra_dav:version-url
+V 106
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/DebugInfo/debuginfofinder-multiple-cu.ll
+END
+inlined-vars.ll
+K 25
+svn:wc:ra_dav:version-url
+V 91
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/DebugInfo/inlined-vars.ll
+END
+namespace.ll
+K 25
+svn:wc:ra_dav:version-url
+V 88
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/DebugInfo/namespace.ll
+END
+inline-debug-info-multiret.ll
+K 25
+svn:wc:ra_dav:version-url
+V 105
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/DebugInfo/inline-debug-info-multiret.ll
+END
+dwarfdump-dump-flags.test
+K 25
+svn:wc:ra_dav:version-url
+V 101
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/DebugInfo/dwarfdump-dump-flags.test
+END
+global.ll
+K 25
+svn:wc:ra_dav:version-url
+V 85
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/DebugInfo/global.ll
+END
+2010-05-10-MultipleCU.ll
+K 25
+svn:wc:ra_dav:version-url
+V 100
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/DebugInfo/2010-05-10-MultipleCU.ll
+END
+dwarfdump-debug-frame-simple.test
+K 25
+svn:wc:ra_dav:version-url
+V 109
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/DebugInfo/dwarfdump-debug-frame-simple.test
+END

@@ -1,0 +1,47 @@
+K 25
+svn:wc:ra_dav:version-url
+V 88
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/Analysis/CostModel/ARM
+END
+divrem.ll
+K 25
+svn:wc:ra_dav:version-url
+V 98
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/Analysis/CostModel/ARM/divrem.ll
+END
+lit.local.cfg
+K 25
+svn:wc:ra_dav:version-url
+V 102
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/Analysis/CostModel/ARM/lit.local.cfg
+END
+cast.ll
+K 25
+svn:wc:ra_dav:version-url
+V 96
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/Analysis/CostModel/ARM/cast.ll
+END
+gep.ll
+K 25
+svn:wc:ra_dav:version-url
+V 95
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/Analysis/CostModel/ARM/gep.ll
+END
+shuffle.ll
+K 25
+svn:wc:ra_dav:version-url
+V 99
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/Analysis/CostModel/ARM/shuffle.ll
+END
+insertelement.ll
+K 25
+svn:wc:ra_dav:version-url
+V 105
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/Analysis/CostModel/ARM/insertelement.ll
+END
+select.ll
+K 25
+svn:wc:ra_dav:version-url
+V 98
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/Analysis/CostModel/ARM/select.ll
+END

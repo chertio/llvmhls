@@ -1,0 +1,17 @@
+K 25
+svn:wc:ra_dav:version-url
+V 87
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/Transforms/LoopReroll
+END
+reduction.ll
+K 25
+svn:wc:ra_dav:version-url
+V 100
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/Transforms/LoopReroll/reduction.ll
+END
+basic.ll
+K 25
+svn:wc:ra_dav:version-url
+V 96
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/Transforms/LoopReroll/basic.ll
+END

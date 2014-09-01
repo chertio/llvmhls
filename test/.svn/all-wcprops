@@ -1,0 +1,47 @@
+K 25
+svn:wc:ra_dav:version-url
+V 65
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test
+END
+lit.cfg
+K 25
+svn:wc:ra_dav:version-url
+V 73
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/lit.cfg
+END
+.clang-format
+K 25
+svn:wc:ra_dav:version-url
+V 79
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/.clang-format
+END
+Makefile
+K 25
+svn:wc:ra_dav:version-url
+V 74
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/Makefile
+END
+CMakeLists.txt
+K 25
+svn:wc:ra_dav:version-url
+V 80
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/CMakeLists.txt
+END
+Makefile.tests
+K 25
+svn:wc:ra_dav:version-url
+V 80
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/Makefile.tests
+END
+lit.site.cfg.in
+K 25
+svn:wc:ra_dav:version-url
+V 81
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/lit.site.cfg.in
+END
+TestRunner.sh
+K 25
+svn:wc:ra_dav:version-url
+V 79
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/TestRunner.sh
+END

@@ -1,0 +1,35 @@
+K 25
+svn:wc:ra_dav:version-url
+V 90
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/Transforms/PhaseOrdering
+END
+2010-03-22-empty-baseclass.ll
+K 25
+svn:wc:ra_dav:version-url
+V 120
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/Transforms/PhaseOrdering/2010-03-22-empty-baseclass.ll
+END
+scev.ll
+K 25
+svn:wc:ra_dav:version-url
+V 98
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/Transforms/PhaseOrdering/scev.ll
+END
+basic.ll
+K 25
+svn:wc:ra_dav:version-url
+V 99
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/Transforms/PhaseOrdering/basic.ll
+END
+gdce.ll
+K 25
+svn:wc:ra_dav:version-url
+V 98
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/Transforms/PhaseOrdering/gdce.ll
+END
+PR6627.ll
+K 25
+svn:wc:ra_dav:version-url
+V 100
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/Transforms/PhaseOrdering/PR6627.ll
+END

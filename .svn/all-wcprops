@@ -1,0 +1,95 @@
+K 25
+svn:wc:ra_dav:version-url
+V 60
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final
+END
+Makefile
+K 25
+svn:wc:ra_dav:version-url
+V 69
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/Makefile
+END
+CMakeLists.txt
+K 25
+svn:wc:ra_dav:version-url
+V 75
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/CMakeLists.txt
+END
+configure
+K 25
+svn:wc:ra_dav:version-url
+V 70
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/configure
+END
+CODE_OWNERS.TXT
+K 25
+svn:wc:ra_dav:version-url
+V 76
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/CODE_OWNERS.TXT
+END
+Makefile.config.in
+K 25
+svn:wc:ra_dav:version-url
+V 79
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/Makefile.config.in
+END
+.clang-format
+K 25
+svn:wc:ra_dav:version-url
+V 74
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/.clang-format
+END
+LICENSE.TXT
+K 25
+svn:wc:ra_dav:version-url
+V 72
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/LICENSE.TXT
+END
+Makefile.common
+K 25
+svn:wc:ra_dav:version-url
+V 76
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/Makefile.common
+END
+.gitignore
+K 25
+svn:wc:ra_dav:version-url
+V 71
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/.gitignore
+END
+Makefile.rules
+K 25
+svn:wc:ra_dav:version-url
+V 75
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/Makefile.rules
+END
+LLVMBuild.txt
+K 25
+svn:wc:ra_dav:version-url
+V 74
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/LLVMBuild.txt
+END
+llvm.spec.in
+K 25
+svn:wc:ra_dav:version-url
+V 73
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/llvm.spec.in
+END
+.arcconfig
+K 25
+svn:wc:ra_dav:version-url
+V 71
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/.arcconfig
+END
+README.txt
+K 25
+svn:wc:ra_dav:version-url
+V 71
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/README.txt
+END
+CREDITS.TXT
+K 25
+svn:wc:ra_dav:version-url
+V 72
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/CREDITS.TXT
+END

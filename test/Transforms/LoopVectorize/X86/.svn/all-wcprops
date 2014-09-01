@@ -1,0 +1,149 @@
+K 25
+svn:wc:ra_dav:version-url
+V 94
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/Transforms/LoopVectorize/X86
+END
+min-trip-count-switch.ll
+K 25
+svn:wc:ra_dav:version-url
+V 119
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/Transforms/LoopVectorize/X86/min-trip-count-switch.ll
+END
+unroll-pm.ll
+K 25
+svn:wc:ra_dav:version-url
+V 107
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/Transforms/LoopVectorize/X86/unroll-pm.ll
+END
+parallel-loops.ll
+K 25
+svn:wc:ra_dav:version-url
+V 112
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/Transforms/LoopVectorize/X86/parallel-loops.ll
+END
+tripcount.ll
+K 25
+svn:wc:ra_dav:version-url
+V 107
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/Transforms/LoopVectorize/X86/tripcount.ll
+END
+vector-scalar-select-cost.ll
+K 25
+svn:wc:ra_dav:version-url
+V 123
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/Transforms/LoopVectorize/X86/vector-scalar-select-cost.ll
+END
+rauw-bug.ll
+K 25
+svn:wc:ra_dav:version-url
+V 106
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/Transforms/LoopVectorize/X86/rauw-bug.ll
+END
+reduction-crash.ll
+K 25
+svn:wc:ra_dav:version-url
+V 113
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/Transforms/LoopVectorize/X86/reduction-crash.ll
+END
+conversion-cost.ll
+K 25
+svn:wc:ra_dav:version-url
+V 113
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/Transforms/LoopVectorize/X86/conversion-cost.ll
+END
+already-vectorized.ll
+K 25
+svn:wc:ra_dav:version-url
+V 116
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/Transforms/LoopVectorize/X86/already-vectorized.ll
+END
+vector_ptr_load_store.ll
+K 25
+svn:wc:ra_dav:version-url
+V 119
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/Transforms/LoopVectorize/X86/vector_ptr_load_store.ll
+END
+cost-model.ll
+K 25
+svn:wc:ra_dav:version-url
+V 108
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/Transforms/LoopVectorize/X86/cost-model.ll
+END
+gcc-examples.ll
+K 25
+svn:wc:ra_dav:version-url
+V 110
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/Transforms/LoopVectorize/X86/gcc-examples.ll
+END
+lit.local.cfg
+K 25
+svn:wc:ra_dav:version-url
+V 108
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/Transforms/LoopVectorize/X86/lit.local.cfg
+END
+unroll-small-loops.ll
+K 25
+svn:wc:ra_dav:version-url
+V 116
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/Transforms/LoopVectorize/X86/unroll-small-loops.ll
+END
+no-vector.ll
+K 25
+svn:wc:ra_dav:version-url
+V 107
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/Transforms/LoopVectorize/X86/no-vector.ll
+END
+x86_fp80-vector-store.ll
+K 25
+svn:wc:ra_dav:version-url
+V 119
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/Transforms/LoopVectorize/X86/x86_fp80-vector-store.ll
+END
+struct-store.ll
+K 25
+svn:wc:ra_dav:version-url
+V 110
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/Transforms/LoopVectorize/X86/struct-store.ll
+END
+illegal-parallel-loop-uniform-write.ll
+K 25
+svn:wc:ra_dav:version-url
+V 133
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/Transforms/LoopVectorize/X86/illegal-parallel-loop-uniform-write.ll
+END
+constant-vector-operand.ll
+K 25
+svn:wc:ra_dav:version-url
+V 121
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/Transforms/LoopVectorize/X86/constant-vector-operand.ll
+END
+avx1.ll
+K 25
+svn:wc:ra_dav:version-url
+V 102
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/Transforms/LoopVectorize/X86/avx1.ll
+END
+small-size.ll
+K 25
+svn:wc:ra_dav:version-url
+V 108
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/Transforms/LoopVectorize/X86/small-size.ll
+END
+gather-cost.ll
+K 25
+svn:wc:ra_dav:version-url
+V 109
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/Transforms/LoopVectorize/X86/gather-cost.ll
+END
+unroll_selection.ll
+K 25
+svn:wc:ra_dav:version-url
+V 114
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/Transforms/LoopVectorize/X86/unroll_selection.ll
+END
+parallel-loops-after-reg2mem.ll
+K 25
+svn:wc:ra_dav:version-url
+V 126
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/Transforms/LoopVectorize/X86/parallel-loops-after-reg2mem.ll
+END

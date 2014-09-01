@@ -1,0 +1,59 @@
+K 25
+svn:wc:ra_dav:version-url
+V 96
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/utils/lit/tests/Inputs/shtest-shell
+END
+error-2.txt
+K 25
+svn:wc:ra_dav:version-url
+V 108
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/utils/lit/tests/Inputs/shtest-shell/error-2.txt
+END
+lit.cfg
+K 25
+svn:wc:ra_dav:version-url
+V 104
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/utils/lit/tests/Inputs/shtest-shell/lit.cfg
+END
+sequencing-0.txt
+K 25
+svn:wc:ra_dav:version-url
+V 113
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/utils/lit/tests/Inputs/shtest-shell/sequencing-0.txt
+END
+sequencing-1.txt
+K 25
+svn:wc:ra_dav:version-url
+V 113
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/utils/lit/tests/Inputs/shtest-shell/sequencing-1.txt
+END
+redirects.txt
+K 25
+svn:wc:ra_dav:version-url
+V 110
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/utils/lit/tests/Inputs/shtest-shell/redirects.txt
+END
+error-0.txt
+K 25
+svn:wc:ra_dav:version-url
+V 108
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/utils/lit/tests/Inputs/shtest-shell/error-0.txt
+END
+write-to-stderr.sh
+K 25
+svn:wc:ra_dav:version-url
+V 115
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/utils/lit/tests/Inputs/shtest-shell/write-to-stderr.sh
+END
+write-to-stdout-and-stderr.sh
+K 25
+svn:wc:ra_dav:version-url
+V 126
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/utils/lit/tests/Inputs/shtest-shell/write-to-stdout-and-stderr.sh
+END
+error-1.txt
+K 25
+svn:wc:ra_dav:version-url
+V 108
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/utils/lit/tests/Inputs/shtest-shell/error-1.txt
+END

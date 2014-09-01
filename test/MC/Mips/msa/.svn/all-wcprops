@@ -1,0 +1,101 @@
+K 25
+svn:wc:ra_dav:version-url
+V 77
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/MC/Mips/msa
+END
+test_vec.s
+K 25
+svn:wc:ra_dav:version-url
+V 88
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/MC/Mips/msa/test_vec.s
+END
+test_i5.s
+K 25
+svn:wc:ra_dav:version-url
+V 87
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/MC/Mips/msa/test_i5.s
+END
+test_elm.s
+K 25
+svn:wc:ra_dav:version-url
+V 88
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/MC/Mips/msa/test_elm.s
+END
+test_bit.s
+K 25
+svn:wc:ra_dav:version-url
+V 88
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/MC/Mips/msa/test_bit.s
+END
+test_lsa.s
+K 25
+svn:wc:ra_dav:version-url
+V 88
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/MC/Mips/msa/test_lsa.s
+END
+test_i8.s
+K 25
+svn:wc:ra_dav:version-url
+V 87
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/MC/Mips/msa/test_i8.s
+END
+test_elm_insve.s
+K 25
+svn:wc:ra_dav:version-url
+V 94
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/MC/Mips/msa/test_elm_insve.s
+END
+test_2r.s
+K 25
+svn:wc:ra_dav:version-url
+V 87
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/MC/Mips/msa/test_2r.s
+END
+test_3r.s
+K 25
+svn:wc:ra_dav:version-url
+V 87
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/MC/Mips/msa/test_3r.s
+END
+test_ctrlregs.s
+K 25
+svn:wc:ra_dav:version-url
+V 93
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/MC/Mips/msa/test_ctrlregs.s
+END
+test_i10.s
+K 25
+svn:wc:ra_dav:version-url
+V 88
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/MC/Mips/msa/test_i10.s
+END
+test_2rf.s
+K 25
+svn:wc:ra_dav:version-url
+V 88
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/MC/Mips/msa/test_2rf.s
+END
+test_3rf.s
+K 25
+svn:wc:ra_dav:version-url
+V 88
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/MC/Mips/msa/test_3rf.s
+END
+test_cbranch.s
+K 25
+svn:wc:ra_dav:version-url
+V 92
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/MC/Mips/msa/test_cbranch.s
+END
+test_elm_insert.s
+K 25
+svn:wc:ra_dav:version-url
+V 95
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/MC/Mips/msa/test_elm_insert.s
+END
+test_mi10.s
+K 25
+svn:wc:ra_dav:version-url
+V 89
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/MC/Mips/msa/test_mi10.s
+END

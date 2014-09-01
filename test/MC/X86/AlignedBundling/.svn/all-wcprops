@@ -1,0 +1,107 @@
+K 25
+svn:wc:ra_dav:version-url
+V 88
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/MC/X86/AlignedBundling
+END
+autogen-inst-offset-padding.s
+K 25
+svn:wc:ra_dav:version-url
+V 118
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/MC/X86/AlignedBundling/autogen-inst-offset-padding.s
+END
+lock-without-bundle-mode-error.s
+K 25
+svn:wc:ra_dav:version-url
+V 121
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/MC/X86/AlignedBundling/lock-without-bundle-mode-error.s
+END
+unlock-without-lock-error.s
+K 25
+svn:wc:ra_dav:version-url
+V 116
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/MC/X86/AlignedBundling/unlock-without-lock-error.s
+END
+autogen-inst-offset-align-to-end.s
+K 25
+svn:wc:ra_dav:version-url
+V 123
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/MC/X86/AlignedBundling/autogen-inst-offset-align-to-end.s
+END
+lit.local.cfg
+K 25
+svn:wc:ra_dav:version-url
+V 102
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/MC/X86/AlignedBundling/lit.local.cfg
+END
+asm-printing-bundle-directives.s
+K 25
+svn:wc:ra_dav:version-url
+V 121
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/MC/X86/AlignedBundling/asm-printing-bundle-directives.s
+END
+relax-in-bundle-group.s
+K 25
+svn:wc:ra_dav:version-url
+V 112
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/MC/X86/AlignedBundling/relax-in-bundle-group.s
+END
+bundle-group-too-large-error.s
+K 25
+svn:wc:ra_dav:version-url
+V 119
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/MC/X86/AlignedBundling/bundle-group-too-large-error.s
+END
+align-mode-argument-error.s
+K 25
+svn:wc:ra_dav:version-url
+V 116
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/MC/X86/AlignedBundling/align-mode-argument-error.s
+END
+pad-align-to-bundle-end.s
+K 25
+svn:wc:ra_dav:version-url
+V 114
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/MC/X86/AlignedBundling/pad-align-to-bundle-end.s
+END
+relax-at-bundle-end.s
+K 25
+svn:wc:ra_dav:version-url
+V 110
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/MC/X86/AlignedBundling/relax-at-bundle-end.s
+END
+pad-bundle-groups.s
+K 25
+svn:wc:ra_dav:version-url
+V 108
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/MC/X86/AlignedBundling/pad-bundle-groups.s
+END
+switch-section-locked-error.s
+K 25
+svn:wc:ra_dav:version-url
+V 118
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/MC/X86/AlignedBundling/switch-section-locked-error.s
+END
+long-nop-pad.s
+K 25
+svn:wc:ra_dav:version-url
+V 103
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/MC/X86/AlignedBundling/long-nop-pad.s
+END
+different-sections.s
+K 25
+svn:wc:ra_dav:version-url
+V 109
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/MC/X86/AlignedBundling/different-sections.s
+END
+single-inst-bundling.s
+K 25
+svn:wc:ra_dav:version-url
+V 111
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/MC/X86/AlignedBundling/single-inst-bundling.s
+END
+bundle-lock-option-error.s
+K 25
+svn:wc:ra_dav:version-url
+V 115
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/MC/X86/AlignedBundling/bundle-lock-option-error.s
+END

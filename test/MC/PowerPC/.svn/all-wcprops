@@ -1,0 +1,149 @@
+K 25
+svn:wc:ra_dav:version-url
+V 76
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/MC/PowerPC
+END
+ppc64-regs.s
+K 25
+svn:wc:ra_dav:version-url
+V 89
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/MC/PowerPC/ppc64-regs.s
+END
+ppc64-encoding-bookII.s
+K 25
+svn:wc:ra_dav:version-url
+V 100
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/MC/PowerPC/ppc64-encoding-bookII.s
+END
+ppc-llong.s
+K 25
+svn:wc:ra_dav:version-url
+V 88
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/MC/PowerPC/ppc-llong.s
+END
+ppc-word.s
+K 25
+svn:wc:ra_dav:version-url
+V 87
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/MC/PowerPC/ppc-word.s
+END
+ppc64-relocs-01.s
+K 25
+svn:wc:ra_dav:version-url
+V 94
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/MC/PowerPC/ppc64-relocs-01.s
+END
+ppc64-tls-relocs-01.s
+K 25
+svn:wc:ra_dav:version-url
+V 98
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/MC/PowerPC/ppc64-tls-relocs-01.s
+END
+tls-gd-obj.s
+K 25
+svn:wc:ra_dav:version-url
+V 89
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/MC/PowerPC/tls-gd-obj.s
+END
+ppc64-encoding-bookIII.s
+K 25
+svn:wc:ra_dav:version-url
+V 101
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/MC/PowerPC/ppc64-encoding-bookIII.s
+END
+ppc64-fixup-explicit.s
+K 25
+svn:wc:ra_dav:version-url
+V 99
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/MC/PowerPC/ppc64-fixup-explicit.s
+END
+tls-ie-obj.s
+K 25
+svn:wc:ra_dav:version-url
+V 89
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/MC/PowerPC/tls-ie-obj.s
+END
+ppc64-operands.s
+K 25
+svn:wc:ra_dav:version-url
+V 93
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/MC/PowerPC/ppc64-operands.s
+END
+ppc64-errors.s
+K 25
+svn:wc:ra_dav:version-url
+V 91
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/MC/PowerPC/ppc64-errors.s
+END
+tls-ld-obj.s
+K 25
+svn:wc:ra_dav:version-url
+V 89
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/MC/PowerPC/tls-ld-obj.s
+END
+ppc64-fixups.s
+K 25
+svn:wc:ra_dav:version-url
+V 91
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/MC/PowerPC/ppc64-fixups.s
+END
+ppc64-fixup-apply.s
+K 25
+svn:wc:ra_dav:version-url
+V 96
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/MC/PowerPC/ppc64-fixup-apply.s
+END
+ppc64-initial-cfa.s
+K 25
+svn:wc:ra_dav:version-url
+V 96
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/MC/PowerPC/ppc64-initial-cfa.s
+END
+ppc-nop.s
+K 25
+svn:wc:ra_dav:version-url
+V 86
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/MC/PowerPC/ppc-nop.s
+END
+ppc64-encoding-ext.s
+K 25
+svn:wc:ra_dav:version-url
+V 97
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/MC/PowerPC/ppc64-encoding-ext.s
+END
+lit.local.cfg
+K 25
+svn:wc:ra_dav:version-url
+V 90
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/MC/PowerPC/lit.local.cfg
+END
+ppc64-encoding.s
+K 25
+svn:wc:ra_dav:version-url
+V 93
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/MC/PowerPC/ppc64-encoding.s
+END
+ppc64-encoding-fp.s
+K 25
+svn:wc:ra_dav:version-url
+V 96
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/MC/PowerPC/ppc64-encoding-fp.s
+END
+ppc-machine.s
+K 25
+svn:wc:ra_dav:version-url
+V 90
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/MC/PowerPC/ppc-machine.s
+END
+deprecated-p7.s
+K 25
+svn:wc:ra_dav:version-url
+V 92
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/MC/PowerPC/deprecated-p7.s
+END
+ppc64-encoding-vmx.s
+K 25
+svn:wc:ra_dav:version-url
+V 97
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/MC/PowerPC/ppc64-encoding-vmx.s
+END

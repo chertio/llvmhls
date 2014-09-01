@@ -1,0 +1,23 @@
+K 25
+svn:wc:ra_dav:version-url
+V 102
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/utils/lit/tests/Inputs/discovery/subsuite
+END
+test-two.txt
+K 25
+svn:wc:ra_dav:version-url
+V 115
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/utils/lit/tests/Inputs/discovery/subsuite/test-two.txt
+END
+lit.cfg
+K 25
+svn:wc:ra_dav:version-url
+V 110
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/utils/lit/tests/Inputs/discovery/subsuite/lit.cfg
+END
+test-one.txt
+K 25
+svn:wc:ra_dav:version-url
+V 115
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/utils/lit/tests/Inputs/discovery/subsuite/test-one.txt
+END

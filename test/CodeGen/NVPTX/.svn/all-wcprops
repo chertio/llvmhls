@@ -1,0 +1,395 @@
+K 25
+svn:wc:ra_dav:version-url
+V 79
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/CodeGen/NVPTX
+END
+inline-asm.ll
+K 25
+svn:wc:ra_dav:version-url
+V 93
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/CodeGen/NVPTX/inline-asm.ll
+END
+st-generic.ll
+K 25
+svn:wc:ra_dav:version-url
+V 93
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/CodeGen/NVPTX/st-generic.ll
+END
+vector-loads.ll
+K 25
+svn:wc:ra_dav:version-url
+V 95
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/CodeGen/NVPTX/vector-loads.ll
+END
+ldu-i8.ll
+K 25
+svn:wc:ra_dav:version-url
+V 89
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/CodeGen/NVPTX/ldu-i8.ll
+END
+ldu-reg-plus-offset.ll
+K 25
+svn:wc:ra_dav:version-url
+V 102
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/CodeGen/NVPTX/ldu-reg-plus-offset.ll
+END
+i1-global.ll
+K 25
+svn:wc:ra_dav:version-url
+V 92
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/CodeGen/NVPTX/i1-global.ll
+END
+refl1.ll
+K 25
+svn:wc:ra_dav:version-url
+V 88
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/CodeGen/NVPTX/refl1.ll
+END
+st-addrspace.ll
+K 25
+svn:wc:ra_dav:version-url
+V 95
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/CodeGen/NVPTX/st-addrspace.ll
+END
+i8-param.ll
+K 25
+svn:wc:ra_dav:version-url
+V 91
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/CodeGen/NVPTX/i8-param.ll
+END
+callchain.ll
+K 25
+svn:wc:ra_dav:version-url
+V 92
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/CodeGen/NVPTX/callchain.ll
+END
+compare-int.ll
+K 25
+svn:wc:ra_dav:version-url
+V 94
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/CodeGen/NVPTX/compare-int.ll
+END
+sm-version-21.ll
+K 25
+svn:wc:ra_dav:version-url
+V 96
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/CodeGen/NVPTX/sm-version-21.ll
+END
+local-stack-frame.ll
+K 25
+svn:wc:ra_dav:version-url
+V 100
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/CodeGen/NVPTX/local-stack-frame.ll
+END
+intrinsics.ll
+K 25
+svn:wc:ra_dav:version-url
+V 93
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/CodeGen/NVPTX/intrinsics.ll
+END
+vector-compare.ll
+K 25
+svn:wc:ra_dav:version-url
+V 97
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/CodeGen/NVPTX/vector-compare.ll
+END
+sm-version-35.ll
+K 25
+svn:wc:ra_dav:version-url
+V 96
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/CodeGen/NVPTX/sm-version-35.ll
+END
+pr17529.ll
+K 25
+svn:wc:ra_dav:version-url
+V 90
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/CodeGen/NVPTX/pr17529.ll
+END
+pr16278.ll
+K 25
+svn:wc:ra_dav:version-url
+V 90
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/CodeGen/NVPTX/pr16278.ll
+END
+annotations.ll
+K 25
+svn:wc:ra_dav:version-url
+V 94
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/CodeGen/NVPTX/annotations.ll
+END
+sext-in-reg.ll
+K 25
+svn:wc:ra_dav:version-url
+V 94
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/CodeGen/NVPTX/sext-in-reg.ll
+END
+fma-disable.ll
+K 25
+svn:wc:ra_dav:version-url
+V 94
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/CodeGen/NVPTX/fma-disable.ll
+END
+sext-params.ll
+K 25
+svn:wc:ra_dav:version-url
+V 94
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/CodeGen/NVPTX/sext-params.ll
+END
+vec8.ll
+K 25
+svn:wc:ra_dav:version-url
+V 87
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/CodeGen/NVPTX/vec8.ll
+END
+i1-param.ll
+K 25
+svn:wc:ra_dav:version-url
+V 91
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/CodeGen/NVPTX/i1-param.ll
+END
+global-ordering.ll
+K 25
+svn:wc:ra_dav:version-url
+V 98
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/CodeGen/NVPTX/global-ordering.ll
+END
+arithmetic-fp-sm20.ll
+K 25
+svn:wc:ra_dav:version-url
+V 101
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/CodeGen/NVPTX/arithmetic-fp-sm20.ll
+END
+constant-vectors.ll
+K 25
+svn:wc:ra_dav:version-url
+V 99
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/CodeGen/NVPTX/constant-vectors.ll
+END
+intrinsic-old.ll
+K 25
+svn:wc:ra_dav:version-url
+V 96
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/CodeGen/NVPTX/intrinsic-old.ll
+END
+vector-stores.ll
+K 25
+svn:wc:ra_dav:version-url
+V 96
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/CodeGen/NVPTX/vector-stores.ll
+END
+module-inline-asm.ll
+K 25
+svn:wc:ra_dav:version-url
+V 100
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/CodeGen/NVPTX/module-inline-asm.ll
+END
+ptx-version-31.ll
+K 25
+svn:wc:ra_dav:version-url
+V 97
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/CodeGen/NVPTX/ptx-version-31.ll
+END
+sm-version-20.ll
+K 25
+svn:wc:ra_dav:version-url
+V 96
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/CodeGen/NVPTX/sm-version-20.ll
+END
+sm-version-30.ll
+K 25
+svn:wc:ra_dav:version-url
+V 96
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/CodeGen/NVPTX/sm-version-30.ll
+END
+pr13291-i1-store.ll
+K 25
+svn:wc:ra_dav:version-url
+V 99
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/CodeGen/NVPTX/pr13291-i1-store.ll
+END
+tuple-literal.ll
+K 25
+svn:wc:ra_dav:version-url
+V 96
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/CodeGen/NVPTX/tuple-literal.ll
+END
+ld-addrspace.ll
+K 25
+svn:wc:ra_dav:version-url
+V 95
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/CodeGen/NVPTX/ld-addrspace.ll
+END
+fast-math.ll
+K 25
+svn:wc:ra_dav:version-url
+V 92
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/CodeGen/NVPTX/fast-math.ll
+END
+param-align.ll
+K 25
+svn:wc:ra_dav:version-url
+V 94
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/CodeGen/NVPTX/param-align.ll
+END
+vector-args.ll
+K 25
+svn:wc:ra_dav:version-url
+V 94
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/CodeGen/NVPTX/vector-args.ll
+END
+intrin-nocapture.ll
+K 25
+svn:wc:ra_dav:version-url
+V 99
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/CodeGen/NVPTX/intrin-nocapture.ll
+END
+implicit-def.ll
+K 25
+svn:wc:ra_dav:version-url
+V 95
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/CodeGen/NVPTX/implicit-def.ll
+END
+sched2.ll
+K 25
+svn:wc:ra_dav:version-url
+V 89
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/CodeGen/NVPTX/sched2.ll
+END
+lit.local.cfg
+K 25
+svn:wc:ra_dav:version-url
+V 93
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/CodeGen/NVPTX/lit.local.cfg
+END
+ctlz.ll
+K 25
+svn:wc:ra_dav:version-url
+V 87
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/CodeGen/NVPTX/ctlz.ll
+END
+ptx-version-30.ll
+K 25
+svn:wc:ra_dav:version-url
+V 97
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/CodeGen/NVPTX/ptx-version-30.ll
+END
+arithmetic-int.ll
+K 25
+svn:wc:ra_dav:version-url
+V 97
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/CodeGen/NVPTX/arithmetic-int.ll
+END
+fp-literals.ll
+K 25
+svn:wc:ra_dav:version-url
+V 94
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/CodeGen/NVPTX/fp-literals.ll
+END
+convert-fp.ll
+K 25
+svn:wc:ra_dav:version-url
+V 93
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/CodeGen/NVPTX/convert-fp.ll
+END
+i1-int-to-fp.ll
+K 25
+svn:wc:ra_dav:version-url
+V 95
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/CodeGen/NVPTX/i1-int-to-fp.ll
+END
+cttz.ll
+K 25
+svn:wc:ra_dav:version-url
+V 87
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/CodeGen/NVPTX/cttz.ll
+END
+ctpop.ll
+K 25
+svn:wc:ra_dav:version-url
+V 88
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/CodeGen/NVPTX/ctpop.ll
+END
+bug17709.ll
+K 25
+svn:wc:ra_dav:version-url
+V 91
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/CodeGen/NVPTX/bug17709.ll
+END
+vec-param-load.ll
+K 25
+svn:wc:ra_dav:version-url
+V 97
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/CodeGen/NVPTX/vec-param-load.ll
+END
+add-128bit.ll
+K 25
+svn:wc:ra_dav:version-url
+V 93
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/CodeGen/NVPTX/add-128bit.ll
+END
+simple-call.ll
+K 25
+svn:wc:ra_dav:version-url
+V 94
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/CodeGen/NVPTX/simple-call.ll
+END
+fma.ll
+K 25
+svn:wc:ra_dav:version-url
+V 86
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/CodeGen/NVPTX/fma.ll
+END
+load-sext-i1.ll
+K 25
+svn:wc:ra_dav:version-url
+V 95
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/CodeGen/NVPTX/load-sext-i1.ll
+END
+sched1.ll
+K 25
+svn:wc:ra_dav:version-url
+V 89
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/CodeGen/NVPTX/sched1.ll
+END
+nvvm-reflect.ll
+K 25
+svn:wc:ra_dav:version-url
+V 95
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/CodeGen/NVPTX/nvvm-reflect.ll
+END
+ld-generic.ll
+K 25
+svn:wc:ra_dav:version-url
+V 93
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/CodeGen/NVPTX/ld-generic.ll
+END
+rsqrt.ll
+K 25
+svn:wc:ra_dav:version-url
+V 88
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/CodeGen/NVPTX/rsqrt.ll
+END
+calling-conv.ll
+K 25
+svn:wc:ra_dav:version-url
+V 95
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/CodeGen/NVPTX/calling-conv.ll
+END
+vector-select.ll
+K 25
+svn:wc:ra_dav:version-url
+V 96
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/CodeGen/NVPTX/vector-select.ll
+END
+generic-to-nvvm.ll
+K 25
+svn:wc:ra_dav:version-url
+V 98
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/CodeGen/NVPTX/generic-to-nvvm.ll
+END
+convert-int-sm20.ll
+K 25
+svn:wc:ra_dav:version-url
+V 99
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/CodeGen/NVPTX/convert-int-sm20.ll
+END

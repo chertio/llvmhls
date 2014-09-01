@@ -1,0 +1,59 @@
+K 25
+svn:wc:ra_dav:version-url
+V 74
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/tools/msbuild
+END
+uninstall.bat
+K 25
+svn:wc:ra_dav:version-url
+V 88
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/tools/msbuild/uninstall.bat
+END
+Microsoft.Cpp.Win32.LLVM-vs2010.targets
+K 25
+svn:wc:ra_dav:version-url
+V 114
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/tools/msbuild/Microsoft.Cpp.Win32.LLVM-vs2010.targets
+END
+Microsoft.Cpp.Win32.LLVM-vs2012.targets
+K 25
+svn:wc:ra_dav:version-url
+V 114
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/tools/msbuild/Microsoft.Cpp.Win32.LLVM-vs2012.targets
+END
+toolset-vs2013_xp.targets
+K 25
+svn:wc:ra_dav:version-url
+V 100
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/tools/msbuild/toolset-vs2013_xp.targets
+END
+Microsoft.Cpp.Win32.llvm.props.in
+K 25
+svn:wc:ra_dav:version-url
+V 108
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/tools/msbuild/Microsoft.Cpp.Win32.llvm.props.in
+END
+Microsoft.Cpp.Win32.LLVM-vs2012_xp.targets
+K 25
+svn:wc:ra_dav:version-url
+V 117
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/tools/msbuild/Microsoft.Cpp.Win32.LLVM-vs2012_xp.targets
+END
+install.bat
+K 25
+svn:wc:ra_dav:version-url
+V 86
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/tools/msbuild/install.bat
+END
+CMakeLists.txt
+K 25
+svn:wc:ra_dav:version-url
+V 89
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/tools/msbuild/CMakeLists.txt
+END
+toolset-vs2013.targets
+K 25
+svn:wc:ra_dav:version-url
+V 97
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/tools/msbuild/toolset-vs2013.targets
+END

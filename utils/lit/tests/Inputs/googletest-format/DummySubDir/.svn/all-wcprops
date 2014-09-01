@@ -1,0 +1,11 @@
+K 25
+svn:wc:ra_dav:version-url
+V 113
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/utils/lit/tests/Inputs/googletest-format/DummySubDir
+END
+OneTest
+K 25
+svn:wc:ra_dav:version-url
+V 121
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/utils/lit/tests/Inputs/googletest-format/DummySubDir/OneTest
+END

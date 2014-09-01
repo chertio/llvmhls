@@ -1,0 +1,359 @@
+K 25
+svn:wc:ra_dav:version-url
+V 76
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/include/llvm/MC
+END
+MCInstrInfo.h
+K 25
+svn:wc:ra_dav:version-url
+V 90
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/include/llvm/MC/MCInstrInfo.h
+END
+MCSectionMachO.h
+K 25
+svn:wc:ra_dav:version-url
+V 93
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/include/llvm/MC/MCSectionMachO.h
+END
+MCValue.h
+K 25
+svn:wc:ra_dav:version-url
+V 86
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/include/llvm/MC/MCValue.h
+END
+MCInst.h
+K 25
+svn:wc:ra_dav:version-url
+V 85
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/include/llvm/MC/MCInst.h
+END
+MCDisassembler.h
+K 25
+svn:wc:ra_dav:version-url
+V 93
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/include/llvm/MC/MCDisassembler.h
+END
+MCAssembler.h
+K 25
+svn:wc:ra_dav:version-url
+V 90
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/include/llvm/MC/MCAssembler.h
+END
+MCAsmLayout.h
+K 25
+svn:wc:ra_dav:version-url
+V 90
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/include/llvm/MC/MCAsmLayout.h
+END
+MCWinCOFFObjectWriter.h
+K 25
+svn:wc:ra_dav:version-url
+V 100
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/include/llvm/MC/MCWinCOFFObjectWriter.h
+END
+MCStreamer.h
+K 25
+svn:wc:ra_dav:version-url
+V 89
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/include/llvm/MC/MCStreamer.h
+END
+MCAsmInfoELF.h
+K 25
+svn:wc:ra_dav:version-url
+V 91
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/include/llvm/MC/MCAsmInfoELF.h
+END
+MCContext.h
+K 25
+svn:wc:ra_dav:version-url
+V 88
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/include/llvm/MC/MCContext.h
+END
+MCFunction.h
+K 25
+svn:wc:ra_dav:version-url
+V 89
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/include/llvm/MC/MCFunction.h
+END
+MCObjectSymbolizer.h
+K 25
+svn:wc:ra_dav:version-url
+V 97
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/include/llvm/MC/MCObjectSymbolizer.h
+END
+MCELFObjectWriter.h
+K 25
+svn:wc:ra_dav:version-url
+V 96
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/include/llvm/MC/MCELFObjectWriter.h
+END
+SectionKind.h
+K 25
+svn:wc:ra_dav:version-url
+V 90
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/include/llvm/MC/SectionKind.h
+END
+MCFixup.h
+K 25
+svn:wc:ra_dav:version-url
+V 86
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/include/llvm/MC/MCFixup.h
+END
+MCMachObjectWriter.h
+K 25
+svn:wc:ra_dav:version-url
+V 97
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/include/llvm/MC/MCMachObjectWriter.h
+END
+MCInstrItineraries.h
+K 25
+svn:wc:ra_dav:version-url
+V 97
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/include/llvm/MC/MCInstrItineraries.h
+END
+MCDirectives.h
+K 25
+svn:wc:ra_dav:version-url
+V 91
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/include/llvm/MC/MCDirectives.h
+END
+MCSectionCOFF.h
+K 25
+svn:wc:ra_dav:version-url
+V 92
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/include/llvm/MC/MCSectionCOFF.h
+END
+MCObjectWriter.h
+K 25
+svn:wc:ra_dav:version-url
+V 93
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/include/llvm/MC/MCObjectWriter.h
+END
+MCInstrAnalysis.h
+K 25
+svn:wc:ra_dav:version-url
+V 94
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/include/llvm/MC/MCInstrAnalysis.h
+END
+MCDwarf.h
+K 25
+svn:wc:ra_dav:version-url
+V 86
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/include/llvm/MC/MCDwarf.h
+END
+MCCodeEmitter.h
+K 25
+svn:wc:ra_dav:version-url
+V 92
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/include/llvm/MC/MCCodeEmitter.h
+END
+MCSection.h
+K 25
+svn:wc:ra_dav:version-url
+V 88
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/include/llvm/MC/MCSection.h
+END
+MCObjectDisassembler.h
+K 25
+svn:wc:ra_dav:version-url
+V 99
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/include/llvm/MC/MCObjectDisassembler.h
+END
+MCELF.h
+K 25
+svn:wc:ra_dav:version-url
+V 84
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/include/llvm/MC/MCELF.h
+END
+MCModuleYAML.h
+K 25
+svn:wc:ra_dav:version-url
+V 91
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/include/llvm/MC/MCModuleYAML.h
+END
+MCObjectStreamer.h
+K 25
+svn:wc:ra_dav:version-url
+V 95
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/include/llvm/MC/MCObjectStreamer.h
+END
+MCRelocationInfo.h
+K 25
+svn:wc:ra_dav:version-url
+V 95
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/include/llvm/MC/MCRelocationInfo.h
+END
+MCSubtargetInfo.h
+K 25
+svn:wc:ra_dav:version-url
+V 94
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/include/llvm/MC/MCSubtargetInfo.h
+END
+MCFixupKindInfo.h
+K 25
+svn:wc:ra_dav:version-url
+V 94
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/include/llvm/MC/MCFixupKindInfo.h
+END
+MachineLocation.h
+K 25
+svn:wc:ra_dav:version-url
+V 94
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/include/llvm/MC/MachineLocation.h
+END
+MCExpr.h
+K 25
+svn:wc:ra_dav:version-url
+V 85
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/include/llvm/MC/MCExpr.h
+END
+MCLabel.h
+K 25
+svn:wc:ra_dav:version-url
+V 86
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/include/llvm/MC/MCLabel.h
+END
+MCCodeGenInfo.h
+K 25
+svn:wc:ra_dav:version-url
+V 92
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/include/llvm/MC/MCCodeGenInfo.h
+END
+MCInstPrinter.h
+K 25
+svn:wc:ra_dav:version-url
+V 92
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/include/llvm/MC/MCInstPrinter.h
+END
+MCObjectFileInfo.h
+K 25
+svn:wc:ra_dav:version-url
+V 95
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/include/llvm/MC/MCObjectFileInfo.h
+END
+MCWin64EH.h
+K 25
+svn:wc:ra_dav:version-url
+V 88
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/include/llvm/MC/MCWin64EH.h
+END
+MCInstBuilder.h
+K 25
+svn:wc:ra_dav:version-url
+V 92
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/include/llvm/MC/MCInstBuilder.h
+END
+MCModule.h
+K 25
+svn:wc:ra_dav:version-url
+V 87
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/include/llvm/MC/MCModule.h
+END
+MCAsmBackend.h
+K 25
+svn:wc:ra_dav:version-url
+V 91
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/include/llvm/MC/MCAsmBackend.h
+END
+MCAsmInfoCOFF.h
+K 25
+svn:wc:ra_dav:version-url
+V 92
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/include/llvm/MC/MCAsmInfoCOFF.h
+END
+MCMachOSymbolFlags.h
+K 25
+svn:wc:ra_dav:version-url
+V 97
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/include/llvm/MC/MCMachOSymbolFlags.h
+END
+MCSectionELF.h
+K 25
+svn:wc:ra_dav:version-url
+V 91
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/include/llvm/MC/MCSectionELF.h
+END
+MCAsmInfo.h
+K 25
+svn:wc:ra_dav:version-url
+V 88
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/include/llvm/MC/MCAsmInfo.h
+END
+SubtargetFeature.h
+K 25
+svn:wc:ra_dav:version-url
+V 95
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/include/llvm/MC/SubtargetFeature.h
+END
+MCSchedule.h
+K 25
+svn:wc:ra_dav:version-url
+V 89
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/include/llvm/MC/MCSchedule.h
+END
+MCFixedLenDisassembler.h
+K 25
+svn:wc:ra_dav:version-url
+V 101
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/include/llvm/MC/MCFixedLenDisassembler.h
+END
+MCInstrDesc.h
+K 25
+svn:wc:ra_dav:version-url
+V 90
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/include/llvm/MC/MCInstrDesc.h
+END
+MCSymbolizer.h
+K 25
+svn:wc:ra_dav:version-url
+V 91
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/include/llvm/MC/MCSymbolizer.h
+END
+MCRegisterInfo.h
+K 25
+svn:wc:ra_dav:version-url
+V 93
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/include/llvm/MC/MCRegisterInfo.h
+END
+MCAtom.h
+K 25
+svn:wc:ra_dav:version-url
+V 85
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/include/llvm/MC/MCAtom.h
+END
+MCAsmInfoDarwin.h
+K 25
+svn:wc:ra_dav:version-url
+V 94
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/include/llvm/MC/MCAsmInfoDarwin.h
+END
+MCExternalSymbolizer.h
+K 25
+svn:wc:ra_dav:version-url
+V 99
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/include/llvm/MC/MCExternalSymbolizer.h
+END
+MCTargetAsmParser.h
+K 25
+svn:wc:ra_dav:version-url
+V 96
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/include/llvm/MC/MCTargetAsmParser.h
+END
+MCSymbol.h
+K 25
+svn:wc:ra_dav:version-url
+V 87
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/include/llvm/MC/MCSymbol.h
+END
+MCELFSymbolFlags.h
+K 25
+svn:wc:ra_dav:version-url
+V 95
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/include/llvm/MC/MCELFSymbolFlags.h
+END
+MCELFStreamer.h
+K 25
+svn:wc:ra_dav:version-url
+V 92
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/include/llvm/MC/MCELFStreamer.h
+END

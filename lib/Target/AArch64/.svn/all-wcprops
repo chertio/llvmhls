@@ -1,0 +1,215 @@
+K 25
+svn:wc:ra_dav:version-url
+V 79
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/lib/Target/AArch64
+END
+AArch64AsmPrinter.h
+K 25
+svn:wc:ra_dav:version-url
+V 99
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/lib/Target/AArch64/AArch64AsmPrinter.h
+END
+AArch64InstrInfo.td
+K 25
+svn:wc:ra_dav:version-url
+V 99
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/lib/Target/AArch64/AArch64InstrInfo.td
+END
+AArch64RegisterInfo.cpp
+K 25
+svn:wc:ra_dav:version-url
+V 103
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/lib/Target/AArch64/AArch64RegisterInfo.cpp
+END
+AArch64Subtarget.cpp
+K 25
+svn:wc:ra_dav:version-url
+V 100
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/lib/Target/AArch64/AArch64Subtarget.cpp
+END
+AArch64FrameLowering.cpp
+K 25
+svn:wc:ra_dav:version-url
+V 104
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/lib/Target/AArch64/AArch64FrameLowering.cpp
+END
+AArch64ISelLowering.cpp
+K 25
+svn:wc:ra_dav:version-url
+V 103
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/lib/Target/AArch64/AArch64ISelLowering.cpp
+END
+AArch64TargetMachine.cpp
+K 25
+svn:wc:ra_dav:version-url
+V 104
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/lib/Target/AArch64/AArch64TargetMachine.cpp
+END
+AArch64InstrInfo.cpp
+K 25
+svn:wc:ra_dav:version-url
+V 100
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/lib/Target/AArch64/AArch64InstrInfo.cpp
+END
+AArch64TargetObjectFile.cpp
+K 25
+svn:wc:ra_dav:version-url
+V 107
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/lib/Target/AArch64/AArch64TargetObjectFile.cpp
+END
+AArch64SelectionDAGInfo.cpp
+K 25
+svn:wc:ra_dav:version-url
+V 107
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/lib/Target/AArch64/AArch64SelectionDAGInfo.cpp
+END
+LLVMBuild.txt
+K 25
+svn:wc:ra_dav:version-url
+V 93
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/lib/Target/AArch64/LLVMBuild.txt
+END
+AArch64InstrFormats.td
+K 25
+svn:wc:ra_dav:version-url
+V 102
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/lib/Target/AArch64/AArch64InstrFormats.td
+END
+README.txt
+K 25
+svn:wc:ra_dav:version-url
+V 90
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/lib/Target/AArch64/README.txt
+END
+AArch64Schedule.td
+K 25
+svn:wc:ra_dav:version-url
+V 98
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/lib/Target/AArch64/AArch64Schedule.td
+END
+AArch64CallingConv.td
+K 25
+svn:wc:ra_dav:version-url
+V 101
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/lib/Target/AArch64/AArch64CallingConv.td
+END
+AArch64AsmPrinter.cpp
+K 25
+svn:wc:ra_dav:version-url
+V 101
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/lib/Target/AArch64/AArch64AsmPrinter.cpp
+END
+AArch64.h
+K 25
+svn:wc:ra_dav:version-url
+V 89
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/lib/Target/AArch64/AArch64.h
+END
+AArch64RegisterInfo.td
+K 25
+svn:wc:ra_dav:version-url
+V 102
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/lib/Target/AArch64/AArch64RegisterInfo.td
+END
+AArch64ISelDAGToDAG.cpp
+K 25
+svn:wc:ra_dav:version-url
+V 103
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/lib/Target/AArch64/AArch64ISelDAGToDAG.cpp
+END
+AArch64MachineFunctionInfo.h
+K 25
+svn:wc:ra_dav:version-url
+V 108
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/lib/Target/AArch64/AArch64MachineFunctionInfo.h
+END
+AArch64BranchFixupPass.cpp
+K 25
+svn:wc:ra_dav:version-url
+V 106
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/lib/Target/AArch64/AArch64BranchFixupPass.cpp
+END
+AArch64InstrNEON.td
+K 25
+svn:wc:ra_dav:version-url
+V 99
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/lib/Target/AArch64/AArch64InstrNEON.td
+END
+AArch64.td
+K 25
+svn:wc:ra_dav:version-url
+V 90
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/lib/Target/AArch64/AArch64.td
+END
+AArch64RegisterInfo.h
+K 25
+svn:wc:ra_dav:version-url
+V 101
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/lib/Target/AArch64/AArch64RegisterInfo.h
+END
+AArch64Subtarget.h
+K 25
+svn:wc:ra_dav:version-url
+V 98
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/lib/Target/AArch64/AArch64Subtarget.h
+END
+AArch64FrameLowering.h
+K 25
+svn:wc:ra_dav:version-url
+V 102
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/lib/Target/AArch64/AArch64FrameLowering.h
+END
+AArch64MCInstLower.cpp
+K 25
+svn:wc:ra_dav:version-url
+V 102
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/lib/Target/AArch64/AArch64MCInstLower.cpp
+END
+AArch64ISelLowering.h
+K 25
+svn:wc:ra_dav:version-url
+V 101
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/lib/Target/AArch64/AArch64ISelLowering.h
+END
+AArch64TargetMachine.h
+K 25
+svn:wc:ra_dav:version-url
+V 102
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/lib/Target/AArch64/AArch64TargetMachine.h
+END
+AArch64InstrInfo.h
+K 25
+svn:wc:ra_dav:version-url
+V 98
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/lib/Target/AArch64/AArch64InstrInfo.h
+END
+AArch64TargetObjectFile.h
+K 25
+svn:wc:ra_dav:version-url
+V 105
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/lib/Target/AArch64/AArch64TargetObjectFile.h
+END
+AArch64SelectionDAGInfo.h
+K 25
+svn:wc:ra_dav:version-url
+V 105
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/lib/Target/AArch64/AArch64SelectionDAGInfo.h
+END
+CMakeLists.txt
+K 25
+svn:wc:ra_dav:version-url
+V 94
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/lib/Target/AArch64/CMakeLists.txt
+END
+Makefile
+K 25
+svn:wc:ra_dav:version-url
+V 88
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/lib/Target/AArch64/Makefile
+END
+AArch64MachineFunctionInfo.cpp
+K 25
+svn:wc:ra_dav:version-url
+V 110
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/lib/Target/AArch64/AArch64MachineFunctionInfo.cpp
+END

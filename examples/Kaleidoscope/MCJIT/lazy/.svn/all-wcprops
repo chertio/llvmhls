@@ -1,0 +1,35 @@
+K 25
+svn:wc:ra_dav:version-url
+V 93
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/examples/Kaleidoscope/MCJIT/lazy
+END
+README.txt
+K 25
+svn:wc:ra_dav:version-url
+V 104
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/examples/Kaleidoscope/MCJIT/lazy/README.txt
+END
+toy.cpp
+K 25
+svn:wc:ra_dav:version-url
+V 101
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/examples/Kaleidoscope/MCJIT/lazy/toy.cpp
+END
+Makefile
+K 25
+svn:wc:ra_dav:version-url
+V 102
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/examples/Kaleidoscope/MCJIT/lazy/Makefile
+END
+genk-timing.py
+K 25
+svn:wc:ra_dav:version-url
+V 108
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/examples/Kaleidoscope/MCJIT/lazy/genk-timing.py
+END
+toy-jit.cpp
+K 25
+svn:wc:ra_dav:version-url
+V 105
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/examples/Kaleidoscope/MCJIT/lazy/toy-jit.cpp
+END

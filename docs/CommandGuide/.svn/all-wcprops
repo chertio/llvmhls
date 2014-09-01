@@ -1,0 +1,143 @@
+K 25
+svn:wc:ra_dav:version-url
+V 78
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/docs/CommandGuide
+END
+llvm-dis.rst
+K 25
+svn:wc:ra_dav:version-url
+V 91
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/docs/CommandGuide/llvm-dis.rst
+END
+bugpoint.rst
+K 25
+svn:wc:ra_dav:version-url
+V 91
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/docs/CommandGuide/bugpoint.rst
+END
+lit.rst
+K 25
+svn:wc:ra_dav:version-url
+V 86
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/docs/CommandGuide/lit.rst
+END
+llvm-stress.rst
+K 25
+svn:wc:ra_dav:version-url
+V 94
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/docs/CommandGuide/llvm-stress.rst
+END
+llvm-cov.rst
+K 25
+svn:wc:ra_dav:version-url
+V 91
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/docs/CommandGuide/llvm-cov.rst
+END
+llvm-bcanalyzer.rst
+K 25
+svn:wc:ra_dav:version-url
+V 98
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/docs/CommandGuide/llvm-bcanalyzer.rst
+END
+opt.rst
+K 25
+svn:wc:ra_dav:version-url
+V 86
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/docs/CommandGuide/opt.rst
+END
+llvm-link.rst
+K 25
+svn:wc:ra_dav:version-url
+V 92
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/docs/CommandGuide/llvm-link.rst
+END
+llvm-build.rst
+K 25
+svn:wc:ra_dav:version-url
+V 93
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/docs/CommandGuide/llvm-build.rst
+END
+index.rst
+K 25
+svn:wc:ra_dav:version-url
+V 88
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/docs/CommandGuide/index.rst
+END
+llvm-symbolizer.rst
+K 25
+svn:wc:ra_dav:version-url
+V 98
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/docs/CommandGuide/llvm-symbolizer.rst
+END
+llvm-ar.rst
+K 25
+svn:wc:ra_dav:version-url
+V 90
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/docs/CommandGuide/llvm-ar.rst
+END
+llc.rst
+K 25
+svn:wc:ra_dav:version-url
+V 86
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/docs/CommandGuide/llc.rst
+END
+llvm-as.rst
+K 25
+svn:wc:ra_dav:version-url
+V 90
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/docs/CommandGuide/llvm-as.rst
+END
+tblgen.rst
+K 25
+svn:wc:ra_dav:version-url
+V 89
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/docs/CommandGuide/tblgen.rst
+END
+llvm-config.rst
+K 25
+svn:wc:ra_dav:version-url
+V 94
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/docs/CommandGuide/llvm-config.rst
+END
+FileCheck.rst
+K 25
+svn:wc:ra_dav:version-url
+V 92
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/docs/CommandGuide/FileCheck.rst
+END
+llvm-readobj.rst
+K 25
+svn:wc:ra_dav:version-url
+V 95
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/docs/CommandGuide/llvm-readobj.rst
+END
+llvm-prof.rst
+K 25
+svn:wc:ra_dav:version-url
+V 92
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/docs/CommandGuide/llvm-prof.rst
+END
+llvm-diff.rst
+K 25
+svn:wc:ra_dav:version-url
+V 92
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/docs/CommandGuide/llvm-diff.rst
+END
+lli.rst
+K 25
+svn:wc:ra_dav:version-url
+V 86
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/docs/CommandGuide/lli.rst
+END
+llvm-extract.rst
+K 25
+svn:wc:ra_dav:version-url
+V 95
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/docs/CommandGuide/llvm-extract.rst
+END
+llvm-nm.rst
+K 25
+svn:wc:ra_dav:version-url
+V 90
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/docs/CommandGuide/llvm-nm.rst
+END

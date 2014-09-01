@@ -1,0 +1,221 @@
+K 25
+svn:wc:ra_dav:version-url
+V 79
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/CodeGen/SPARC
+END
+2012-05-01-LowerArguments.ll
+K 25
+svn:wc:ra_dav:version-url
+V 108
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/CodeGen/SPARC/2012-05-01-LowerArguments.ll
+END
+fp128.ll
+K 25
+svn:wc:ra_dav:version-url
+V 88
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/CodeGen/SPARC/fp128.ll
+END
+2011-01-11-FrameAddr.ll
+K 25
+svn:wc:ra_dav:version-url
+V 103
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/CodeGen/SPARC/2011-01-11-FrameAddr.ll
+END
+2011-01-11-CC.ll
+K 25
+svn:wc:ra_dav:version-url
+V 96
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/CodeGen/SPARC/2011-01-11-CC.ll
+END
+2007-05-09-JumpTables.ll
+K 25
+svn:wc:ra_dav:version-url
+V 104
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/CodeGen/SPARC/2007-05-09-JumpTables.ll
+END
+64abi.ll
+K 25
+svn:wc:ra_dav:version-url
+V 88
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/CodeGen/SPARC/64abi.ll
+END
+varargs.ll
+K 25
+svn:wc:ra_dav:version-url
+V 90
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/CodeGen/SPARC/varargs.ll
+END
+2011-12-03-TailDuplication.ll
+K 25
+svn:wc:ra_dav:version-url
+V 109
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/CodeGen/SPARC/2011-12-03-TailDuplication.ll
+END
+2008-10-10-InlineAsmRegOperand.ll
+K 25
+svn:wc:ra_dav:version-url
+V 113
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/CodeGen/SPARC/2008-10-10-InlineAsmRegOperand.ll
+END
+private.ll
+K 25
+svn:wc:ra_dav:version-url
+V 90
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/CodeGen/SPARC/private.ll
+END
+mult-alt-generic-sparc.ll
+K 25
+svn:wc:ra_dav:version-url
+V 105
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/CodeGen/SPARC/mult-alt-generic-sparc.ll
+END
+2009-08-28-PIC.ll
+K 25
+svn:wc:ra_dav:version-url
+V 97
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/CodeGen/SPARC/2009-08-28-PIC.ll
+END
+constpool.ll
+K 25
+svn:wc:ra_dav:version-url
+V 92
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/CodeGen/SPARC/constpool.ll
+END
+basictest.ll
+K 25
+svn:wc:ra_dav:version-url
+V 92
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/CodeGen/SPARC/basictest.ll
+END
+2007-07-05-LiveIntervalAssert.ll
+K 25
+svn:wc:ra_dav:version-url
+V 112
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/CodeGen/SPARC/2007-07-05-LiveIntervalAssert.ll
+END
+rem.ll
+K 25
+svn:wc:ra_dav:version-url
+V 86
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/CodeGen/SPARC/rem.ll
+END
+globals.ll
+K 25
+svn:wc:ra_dav:version-url
+V 90
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/CodeGen/SPARC/globals.ll
+END
+blockaddr.ll
+K 25
+svn:wc:ra_dav:version-url
+V 92
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/CodeGen/SPARC/blockaddr.ll
+END
+2011-01-19-DelaySlot.ll
+K 25
+svn:wc:ra_dav:version-url
+V 103
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/CodeGen/SPARC/2011-01-19-DelaySlot.ll
+END
+2009-08-28-WeakLinkage.ll
+K 25
+svn:wc:ra_dav:version-url
+V 105
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/CodeGen/SPARC/2009-08-28-WeakLinkage.ll
+END
+64bit.ll
+K 25
+svn:wc:ra_dav:version-url
+V 88
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/CodeGen/SPARC/64bit.ll
+END
+64cond.ll
+K 25
+svn:wc:ra_dav:version-url
+V 89
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/CodeGen/SPARC/64cond.ll
+END
+DbgValueOtherTargets.test
+K 25
+svn:wc:ra_dav:version-url
+V 105
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/CodeGen/SPARC/DbgValueOtherTargets.test
+END
+exception.ll
+K 25
+svn:wc:ra_dav:version-url
+V 92
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/CodeGen/SPARC/exception.ll
+END
+setjmp.ll
+K 25
+svn:wc:ra_dav:version-url
+V 89
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/CodeGen/SPARC/setjmp.ll
+END
+tls.ll
+K 25
+svn:wc:ra_dav:version-url
+V 86
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/CodeGen/SPARC/tls.ll
+END
+2008-10-10-InlineAsmMemoryOperand.ll
+K 25
+svn:wc:ra_dav:version-url
+V 116
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/CodeGen/SPARC/2008-10-10-InlineAsmMemoryOperand.ll
+END
+float.ll
+K 25
+svn:wc:ra_dav:version-url
+V 88
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/CodeGen/SPARC/float.ll
+END
+lit.local.cfg
+K 25
+svn:wc:ra_dav:version-url
+V 93
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/CodeGen/SPARC/lit.local.cfg
+END
+2011-01-21-ByValArgs.ll
+K 25
+svn:wc:ra_dav:version-url
+V 103
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/CodeGen/SPARC/2011-01-21-ByValArgs.ll
+END
+2006-01-22-BitConvertLegalize.ll
+K 25
+svn:wc:ra_dav:version-url
+V 112
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/CodeGen/SPARC/2006-01-22-BitConvertLegalize.ll
+END
+2013-05-17-CallFrame.ll
+K 25
+svn:wc:ra_dav:version-url
+V 103
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/CodeGen/SPARC/2013-05-17-CallFrame.ll
+END
+ctpop.ll
+K 25
+svn:wc:ra_dav:version-url
+V 88
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/CodeGen/SPARC/ctpop.ll
+END
+2011-01-11-Call.ll
+K 25
+svn:wc:ra_dav:version-url
+V 98
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/CodeGen/SPARC/2011-01-11-Call.ll
+END
+leafproc.ll
+K 25
+svn:wc:ra_dav:version-url
+V 91
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/CodeGen/SPARC/leafproc.ll
+END
+2011-01-22-SRet.ll
+K 25
+svn:wc:ra_dav:version-url
+V 98
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/test/CodeGen/SPARC/2011-01-22-SRet.ll
+END

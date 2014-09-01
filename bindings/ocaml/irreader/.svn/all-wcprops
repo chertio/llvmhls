@@ -1,0 +1,29 @@
+K 25
+svn:wc:ra_dav:version-url
+V 84
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/bindings/ocaml/irreader
+END
+Makefile
+K 25
+svn:wc:ra_dav:version-url
+V 93
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/bindings/ocaml/irreader/Makefile
+END
+llvm_irreader.ml
+K 25
+svn:wc:ra_dav:version-url
+V 101
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/bindings/ocaml/irreader/llvm_irreader.ml
+END
+llvm_irreader.mli
+K 25
+svn:wc:ra_dav:version-url
+V 102
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/bindings/ocaml/irreader/llvm_irreader.mli
+END
+irreader_ocaml.c
+K 25
+svn:wc:ra_dav:version-url
+V 101
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/bindings/ocaml/irreader/irreader_ocaml.c
+END

@@ -1,0 +1,53 @@
+K 25
+svn:wc:ra_dav:version-url
+V 90
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/lib/Target/NVPTX/MCTargetDesc
+END
+NVPTXMCTargetDesc.cpp
+K 25
+svn:wc:ra_dav:version-url
+V 112
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/lib/Target/NVPTX/MCTargetDesc/NVPTXMCTargetDesc.cpp
+END
+LLVMBuild.txt
+K 25
+svn:wc:ra_dav:version-url
+V 104
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/lib/Target/NVPTX/MCTargetDesc/LLVMBuild.txt
+END
+NVPTXMCTargetDesc.h
+K 25
+svn:wc:ra_dav:version-url
+V 110
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/lib/Target/NVPTX/MCTargetDesc/NVPTXMCTargetDesc.h
+END
+NVPTXBaseInfo.h
+K 25
+svn:wc:ra_dav:version-url
+V 106
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/lib/Target/NVPTX/MCTargetDesc/NVPTXBaseInfo.h
+END
+CMakeLists.txt
+K 25
+svn:wc:ra_dav:version-url
+V 105
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/lib/Target/NVPTX/MCTargetDesc/CMakeLists.txt
+END
+Makefile
+K 25
+svn:wc:ra_dav:version-url
+V 99
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/lib/Target/NVPTX/MCTargetDesc/Makefile
+END
+NVPTXMCAsmInfo.cpp
+K 25
+svn:wc:ra_dav:version-url
+V 109
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/lib/Target/NVPTX/MCTargetDesc/NVPTXMCAsmInfo.cpp
+END
+NVPTXMCAsmInfo.h
+K 25
+svn:wc:ra_dav:version-url
+V 107
+/svn/llvm-project/!svn/ver/197955/llvm/tags/RELEASE_34/final/lib/Target/NVPTX/MCTargetDesc/NVPTXMCAsmInfo.h
+END

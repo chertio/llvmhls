@@ -1,0 +1,211 @@
+10
+
+dir
+216418
+http://llvm.org/svn/llvm-project/llvm/tags/RELEASE_34/final/test/Transforms
+http://llvm.org/svn/llvm-project
+
+
+
+2013-12-17T01:28:35.806622Z
+197453
+void
+has-props
+
+
+
+
+
+
+
+
+
+
+
+
+
+91177308-0d34-0410-b5e6-96231b3b80d8
+
+InstSimplify
+dir
+
+LoopIdiom
+dir
+
+DeadStoreElimination
+dir
+
+ObjCARC
+dir
+
+Sink
+dir
+
+SROA
+dir
+
+LoopVectorize
+dir
+
+EarlyCSE
+dir
+
+ConstantMerge
+dir
+
+StripSymbols
+dir
+
+LowerSwitch
+dir
+
+SLPVectorizer
+dir
+
+MemCpyOpt
+dir
+
+Inline
+dir
+
+BBVectorize
+dir
+
+DebugIR
+dir
+
+BlockPlacement
+dir
+
+Internalize
+dir
+
+LICM
+dir
+
+LowerExpectIntrinsic
+dir
+
+LoopSimplify
+dir
+
+ScalarRepl
+dir
+
+PhaseOrdering
+dir
+
+GVN
+dir
+
+ADCE
+dir
+
+TailCallElim
+dir
+
+LoopDeletion
+dir
+
+Reg2Mem
+dir
+
+Mem2Reg
+dir
+
+DeadArgElim
+dir
+
+LoopUnswitch
+dir
+
+BranchFolding
+dir
+
+MetaRenamer
+dir
+
+IndVarSimplify
+dir
+
+JumpThreading
+dir
+
+Reassociate
+dir
+
+SampleProfile
+dir
+
+TailDup
+dir
+
+FunctionAttrs
+dir
+
+LowerInvoke
+dir
+
+LCSSA
+dir
+
+LoopUnroll
+dir
+
+PruneEH
+dir
+
+CodeExtractor
+dir
+
+GCOVProfiling
+dir
+
+InstCombine
+dir
+
+MergeFunc
+dir
+
+GlobalDCE
+dir
+
+SimplifyCFG
+dir
+
+LoopStrengthReduce
+dir
+
+IPConstantProp
+dir
+
+CodeGenPrepare
+dir
+
+StructurizeCFG
+dir
+
+GlobalOpt
+dir
+
+CorrelatedValuePropagation
+dir
+
+LowerAtomic
+dir
+
+ConstProp
+dir
+
+SCCP
+dir
+
+LoopRotate
+dir
+
+LoopReroll
+dir
+
+ArgumentPromotion
+dir
+
