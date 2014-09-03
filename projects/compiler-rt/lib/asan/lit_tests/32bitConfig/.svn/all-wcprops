@@ -1,0 +1,11 @@
+K 25
+svn:wc:ra_dav:version-url
+V 98
+/svn/llvm-project/!svn/ver/197959/compiler-rt/tags/RELEASE_34/final/lib/asan/lit_tests/32bitConfig
+END
+lit.site.cfg.in
+K 25
+svn:wc:ra_dav:version-url
+V 114
+/svn/llvm-project/!svn/ver/197959/compiler-rt/tags/RELEASE_34/final/lib/asan/lit_tests/32bitConfig/lit.site.cfg.in
+END

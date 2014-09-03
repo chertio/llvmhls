@@ -1,0 +1,89 @@
+K 25
+svn:wc:ra_dav:version-url
+V 75
+/svn/llvm-project/!svn/ver/197959/compiler-rt/tags/RELEASE_34/final/lib/ppc
+END
+DD.h
+K 25
+svn:wc:ra_dav:version-url
+V 80
+/svn/llvm-project/!svn/ver/197959/compiler-rt/tags/RELEASE_34/final/lib/ppc/DD.h
+END
+divtc3.c
+K 25
+svn:wc:ra_dav:version-url
+V 84
+/svn/llvm-project/!svn/ver/197959/compiler-rt/tags/RELEASE_34/final/lib/ppc/divtc3.c
+END
+floatditf.c
+K 25
+svn:wc:ra_dav:version-url
+V 87
+/svn/llvm-project/!svn/ver/197959/compiler-rt/tags/RELEASE_34/final/lib/ppc/floatditf.c
+END
+fixtfdi.c
+K 25
+svn:wc:ra_dav:version-url
+V 85
+/svn/llvm-project/!svn/ver/197959/compiler-rt/tags/RELEASE_34/final/lib/ppc/fixtfdi.c
+END
+floatunditf.c
+K 25
+svn:wc:ra_dav:version-url
+V 89
+/svn/llvm-project/!svn/ver/197959/compiler-rt/tags/RELEASE_34/final/lib/ppc/floatunditf.c
+END
+gcc_qdiv.c
+K 25
+svn:wc:ra_dav:version-url
+V 86
+/svn/llvm-project/!svn/ver/197959/compiler-rt/tags/RELEASE_34/final/lib/ppc/gcc_qdiv.c
+END
+Makefile.mk
+K 25
+svn:wc:ra_dav:version-url
+V 87
+/svn/llvm-project/!svn/ver/197959/compiler-rt/tags/RELEASE_34/final/lib/ppc/Makefile.mk
+END
+fixunstfdi.c
+K 25
+svn:wc:ra_dav:version-url
+V 88
+/svn/llvm-project/!svn/ver/197959/compiler-rt/tags/RELEASE_34/final/lib/ppc/fixunstfdi.c
+END
+restFP.S
+K 25
+svn:wc:ra_dav:version-url
+V 84
+/svn/llvm-project/!svn/ver/197959/compiler-rt/tags/RELEASE_34/final/lib/ppc/restFP.S
+END
+saveFP.S
+K 25
+svn:wc:ra_dav:version-url
+V 84
+/svn/llvm-project/!svn/ver/197959/compiler-rt/tags/RELEASE_34/final/lib/ppc/saveFP.S
+END
+gcc_qadd.c
+K 25
+svn:wc:ra_dav:version-url
+V 86
+/svn/llvm-project/!svn/ver/197959/compiler-rt/tags/RELEASE_34/final/lib/ppc/gcc_qadd.c
+END
+gcc_qsub.c
+K 25
+svn:wc:ra_dav:version-url
+V 86
+/svn/llvm-project/!svn/ver/197959/compiler-rt/tags/RELEASE_34/final/lib/ppc/gcc_qsub.c
+END
+multc3.c
+K 25
+svn:wc:ra_dav:version-url
+V 84
+/svn/llvm-project/!svn/ver/197959/compiler-rt/tags/RELEASE_34/final/lib/ppc/multc3.c
+END
+gcc_qmul.c
+K 25
+svn:wc:ra_dav:version-url
+V 86
+/svn/llvm-project/!svn/ver/197959/compiler-rt/tags/RELEASE_34/final/lib/ppc/gcc_qmul.c
+END

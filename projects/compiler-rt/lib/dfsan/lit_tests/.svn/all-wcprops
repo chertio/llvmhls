@@ -1,0 +1,53 @@
+K 25
+svn:wc:ra_dav:version-url
+V 87
+/svn/llvm-project/!svn/ver/197959/compiler-rt/tags/RELEASE_34/final/lib/dfsan/lit_tests
+END
+fncall.c
+K 25
+svn:wc:ra_dav:version-url
+V 96
+/svn/llvm-project/!svn/ver/197959/compiler-rt/tags/RELEASE_34/final/lib/dfsan/lit_tests/fncall.c
+END
+basic.c
+K 25
+svn:wc:ra_dav:version-url
+V 95
+/svn/llvm-project/!svn/ver/197959/compiler-rt/tags/RELEASE_34/final/lib/dfsan/lit_tests/basic.c
+END
+propagate.c
+K 25
+svn:wc:ra_dav:version-url
+V 99
+/svn/llvm-project/!svn/ver/197959/compiler-rt/tags/RELEASE_34/final/lib/dfsan/lit_tests/propagate.c
+END
+lit.cfg
+K 25
+svn:wc:ra_dav:version-url
+V 95
+/svn/llvm-project/!svn/ver/197959/compiler-rt/tags/RELEASE_34/final/lib/dfsan/lit_tests/lit.cfg
+END
+custom.c
+K 25
+svn:wc:ra_dav:version-url
+V 96
+/svn/llvm-project/!svn/ver/197959/compiler-rt/tags/RELEASE_34/final/lib/dfsan/lit_tests/custom.c
+END
+CMakeLists.txt
+K 25
+svn:wc:ra_dav:version-url
+V 102
+/svn/llvm-project/!svn/ver/197959/compiler-rt/tags/RELEASE_34/final/lib/dfsan/lit_tests/CMakeLists.txt
+END
+flags.c
+K 25
+svn:wc:ra_dav:version-url
+V 95
+/svn/llvm-project/!svn/ver/197959/compiler-rt/tags/RELEASE_34/final/lib/dfsan/lit_tests/flags.c
+END
+lit.site.cfg.in
+K 25
+svn:wc:ra_dav:version-url
+V 103
+/svn/llvm-project/!svn/ver/197959/compiler-rt/tags/RELEASE_34/final/lib/dfsan/lit_tests/lit.site.cfg.in
+END

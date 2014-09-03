@@ -1,0 +1,35 @@
+K 25
+svn:wc:ra_dav:version-url
+V 107
+/svn/llvm-project/!svn/ver/197959/compiler-rt/tags/RELEASE_34/final/lib/asan/lit_tests/TestCases/SharedLibs
+END
+shared-lib-test-so.cc
+K 25
+svn:wc:ra_dav:version-url
+V 129
+/svn/llvm-project/!svn/ver/197959/compiler-rt/tags/RELEASE_34/final/lib/asan/lit_tests/TestCases/SharedLibs/shared-lib-test-so.cc
+END
+init-order-dlopen-so.cc
+K 25
+svn:wc:ra_dav:version-url
+V 131
+/svn/llvm-project/!svn/ver/197959/compiler-rt/tags/RELEASE_34/final/lib/asan/lit_tests/TestCases/SharedLibs/init-order-dlopen-so.cc
+END
+lit.local.cfg
+K 25
+svn:wc:ra_dav:version-url
+V 121
+/svn/llvm-project/!svn/ver/197959/compiler-rt/tags/RELEASE_34/final/lib/asan/lit_tests/TestCases/SharedLibs/lit.local.cfg
+END
+dlclose-test-so.cc
+K 25
+svn:wc:ra_dav:version-url
+V 126
+/svn/llvm-project/!svn/ver/197959/compiler-rt/tags/RELEASE_34/final/lib/asan/lit_tests/TestCases/SharedLibs/dlclose-test-so.cc
+END
+darwin-dummy-shared-lib-so.cc
+K 25
+svn:wc:ra_dav:version-url
+V 137
+/svn/llvm-project/!svn/ver/197959/compiler-rt/tags/RELEASE_34/final/lib/asan/lit_tests/TestCases/SharedLibs/darwin-dummy-shared-lib-so.cc
+END

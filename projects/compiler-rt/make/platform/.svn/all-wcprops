@@ -1,0 +1,53 @@
+K 25
+svn:wc:ra_dav:version-url
+V 81
+/svn/llvm-project/!svn/ver/197959/compiler-rt/tags/RELEASE_34/final/make/platform
+END
+darwin_fat.mk
+K 25
+svn:wc:ra_dav:version-url
+V 95
+/svn/llvm-project/!svn/ver/197959/compiler-rt/tags/RELEASE_34/final/make/platform/darwin_fat.mk
+END
+clang_darwin_embedded.mk
+K 25
+svn:wc:ra_dav:version-url
+V 106
+/svn/llvm-project/!svn/ver/197959/compiler-rt/tags/RELEASE_34/final/make/platform/clang_darwin_embedded.mk
+END
+clang_darwin_test_input.c
+K 25
+svn:wc:ra_dav:version-url
+V 107
+/svn/llvm-project/!svn/ver/197959/compiler-rt/tags/RELEASE_34/final/make/platform/clang_darwin_test_input.c
+END
+clang_linux.mk
+K 25
+svn:wc:ra_dav:version-url
+V 96
+/svn/llvm-project/!svn/ver/197959/compiler-rt/tags/RELEASE_34/final/make/platform/clang_linux.mk
+END
+multi_arch.mk
+K 25
+svn:wc:ra_dav:version-url
+V 95
+/svn/llvm-project/!svn/ver/197959/compiler-rt/tags/RELEASE_34/final/make/platform/multi_arch.mk
+END
+clang_darwin.mk
+K 25
+svn:wc:ra_dav:version-url
+V 97
+/svn/llvm-project/!svn/ver/197959/compiler-rt/tags/RELEASE_34/final/make/platform/clang_darwin.mk
+END
+clang_linux_test_input.c
+K 25
+svn:wc:ra_dav:version-url
+V 106
+/svn/llvm-project/!svn/ver/197959/compiler-rt/tags/RELEASE_34/final/make/platform/clang_linux_test_input.c
+END
+darwin_bni.mk
+K 25
+svn:wc:ra_dav:version-url
+V 95
+/svn/llvm-project/!svn/ver/197959/compiler-rt/tags/RELEASE_34/final/make/platform/darwin_bni.mk
+END

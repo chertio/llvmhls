@@ -1,0 +1,269 @@
+K 25
+svn:wc:ra_dav:version-url
+V 86
+/svn/llvm-project/!svn/ver/197959/compiler-rt/tags/RELEASE_34/final/lib/msan/lit_tests
+END
+getline_test_data
+K 25
+svn:wc:ra_dav:version-url
+V 104
+/svn/llvm-project/!svn/ver/197959/compiler-rt/tags/RELEASE_34/final/lib/msan/lit_tests/getline_test_data
+END
+allocator_returns_null.cc
+K 25
+svn:wc:ra_dav:version-url
+V 112
+/svn/llvm-project/!svn/ver/197959/compiler-rt/tags/RELEASE_34/final/lib/msan/lit_tests/allocator_returns_null.cc
+END
+heap-origin.cc
+K 25
+svn:wc:ra_dav:version-url
+V 101
+/svn/llvm-project/!svn/ver/197959/compiler-rt/tags/RELEASE_34/final/lib/msan/lit_tests/heap-origin.cc
+END
+initgroups.cc
+K 25
+svn:wc:ra_dav:version-url
+V 100
+/svn/llvm-project/!svn/ver/197959/compiler-rt/tags/RELEASE_34/final/lib/msan/lit_tests/initgroups.cc
+END
+ioctl_custom.cc
+K 25
+svn:wc:ra_dav:version-url
+V 102
+/svn/llvm-project/!svn/ver/197959/compiler-rt/tags/RELEASE_34/final/lib/msan/lit_tests/ioctl_custom.cc
+END
+wrap_indirect_calls.cc
+K 25
+svn:wc:ra_dav:version-url
+V 109
+/svn/llvm-project/!svn/ver/197959/compiler-rt/tags/RELEASE_34/final/lib/msan/lit_tests/wrap_indirect_calls.cc
+END
+no_sanitize_memory_prop.cc
+K 25
+svn:wc:ra_dav:version-url
+V 113
+/svn/llvm-project/!svn/ver/197959/compiler-rt/tags/RELEASE_34/final/lib/msan/lit_tests/no_sanitize_memory_prop.cc
+END
+no_sanitize_memory.cc
+K 25
+svn:wc:ra_dav:version-url
+V 108
+/svn/llvm-project/!svn/ver/197959/compiler-rt/tags/RELEASE_34/final/lib/msan/lit_tests/no_sanitize_memory.cc
+END
+dso-origin.cc
+K 25
+svn:wc:ra_dav:version-url
+V 100
+/svn/llvm-project/!svn/ver/197959/compiler-rt/tags/RELEASE_34/final/lib/msan/lit_tests/dso-origin.cc
+END
+setlocale.cc
+K 25
+svn:wc:ra_dav:version-url
+V 99
+/svn/llvm-project/!svn/ver/197959/compiler-rt/tags/RELEASE_34/final/lib/msan/lit_tests/setlocale.cc
+END
+default_blacklist.cc
+K 25
+svn:wc:ra_dav:version-url
+V 107
+/svn/llvm-project/!svn/ver/197959/compiler-rt/tags/RELEASE_34/final/lib/msan/lit_tests/default_blacklist.cc
+END
+backtrace.cc
+K 25
+svn:wc:ra_dav:version-url
+V 99
+/svn/llvm-project/!svn/ver/197959/compiler-rt/tags/RELEASE_34/final/lib/msan/lit_tests/backtrace.cc
+END
+sync_lock_set_and_test.cc
+K 25
+svn:wc:ra_dav:version-url
+V 112
+/svn/llvm-project/!svn/ver/197959/compiler-rt/tags/RELEASE_34/final/lib/msan/lit_tests/sync_lock_set_and_test.cc
+END
+keep-going.cc
+K 25
+svn:wc:ra_dav:version-url
+V 100
+/svn/llvm-project/!svn/ver/197959/compiler-rt/tags/RELEASE_34/final/lib/msan/lit_tests/keep-going.cc
+END
+getaddrinfo-positive.cc
+K 25
+svn:wc:ra_dav:version-url
+V 110
+/svn/llvm-project/!svn/ver/197959/compiler-rt/tags/RELEASE_34/final/lib/msan/lit_tests/getaddrinfo-positive.cc
+END
+getaddrinfo.cc
+K 25
+svn:wc:ra_dav:version-url
+V 101
+/svn/llvm-project/!svn/ver/197959/compiler-rt/tags/RELEASE_34/final/lib/msan/lit_tests/getaddrinfo.cc
+END
+getline.cc
+K 25
+svn:wc:ra_dav:version-url
+V 97
+/svn/llvm-project/!svn/ver/197959/compiler-rt/tags/RELEASE_34/final/lib/msan/lit_tests/getline.cc
+END
+CMakeLists.txt
+K 25
+svn:wc:ra_dav:version-url
+V 101
+/svn/llvm-project/!svn/ver/197959/compiler-rt/tags/RELEASE_34/final/lib/msan/lit_tests/CMakeLists.txt
+END
+stack-origin.cc
+K 25
+svn:wc:ra_dav:version-url
+V 102
+/svn/llvm-project/!svn/ver/197959/compiler-rt/tags/RELEASE_34/final/lib/msan/lit_tests/stack-origin.cc
+END
+poison_in_free.cc
+K 25
+svn:wc:ra_dav:version-url
+V 104
+/svn/llvm-project/!svn/ver/197959/compiler-rt/tags/RELEASE_34/final/lib/msan/lit_tests/poison_in_free.cc
+END
+c-strdup.c
+K 25
+svn:wc:ra_dav:version-url
+V 97
+/svn/llvm-project/!svn/ver/197959/compiler-rt/tags/RELEASE_34/final/lib/msan/lit_tests/c-strdup.c
+END
+vector_select.cc
+K 25
+svn:wc:ra_dav:version-url
+V 103
+/svn/llvm-project/!svn/ver/197959/compiler-rt/tags/RELEASE_34/final/lib/msan/lit_tests/vector_select.cc
+END
+lit.cfg
+K 25
+svn:wc:ra_dav:version-url
+V 94
+/svn/llvm-project/!svn/ver/197959/compiler-rt/tags/RELEASE_34/final/lib/msan/lit_tests/lit.cfg
+END
+sigwait.cc
+K 25
+svn:wc:ra_dav:version-url
+V 97
+/svn/llvm-project/!svn/ver/197959/compiler-rt/tags/RELEASE_34/final/lib/msan/lit_tests/sigwait.cc
+END
+keep-going-dso.cc
+K 25
+svn:wc:ra_dav:version-url
+V 104
+/svn/llvm-project/!svn/ver/197959/compiler-rt/tags/RELEASE_34/final/lib/msan/lit_tests/keep-going-dso.cc
+END
+insertvalue_origin.cc
+K 25
+svn:wc:ra_dav:version-url
+V 108
+/svn/llvm-project/!svn/ver/197959/compiler-rt/tags/RELEASE_34/final/lib/msan/lit_tests/insertvalue_origin.cc
+END
+unaligned_read_origin.cc
+K 25
+svn:wc:ra_dav:version-url
+V 111
+/svn/llvm-project/!svn/ver/197959/compiler-rt/tags/RELEASE_34/final/lib/msan/lit_tests/unaligned_read_origin.cc
+END
+dlerror.cc
+K 25
+svn:wc:ra_dav:version-url
+V 97
+/svn/llvm-project/!svn/ver/197959/compiler-rt/tags/RELEASE_34/final/lib/msan/lit_tests/dlerror.cc
+END
+tzset.cc
+K 25
+svn:wc:ra_dav:version-url
+V 95
+/svn/llvm-project/!svn/ver/197959/compiler-rt/tags/RELEASE_34/final/lib/msan/lit_tests/tzset.cc
+END
+lit.site.cfg.in
+K 25
+svn:wc:ra_dav:version-url
+V 102
+/svn/llvm-project/!svn/ver/197959/compiler-rt/tags/RELEASE_34/final/lib/msan/lit_tests/lit.site.cfg.in
+END
+use-after-free.cc
+K 25
+svn:wc:ra_dav:version-url
+V 104
+/svn/llvm-project/!svn/ver/197959/compiler-rt/tags/RELEASE_34/final/lib/msan/lit_tests/use-after-free.cc
+END
+ioctl.cc
+K 25
+svn:wc:ra_dav:version-url
+V 95
+/svn/llvm-project/!svn/ver/197959/compiler-rt/tags/RELEASE_34/final/lib/msan/lit_tests/ioctl.cc
+END
+scandir_null.cc
+K 25
+svn:wc:ra_dav:version-url
+V 102
+/svn/llvm-project/!svn/ver/197959/compiler-rt/tags/RELEASE_34/final/lib/msan/lit_tests/scandir_null.cc
+END
+ptrace.cc
+K 25
+svn:wc:ra_dav:version-url
+V 96
+/svn/llvm-project/!svn/ver/197959/compiler-rt/tags/RELEASE_34/final/lib/msan/lit_tests/ptrace.cc
+END
+inline.cc
+K 25
+svn:wc:ra_dav:version-url
+V 96
+/svn/llvm-project/!svn/ver/197959/compiler-rt/tags/RELEASE_34/final/lib/msan/lit_tests/inline.cc
+END
+vector_cvt.cc
+K 25
+svn:wc:ra_dav:version-url
+V 100
+/svn/llvm-project/!svn/ver/197959/compiler-rt/tags/RELEASE_34/final/lib/msan/lit_tests/vector_cvt.cc
+END
+select.cc
+K 25
+svn:wc:ra_dav:version-url
+V 96
+/svn/llvm-project/!svn/ver/197959/compiler-rt/tags/RELEASE_34/final/lib/msan/lit_tests/select.cc
+END
+signal_stress_test.cc
+K 25
+svn:wc:ra_dav:version-url
+V 108
+/svn/llvm-project/!svn/ver/197959/compiler-rt/tags/RELEASE_34/final/lib/msan/lit_tests/signal_stress_test.cc
+END
+scandir.cc
+K 25
+svn:wc:ra_dav:version-url
+V 97
+/svn/llvm-project/!svn/ver/197959/compiler-rt/tags/RELEASE_34/final/lib/msan/lit_tests/scandir.cc
+END
+sigwaitinfo.cc
+K 25
+svn:wc:ra_dav:version-url
+V 101
+/svn/llvm-project/!svn/ver/197959/compiler-rt/tags/RELEASE_34/final/lib/msan/lit_tests/sigwaitinfo.cc
+END
+readdir64.cc
+K 25
+svn:wc:ra_dav:version-url
+V 99
+/svn/llvm-project/!svn/ver/197959/compiler-rt/tags/RELEASE_34/final/lib/msan/lit_tests/readdir64.cc
+END
+errno.cc
+K 25
+svn:wc:ra_dav:version-url
+V 95
+/svn/llvm-project/!svn/ver/197959/compiler-rt/tags/RELEASE_34/final/lib/msan/lit_tests/errno.cc
+END
+malloc_hook.cc
+K 25
+svn:wc:ra_dav:version-url
+V 101
+/svn/llvm-project/!svn/ver/197959/compiler-rt/tags/RELEASE_34/final/lib/msan/lit_tests/malloc_hook.cc
+END
+cxa_atexit.cc
+K 25
+svn:wc:ra_dav:version-url
+V 100
+/svn/llvm-project/!svn/ver/197959/compiler-rt/tags/RELEASE_34/final/lib/msan/lit_tests/cxa_atexit.cc
+END

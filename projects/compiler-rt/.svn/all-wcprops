@@ -1,0 +1,47 @@
+K 25
+svn:wc:ra_dav:version-url
+V 67
+/svn/llvm-project/!svn/ver/197959/compiler-rt/tags/RELEASE_34/final
+END
+.gitignore
+K 25
+svn:wc:ra_dav:version-url
+V 78
+/svn/llvm-project/!svn/ver/197959/compiler-rt/tags/RELEASE_34/final/.gitignore
+END
+.arcconfig
+K 25
+svn:wc:ra_dav:version-url
+V 78
+/svn/llvm-project/!svn/ver/197959/compiler-rt/tags/RELEASE_34/final/.arcconfig
+END
+CREDITS.TXT
+K 25
+svn:wc:ra_dav:version-url
+V 79
+/svn/llvm-project/!svn/ver/197959/compiler-rt/tags/RELEASE_34/final/CREDITS.TXT
+END
+README.txt
+K 25
+svn:wc:ra_dav:version-url
+V 78
+/svn/llvm-project/!svn/ver/197959/compiler-rt/tags/RELEASE_34/final/README.txt
+END
+CMakeLists.txt
+K 25
+svn:wc:ra_dav:version-url
+V 82
+/svn/llvm-project/!svn/ver/197959/compiler-rt/tags/RELEASE_34/final/CMakeLists.txt
+END
+Makefile
+K 25
+svn:wc:ra_dav:version-url
+V 76
+/svn/llvm-project/!svn/ver/197959/compiler-rt/tags/RELEASE_34/final/Makefile
+END
+LICENSE.TXT
+K 25
+svn:wc:ra_dav:version-url
+V 79
+/svn/llvm-project/!svn/ver/197959/compiler-rt/tags/RELEASE_34/final/LICENSE.TXT
+END

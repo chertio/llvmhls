@@ -1,0 +1,455 @@
+K 25
+svn:wc:ra_dav:version-url
+V 96
+/svn/llvm-project/!svn/ver/197959/compiler-rt/tags/RELEASE_34/final/lib/asan/lit_tests/TestCases
+END
+use-after-free-right.cc
+K 25
+svn:wc:ra_dav:version-url
+V 120
+/svn/llvm-project/!svn/ver/197959/compiler-rt/tags/RELEASE_34/final/lib/asan/lit_tests/TestCases/use-after-free-right.cc
+END
+huge_negative_hea_oob.cc
+K 25
+svn:wc:ra_dav:version-url
+V 121
+/svn/llvm-project/!svn/ver/197959/compiler-rt/tags/RELEASE_34/final/lib/asan/lit_tests/TestCases/huge_negative_hea_oob.cc
+END
+initialization-blacklist.cc
+K 25
+svn:wc:ra_dav:version-url
+V 124
+/svn/llvm-project/!svn/ver/197959/compiler-rt/tags/RELEASE_34/final/lib/asan/lit_tests/TestCases/initialization-blacklist.cc
+END
+deep_call_stack.cc
+K 25
+svn:wc:ra_dav:version-url
+V 115
+/svn/llvm-project/!svn/ver/197959/compiler-rt/tags/RELEASE_34/final/lib/asan/lit_tests/TestCases/deep_call_stack.cc
+END
+allow_user_segv.cc
+K 25
+svn:wc:ra_dav:version-url
+V 115
+/svn/llvm-project/!svn/ver/197959/compiler-rt/tags/RELEASE_34/final/lib/asan/lit_tests/TestCases/allow_user_segv.cc
+END
+contiguous_container.cc
+K 25
+svn:wc:ra_dav:version-url
+V 120
+/svn/llvm-project/!svn/ver/197959/compiler-rt/tags/RELEASE_34/final/lib/asan/lit_tests/TestCases/contiguous_container.cc
+END
+on_error_callback.cc
+K 25
+svn:wc:ra_dav:version-url
+V 117
+/svn/llvm-project/!svn/ver/197959/compiler-rt/tags/RELEASE_34/final/lib/asan/lit_tests/TestCases/on_error_callback.cc
+END
+init-order-pthread-create.cc
+K 25
+svn:wc:ra_dav:version-url
+V 125
+/svn/llvm-project/!svn/ver/197959/compiler-rt/tags/RELEASE_34/final/lib/asan/lit_tests/TestCases/init-order-pthread-create.cc
+END
+strncpy-overflow.cc
+K 25
+svn:wc:ra_dav:version-url
+V 116
+/svn/llvm-project/!svn/ver/197959/compiler-rt/tags/RELEASE_34/final/lib/asan/lit_tests/TestCases/strncpy-overflow.cc
+END
+invalid-free.cc
+K 25
+svn:wc:ra_dav:version-url
+V 112
+/svn/llvm-project/!svn/ver/197959/compiler-rt/tags/RELEASE_34/final/lib/asan/lit_tests/TestCases/invalid-free.cc
+END
+stack-frame-demangle.cc
+K 25
+svn:wc:ra_dav:version-url
+V 120
+/svn/llvm-project/!svn/ver/197959/compiler-rt/tags/RELEASE_34/final/lib/asan/lit_tests/TestCases/stack-frame-demangle.cc
+END
+init-order-atexit.cc
+K 25
+svn:wc:ra_dav:version-url
+V 117
+/svn/llvm-project/!svn/ver/197959/compiler-rt/tags/RELEASE_34/final/lib/asan/lit_tests/TestCases/init-order-atexit.cc
+END
+blacklist.cc
+K 25
+svn:wc:ra_dav:version-url
+V 109
+/svn/llvm-project/!svn/ver/197959/compiler-rt/tags/RELEASE_34/final/lib/asan/lit_tests/TestCases/blacklist.cc
+END
+uar_and_exceptions.cc
+K 25
+svn:wc:ra_dav:version-url
+V 118
+/svn/llvm-project/!svn/ver/197959/compiler-rt/tags/RELEASE_34/final/lib/asan/lit_tests/TestCases/uar_and_exceptions.cc
+END
+log-path_test.cc
+K 25
+svn:wc:ra_dav:version-url
+V 113
+/svn/llvm-project/!svn/ver/197959/compiler-rt/tags/RELEASE_34/final/lib/asan/lit_tests/TestCases/log-path_test.cc
+END
+global-demangle.cc
+K 25
+svn:wc:ra_dav:version-url
+V 115
+/svn/llvm-project/!svn/ver/197959/compiler-rt/tags/RELEASE_34/final/lib/asan/lit_tests/TestCases/global-demangle.cc
+END
+time_interceptor.cc
+K 25
+svn:wc:ra_dav:version-url
+V 116
+/svn/llvm-project/!svn/ver/197959/compiler-rt/tags/RELEASE_34/final/lib/asan/lit_tests/TestCases/time_interceptor.cc
+END
+heap-overflow.cc
+K 25
+svn:wc:ra_dav:version-url
+V 113
+/svn/llvm-project/!svn/ver/197959/compiler-rt/tags/RELEASE_34/final/lib/asan/lit_tests/TestCases/heap-overflow.cc
+END
+strdup_oob_test.cc
+K 25
+svn:wc:ra_dav:version-url
+V 115
+/svn/llvm-project/!svn/ver/197959/compiler-rt/tags/RELEASE_34/final/lib/asan/lit_tests/TestCases/strdup_oob_test.cc
+END
+poison_partial.cc
+K 25
+svn:wc:ra_dav:version-url
+V 114
+/svn/llvm-project/!svn/ver/197959/compiler-rt/tags/RELEASE_34/final/lib/asan/lit_tests/TestCases/poison_partial.cc
+END
+shared-lib-test.cc
+K 25
+svn:wc:ra_dav:version-url
+V 115
+/svn/llvm-project/!svn/ver/197959/compiler-rt/tags/RELEASE_34/final/lib/asan/lit_tests/TestCases/shared-lib-test.cc
+END
+malloc_hook.cc
+K 25
+svn:wc:ra_dav:version-url
+V 111
+/svn/llvm-project/!svn/ver/197959/compiler-rt/tags/RELEASE_34/final/lib/asan/lit_tests/TestCases/malloc_hook.cc
+END
+symbolize_callback.cc
+K 25
+svn:wc:ra_dav:version-url
+V 118
+/svn/llvm-project/!svn/ver/197959/compiler-rt/tags/RELEASE_34/final/lib/asan/lit_tests/TestCases/symbolize_callback.cc
+END
+deep_thread_stack.cc
+K 25
+svn:wc:ra_dav:version-url
+V 117
+/svn/llvm-project/!svn/ver/197959/compiler-rt/tags/RELEASE_34/final/lib/asan/lit_tests/TestCases/deep_thread_stack.cc
+END
+partial_right.cc
+K 25
+svn:wc:ra_dav:version-url
+V 113
+/svn/llvm-project/!svn/ver/197959/compiler-rt/tags/RELEASE_34/final/lib/asan/lit_tests/TestCases/partial_right.cc
+END
+double-free.cc
+K 25
+svn:wc:ra_dav:version-url
+V 111
+/svn/llvm-project/!svn/ver/197959/compiler-rt/tags/RELEASE_34/final/lib/asan/lit_tests/TestCases/double-free.cc
+END
+allocator_returns_null.cc
+K 25
+svn:wc:ra_dav:version-url
+V 122
+/svn/llvm-project/!svn/ver/197959/compiler-rt/tags/RELEASE_34/final/lib/asan/lit_tests/TestCases/allocator_returns_null.cc
+END
+initialization-nobug.cc
+K 25
+svn:wc:ra_dav:version-url
+V 120
+/svn/llvm-project/!svn/ver/197959/compiler-rt/tags/RELEASE_34/final/lib/asan/lit_tests/TestCases/initialization-nobug.cc
+END
+current_allocated_bytes.cc
+K 25
+svn:wc:ra_dav:version-url
+V 123
+/svn/llvm-project/!svn/ver/197959/compiler-rt/tags/RELEASE_34/final/lib/asan/lit_tests/TestCases/current_allocated_bytes.cc
+END
+use-after-poison.cc
+K 25
+svn:wc:ra_dav:version-url
+V 116
+/svn/llvm-project/!svn/ver/197959/compiler-rt/tags/RELEASE_34/final/lib/asan/lit_tests/TestCases/use-after-poison.cc
+END
+readv.cc
+K 25
+svn:wc:ra_dav:version-url
+V 105
+/svn/llvm-project/!svn/ver/197959/compiler-rt/tags/RELEASE_34/final/lib/asan/lit_tests/TestCases/readv.cc
+END
+free_hook_realloc.cc
+K 25
+svn:wc:ra_dav:version-url
+V 117
+/svn/llvm-project/!svn/ver/197959/compiler-rt/tags/RELEASE_34/final/lib/asan/lit_tests/TestCases/free_hook_realloc.cc
+END
+stack-overflow.cc
+K 25
+svn:wc:ra_dav:version-url
+V 114
+/svn/llvm-project/!svn/ver/197959/compiler-rt/tags/RELEASE_34/final/lib/asan/lit_tests/TestCases/stack-overflow.cc
+END
+print_summary.cc
+K 25
+svn:wc:ra_dav:version-url
+V 113
+/svn/llvm-project/!svn/ver/197959/compiler-rt/tags/RELEASE_34/final/lib/asan/lit_tests/TestCases/print_summary.cc
+END
+initialization-constexpr.cc
+K 25
+svn:wc:ra_dav:version-url
+V 124
+/svn/llvm-project/!svn/ver/197959/compiler-rt/tags/RELEASE_34/final/lib/asan/lit_tests/TestCases/initialization-constexpr.cc
+END
+default_blacklist.cc
+K 25
+svn:wc:ra_dav:version-url
+V 117
+/svn/llvm-project/!svn/ver/197959/compiler-rt/tags/RELEASE_34/final/lib/asan/lit_tests/TestCases/default_blacklist.cc
+END
+memcmp_test.cc
+K 25
+svn:wc:ra_dav:version-url
+V 111
+/svn/llvm-project/!svn/ver/197959/compiler-rt/tags/RELEASE_34/final/lib/asan/lit_tests/TestCases/memcmp_test.cc
+END
+malloc_fill.cc
+K 25
+svn:wc:ra_dav:version-url
+V 111
+/svn/llvm-project/!svn/ver/197959/compiler-rt/tags/RELEASE_34/final/lib/asan/lit_tests/TestCases/malloc_fill.cc
+END
+deep_tail_call.cc
+K 25
+svn:wc:ra_dav:version-url
+V 114
+/svn/llvm-project/!svn/ver/197959/compiler-rt/tags/RELEASE_34/final/lib/asan/lit_tests/TestCases/deep_tail_call.cc
+END
+use-after-scope-dtor-order.cc
+K 25
+svn:wc:ra_dav:version-url
+V 126
+/svn/llvm-project/!svn/ver/197959/compiler-rt/tags/RELEASE_34/final/lib/asan/lit_tests/TestCases/use-after-scope-dtor-order.cc
+END
+use-after-scope-inlined.cc
+K 25
+svn:wc:ra_dav:version-url
+V 123
+/svn/llvm-project/!svn/ver/197959/compiler-rt/tags/RELEASE_34/final/lib/asan/lit_tests/TestCases/use-after-scope-inlined.cc
+END
+log_path_fork_test.cc.disabled
+K 25
+svn:wc:ra_dav:version-url
+V 127
+/svn/llvm-project/!svn/ver/197959/compiler-rt/tags/RELEASE_34/final/lib/asan/lit_tests/TestCases/log_path_fork_test.cc.disabled
+END
+stack-buffer-overflow-with-position.cc
+K 25
+svn:wc:ra_dav:version-url
+V 135
+/svn/llvm-project/!svn/ver/197959/compiler-rt/tags/RELEASE_34/final/lib/asan/lit_tests/TestCases/stack-buffer-overflow-with-position.cc
+END
+init-order-dlopen.cc
+K 25
+svn:wc:ra_dav:version-url
+V 117
+/svn/llvm-project/!svn/ver/197959/compiler-rt/tags/RELEASE_34/final/lib/asan/lit_tests/TestCases/init-order-dlopen.cc
+END
+throw_call_test.cc
+K 25
+svn:wc:ra_dav:version-url
+V 115
+/svn/llvm-project/!svn/ver/197959/compiler-rt/tags/RELEASE_34/final/lib/asan/lit_tests/TestCases/throw_call_test.cc
+END
+stack-oob-frames.cc
+K 25
+svn:wc:ra_dav:version-url
+V 116
+/svn/llvm-project/!svn/ver/197959/compiler-rt/tags/RELEASE_34/final/lib/asan/lit_tests/TestCases/stack-oob-frames.cc
+END
+sanity_check_pure_c.c
+K 25
+svn:wc:ra_dav:version-url
+V 118
+/svn/llvm-project/!svn/ver/197959/compiler-rt/tags/RELEASE_34/final/lib/asan/lit_tests/TestCases/sanity_check_pure_c.c
+END
+default_options.cc
+K 25
+svn:wc:ra_dav:version-url
+V 115
+/svn/llvm-project/!svn/ver/197959/compiler-rt/tags/RELEASE_34/final/lib/asan/lit_tests/TestCases/default_options.cc
+END
+use-after-scope.cc
+K 25
+svn:wc:ra_dav:version-url
+V 115
+/svn/llvm-project/!svn/ver/197959/compiler-rt/tags/RELEASE_34/final/lib/asan/lit_tests/TestCases/use-after-scope.cc
+END
+strerror_r_test.cc
+K 25
+svn:wc:ra_dav:version-url
+V 115
+/svn/llvm-project/!svn/ver/197959/compiler-rt/tags/RELEASE_34/final/lib/asan/lit_tests/TestCases/strerror_r_test.cc
+END
+initialization-bug.cc
+K 25
+svn:wc:ra_dav:version-url
+V 118
+/svn/llvm-project/!svn/ver/197959/compiler-rt/tags/RELEASE_34/final/lib/asan/lit_tests/TestCases/initialization-bug.cc
+END
+dlclose-test.cc
+K 25
+svn:wc:ra_dav:version-url
+V 112
+/svn/llvm-project/!svn/ver/197959/compiler-rt/tags/RELEASE_34/final/lib/asan/lit_tests/TestCases/dlclose-test.cc
+END
+large_func_test.cc
+K 25
+svn:wc:ra_dav:version-url
+V 115
+/svn/llvm-project/!svn/ver/197959/compiler-rt/tags/RELEASE_34/final/lib/asan/lit_tests/TestCases/large_func_test.cc
+END
+malloc_context_size.cc
+K 25
+svn:wc:ra_dav:version-url
+V 119
+/svn/llvm-project/!svn/ver/197959/compiler-rt/tags/RELEASE_34/final/lib/asan/lit_tests/TestCases/malloc_context_size.cc
+END
+ioctl.cc
+K 25
+svn:wc:ra_dav:version-url
+V 105
+/svn/llvm-project/!svn/ver/197959/compiler-rt/tags/RELEASE_34/final/lib/asan/lit_tests/TestCases/ioctl.cc
+END
+use-after-free.cc
+K 25
+svn:wc:ra_dav:version-url
+V 114
+/svn/llvm-project/!svn/ver/197959/compiler-rt/tags/RELEASE_34/final/lib/asan/lit_tests/TestCases/use-after-free.cc
+END
+lsan_annotations.cc
+K 25
+svn:wc:ra_dav:version-url
+V 116
+/svn/llvm-project/!svn/ver/197959/compiler-rt/tags/RELEASE_34/final/lib/asan/lit_tests/TestCases/lsan_annotations.cc
+END
+atexit_stats.cc
+K 25
+svn:wc:ra_dav:version-url
+V 112
+/svn/llvm-project/!svn/ver/197959/compiler-rt/tags/RELEASE_34/final/lib/asan/lit_tests/TestCases/atexit_stats.cc
+END
+throw_invoke_test.cc
+K 25
+svn:wc:ra_dav:version-url
+V 117
+/svn/llvm-project/!svn/ver/197959/compiler-rt/tags/RELEASE_34/final/lib/asan/lit_tests/TestCases/throw_invoke_test.cc
+END
+inline.cc
+K 25
+svn:wc:ra_dav:version-url
+V 106
+/svn/llvm-project/!svn/ver/197959/compiler-rt/tags/RELEASE_34/final/lib/asan/lit_tests/TestCases/inline.cc
+END
+asan-symbolize-sanity-test.cc
+K 25
+svn:wc:ra_dav:version-url
+V 126
+/svn/llvm-project/!svn/ver/197959/compiler-rt/tags/RELEASE_34/final/lib/asan/lit_tests/TestCases/asan-symbolize-sanity-test.cc
+END
+null_deref.cc
+K 25
+svn:wc:ra_dav:version-url
+V 110
+/svn/llvm-project/!svn/ver/197959/compiler-rt/tags/RELEASE_34/final/lib/asan/lit_tests/TestCases/null_deref.cc
+END
+assign_large_valloc_to_global.cc
+K 25
+svn:wc:ra_dav:version-url
+V 129
+/svn/llvm-project/!svn/ver/197959/compiler-rt/tags/RELEASE_34/final/lib/asan/lit_tests/TestCases/assign_large_valloc_to_global.cc
+END
+sleep_before_dying.c
+K 25
+svn:wc:ra_dav:version-url
+V 117
+/svn/llvm-project/!svn/ver/197959/compiler-rt/tags/RELEASE_34/final/lib/asan/lit_tests/TestCases/sleep_before_dying.c
+END
+strip_path_prefix.c
+K 25
+svn:wc:ra_dav:version-url
+V 116
+/svn/llvm-project/!svn/ver/197959/compiler-rt/tags/RELEASE_34/final/lib/asan/lit_tests/TestCases/strip_path_prefix.c
+END
+deep_stack_uaf.cc
+K 25
+svn:wc:ra_dav:version-url
+V 114
+/svn/llvm-project/!svn/ver/197959/compiler-rt/tags/RELEASE_34/final/lib/asan/lit_tests/TestCases/deep_stack_uaf.cc
+END
+force_inline_opt0.cc
+K 25
+svn:wc:ra_dav:version-url
+V 117
+/svn/llvm-project/!svn/ver/197959/compiler-rt/tags/RELEASE_34/final/lib/asan/lit_tests/TestCases/force_inline_opt0.cc
+END
+interface_test.cc
+K 25
+svn:wc:ra_dav:version-url
+V 114
+/svn/llvm-project/!svn/ver/197959/compiler-rt/tags/RELEASE_34/final/lib/asan/lit_tests/TestCases/interface_test.cc
+END
+global-overflow.cc
+K 25
+svn:wc:ra_dav:version-url
+V 115
+/svn/llvm-project/!svn/ver/197959/compiler-rt/tags/RELEASE_34/final/lib/asan/lit_tests/TestCases/global-overflow.cc
+END
+wait.cc
+K 25
+svn:wc:ra_dav:version-url
+V 104
+/svn/llvm-project/!svn/ver/197959/compiler-rt/tags/RELEASE_34/final/lib/asan/lit_tests/TestCases/wait.cc
+END
+use-after-scope-temp.cc
+K 25
+svn:wc:ra_dav:version-url
+V 120
+/svn/llvm-project/!svn/ver/197959/compiler-rt/tags/RELEASE_34/final/lib/asan/lit_tests/TestCases/use-after-scope-temp.cc
+END
+memcmp_strict_test.cc
+K 25
+svn:wc:ra_dav:version-url
+V 118
+/svn/llvm-project/!svn/ver/197959/compiler-rt/tags/RELEASE_34/final/lib/asan/lit_tests/TestCases/memcmp_strict_test.cc
+END
+unaligned_loads_and_stores.cc
+K 25
+svn:wc:ra_dav:version-url
+V 126
+/svn/llvm-project/!svn/ver/197959/compiler-rt/tags/RELEASE_34/final/lib/asan/lit_tests/TestCases/unaligned_loads_and_stores.cc
+END
+use-after-scope-nobug.cc
+K 25
+svn:wc:ra_dav:version-url
+V 121
+/svn/llvm-project/!svn/ver/197959/compiler-rt/tags/RELEASE_34/final/lib/asan/lit_tests/TestCases/use-after-scope-nobug.cc
+END
+stack-use-after-return.cc
+K 25
+svn:wc:ra_dav:version-url
+V 122
+/svn/llvm-project/!svn/ver/197959/compiler-rt/tags/RELEASE_34/final/lib/asan/lit_tests/TestCases/stack-use-after-return.cc
+END
