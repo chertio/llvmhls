@@ -5,6 +5,7 @@
 add_llvm_tool_subdirectory(llvm-config)
 
 add_llvm_tool_subdirectory(opt)
+add_llvm_tool_subdirectory(dppgen)
 add_llvm_tool_subdirectory(llvm-as)
 add_llvm_tool_subdirectory(llvm-dis)
 add_llvm_tool_subdirectory(llvm-mc)
