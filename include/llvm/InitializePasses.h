@@ -74,6 +74,7 @@ void initializeSampleProfileLoaderPass(PassRegistry&);
 void initializeBarrierNoopPass(PassRegistry&);
 void initializeBasicAliasAnalysisPass(PassRegistry&);
 void initializeCallGraphPass(PassRegistry&);
+void initializeInstructionGraphPass(PassRegistry&);
 void initializeBasicTTIPass(PassRegistry&);
 void initializeBlockExtractorPassPass(PassRegistry&);
 void initializeBlockFrequencyInfoPass(PassRegistry&);

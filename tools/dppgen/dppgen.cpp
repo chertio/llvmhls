@@ -586,7 +586,8 @@ int main(int argc, char **argv) {
   llvm_shutdown_obj Y;  // Call llvm_shutdown() on exit.
   LLVMContext &Context = getGlobalContext();
 
-
+  PassRegistry &Registry = *PassRegistry::getPassRegistry();
+  initializeInstructionGraphPass(Registry);
 
   cl::ParseCommandLineOptions(argc, argv,
     "llvm .bc -> .bc modular optimizer and analysis printer\n");

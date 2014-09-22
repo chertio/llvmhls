@@ -1,5 +1,5 @@
-#ifndef LLVM_ANALYSIS_CALLGRAPH_H
-#define LLVM_ANALYSIS_CALLGRAPH_H
+#ifndef LLVM_ANALYSIS_INSTRUCTIONGRAPH_H
+#define LLVM_ANALYSIS_INSTRUCTIONGRAPH_H
 
 #include "llvm/ADT/GraphTraits.h"
 #include "llvm/ADT/STLExtras.h"
@@ -43,11 +43,10 @@ class InstructionGraph : public FunctionPass {
   ///
   /* Shaoyi: we probably wont add instruction
   //void spliceFunction(const Function *From, const Function *To);
-
-  // Add a function to the call graph, and link the node to all of the functions
-  // that it calls.
-  void addToInstructionGraph(Instruction *I);
   */
+
+  void addToInstructionGraph(Instruction *I);
+
 public:
   static char ID; // Class identification, replacement for typeinfo
   //===---------------------------------------------------------------------
@@ -104,7 +103,7 @@ public:
   /// getOrInsertFunction - This method is identical to calling operator[], but
   /// it will insert a new CallGraphNode for the specified function if one does
   /// not already exist.
-  //CallGraphNode *getOrInsertFunction(const Function *F);
+  InstructionGraphNode *getOrInsertInstruction(const Instruction *F);
 
   InstructionGraph();
   virtual ~InstructionGraph() { releaseMemory(); }
@@ -112,7 +111,7 @@ public:
   virtual bool runOnFunction(Function &F);
   virtual void releaseMemory();
 
-  void print(raw_ostream &o, const Module* = 0) const;
+  void print(raw_ostream &o, const Function* = 0) const;
   void dump() const;
 };
 
@@ -128,8 +127,8 @@ class InstructionGraphNode {
   // and the callgraph node being called.
 public:
   typedef std::pair<WeakVH, InstructionGraphNode*> InstructionRecord;
-//private:
- // std::vector<InstructionRecord> UsedInstructions;
+private:
+  std::vector<InstructionRecord> DependentInstructions;
 
   /// NumReferences - This is the number of times that this CallGraphNode occurs
   /// in the CalledFunctions array of this or other CallGraphNodes.
@@ -141,29 +140,29 @@ public:
   //void DropRef() { --NumReferences; }
   //void AddRef() { ++NumReferences; }
 public:
-  //typedef std::vector<InstructionRecord> UsedInstructionsVector;
+  typedef std::vector<InstructionRecord> DependentInstructionsVector;
 
 
   // CallGraphNode ctor - Create a node for the specified function.
   inline InstructionGraphNode(Instruction *f) : I(f) {}
-  ~CallGraphNode() { }
+  ~InstructionGraphNode() { }
 
   //===---------------------------------------------------------------------
   // Accessor methods.
   //
 
-  //typedef std::vector<InstructionRecord>::iterator iterator;
-  //typedef std::vector<InstructionRecord>::const_iterator const_iterator;
+  typedef std::vector<InstructionRecord>::iterator iterator;
+  typedef std::vector<InstructionRecord>::const_iterator const_iterator;
 
   // getInstruction - Return the instruction that this ins graph node represents.
   Instruction *getInstruction() const { return I; }
 
-  //inline iterator begin() { return UsedInstructions.begin(); }
-  //inline iterator end()   { return CalledFunctions.end();   }
-  //inline const_iterator begin() const { return CalledFunctions.begin(); }
-  //inline const_iterator end()   const { return CalledFunctions.end();   }
-  //inline bool empty() const { return CalledFunctions.empty(); }
-  //inline unsigned size() const { return (unsigned)CalledFunctions.size(); }
+  inline iterator begin() { return DependentInstructions.begin(); }
+  inline iterator end()   { return DependentInstructions.end();   }
+  inline const_iterator begin() const { return DependentInstructions.begin(); }
+  inline const_iterator end()   const { return DependentInstructions.end();   }
+  inline bool empty() const { return DependentInstructions.empty(); }
+  inline unsigned size() const { return (unsigned)DependentInstructions.size(); }
 
   /// getNumReferences - Return the number of other CallGraphNodes in this
   /// CallGraph that reference this node in their callee list.
@@ -171,10 +170,10 @@ public:
 
   // Subscripting operator - Return the i'th called function.
   //
-  /*CallGraphNode *operator[](unsigned i) const {
-    assert(i < CalledFunctions.size() && "Invalid index");
-    return CalledFunctions[i].second;
-  }*/
+  InstructionGraphNode *operator[](unsigned i) const {
+    assert(i < DependentInstructions.size() && "Invalid index");
+    return DependentInstructions[i].second;
+  }
 
   /// dump - Print out this call graph node.
   ///
@@ -186,8 +185,8 @@ public:
   // modified
   //
 
-  /// removeAllCalledFunctions - As the name implies, this removes all edges
-  /// from this CallGraphNode to any functions it calls.
+  /// removeAllDependentInstructions - As the name implies, this removes all edges
+  /// from this InstructionGraphNode to any instructions dependent on it.
   /*void removeAllCalledFunctions() {
     while (!CalledFunctions.empty()) {
       CalledFunctions.back().second->DropRef();
@@ -204,15 +203,13 @@ public:
   }*/
 
 
-  /// addCalledFunction - Add a function to the list of functions called by this
-  /// one.
-  /*void addCalledFunction(CallSite CS, CallGraphNode *M) {
-    assert(!CS.getInstruction() ||
-           !CS.getCalledFunction() ||
-           !CS.getCalledFunction()->isIntrinsic());
-    CalledFunctions.push_back(std::make_pair(CS.getInstruction(), M));
-    M->AddRef();
-  }*/
+  /// addDependentInstruction - Add an instruction to the list of instructions depending on this
+  /// one.no need to worry about the pseudo external instruction coz nobody gonna call this function
+  /// on it
+  void addDependentInstruction( InstructionGraphNode *M) {
+    DependentInstructions.push_back(std::make_pair(M->getInstruction(), M));
+
+  }
 
   /*void removeCallEdge(iterator I) {
     I->second->DropRef();
@@ -302,7 +299,7 @@ template<> struct GraphTraits<InstructionGraph*> : public GraphTraits<Instructio
     return map_iterator(IG->end(), DerefFun(IGdereference));
   }
 
-  static InstructionGraphNode &CGdereference(PairTy P) {
+  static InstructionGraphNode &IGdereference(PairTy P) {
     return *P.second;
   }
 };
@@ -315,12 +312,12 @@ template<> struct GraphTraits<const InstructionGraph*> :
   // nodes_iterator/begin/end - Allow iteration over all nodes in the graph
   typedef InstructionGraph::const_iterator nodes_iterator;
   static nodes_iterator nodes_begin(const InstructionGraph *IG) { return IG->begin(); }
-  static nodes_iterator nodes_end  (const InstructionGraph *CG) { return IG->end(); }
+  static nodes_iterator nodes_end  (const InstructionGraph *IG) { return IG->end(); }
 };
 
 } // End llvm namespace
 
 // Make sure that any clients of this file link in CallGraph.cpp
-FORCE_DEFINING_FILE_TO_BE_LINKED(InstructionGraph)
+//FORCE_DEFINING_FILE_TO_BE_LINKED(InstructionGraph)
 
 #endif
