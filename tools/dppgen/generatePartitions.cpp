@@ -40,7 +40,7 @@ namespace {
     struct DAGNode4Partition;
 
     struct DAGNode4Partition{
-        const std::vector<InstructionGraphNode*>* dagNodeContent;
+        std::vector<InstructionGraphNode*>* dagNodeContent;
         bool singleIns;
         int sccLat;
         bool hasMemory;
@@ -91,6 +91,8 @@ namespace {
 
     void print(raw_ostream &O, const Module* = 0) const { }
 
+    void DFSCluster(DAGNode4Partition* curNode, DAGPartition* curPartition);
+
     virtual void getAnalysisUsage(AnalysisUsage &AU) const {
       AU.addRequired<InstructionGraph>();
       AU.setPreservesAll();
@@ -116,9 +118,11 @@ void PartitionGen::DFSCluster(DAGNode4Partition* curNode, DAGPartition* curParti
 void PartitionGen::generatePartition(std::vector<DAGNode4Partition*> *dag)
 {
     DAGPartition* curPartition = 0;
-    for(std::iterator di = dag->begin(), de = dag->end(); di!=de; ++di)
+
+
+    for(unsigned int dagInd = 0; dagInd < dag->size(); dagInd++)
     {
-        DAGNode4Partition* curNode = *di;
+        DAGNode4Partition* curNode = dag->at(dagInd);
         if(curNode->covered)
             continue;
 
@@ -126,7 +130,7 @@ void PartitionGen::generatePartition(std::vector<DAGNode4Partition*> *dag)
         {
             curPartition = new DAGPartition;
             curPartition->init();
-            dag->push_back(curPartition);
+            partitions.push_back(curPartition);
         }
         // if curnode has memory or it is long latency cycle
         else if(curNode->hasMemory || (!curNode->singleIns  && curNode->sccLat >= 5))
@@ -136,7 +140,7 @@ void PartitionGen::generatePartition(std::vector<DAGNode4Partition*> *dag)
                 // time to start a new partition
                 curPartition = new DAGPartition;
                 curPartition->init();
-                dag->push_back(curPartition);
+                partitions.push_back(curPartition);
             }
 
         }
@@ -154,20 +158,21 @@ bool PartitionGen::runOnFunction(Function &F) {
     InstructionGraphNode* rootNode = getAnalysis<InstructionGraph>().getRoot();
 
 
-    unsigned sccNum = 0;
+    //unsigned sccNum = 0;
     std::vector<DAGNode4Partition*> collectedDagNode;
 
     errs() << "SCCs for the program in PostOrder:";
     for (scc_iterator<InstructionGraphNode*> SCCI = scc_begin(rootNode),
            E = scc_end(rootNode); SCCI != E; ++SCCI) {
 
-      const std::vector<InstructionGraphNode*> &nextSCC = *SCCI;
+      std::vector<InstructionGraphNode*> &nextSCC = *SCCI;
       // we can ignore the last scc coz its the pseudo node root
       if(nextSCC.at(0)->getInstruction()!=0 )
       {
           DAGNode4Partition* curDagNode = new DAGNode4Partition;
           curDagNode->init();
-          curDagNode->dagNodeContent = &nextSCC;
+          curDagNode->dagNodeContent = new std::vector<InstructionGraphNode*>();
+          *(curDagNode->dagNodeContent) = nextSCC;
           curDagNode->singleIns = (nextSCC.size()==1);
 
           for (std::vector<InstructionGraphNode*>::const_iterator I = nextSCC.begin(),
@@ -184,8 +189,15 @@ bool PartitionGen::runOnFunction(Function &F) {
           }
           collectedDagNode.push_back(curDagNode);
       }
-
-
+      errs()<<"one\n";
+      for (std::vector<InstructionGraphNode*>::const_iterator I = nextSCC.begin(),
+             E = nextSCC.end(); I != E; ++I)
+      {
+        if((*I)->getInstruction())
+            errs() << *((*I)->getInstruction())<< "\n ";
+        if (nextSCC.size() == 1 && SCCI.hasLoop())
+            errs() << " (Has self-loop).";
+      }
 
 
       /*errs() << "\nSCC #" << ++sccNum << " : ";
@@ -198,7 +210,22 @@ bool PartitionGen::runOnFunction(Function &F) {
             errs() << " (Has self-loop).";
       }*/
     }
+    errs()<<"here\n";
     std::reverse(collectedDagNode.begin(),collectedDagNode.end());
+    for(unsigned int m=0; m <collectedDagNode.size(); m++)
+    {
+        errs()<<m<<"node\n";
+        DAGNode4Partition* curNode = collectedDagNode.at(m);
+        const std::vector<InstructionGraphNode*> curNodeContent = *(curNode->dagNodeContent);
+        errs()<<curNodeContent.size()<<"\n";
+        for (unsigned int mi=0; mi<curNodeContent.size();mi++)
+        {
+            if((curNodeContent.at(mi))->getInstruction())
+              errs() << *((curNodeContent.at(mi))->getInstruction())<< "\n ";
+
+        }
+    }
+
 
     // all instructions have been added to the dagNodeMap, collectedDagNode
     // we can start building dependencies in the DAGNodePartitions

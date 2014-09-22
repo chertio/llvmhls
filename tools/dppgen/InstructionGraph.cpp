@@ -112,8 +112,14 @@ void InstructionGraph::dump() const {
 InstructionGraphNode *InstructionGraph::getOrInsertInstruction(const Instruction *F) {
   InstructionGraphNode *&IGN = InstructionMap[F];
   if (IGN) return IGN;
-
-  assert((!F || F->getParent()->getParent()!= Func) && "instruction not in current function!");
+ /* if(F)
+  {
+      errs()<<*F<<"\n";
+      errs()<<F->getParent()->getParent()->getName()<<"\n";
+      errs()<<Func->getName()<<"\n";
+      errs()<<Func<<"   "<<F->getParent()->getParent()<<"\n";
+  }*/
+  assert((!F || F->getParent()->getParent()== Func) && "instruction not in current function!");
   return IGN = new InstructionGraphNode(const_cast<Instruction*>(F));
 }
 
@@ -132,5 +138,5 @@ void InstructionGraphNode::print(raw_ostream &OS) const {
 }
 
 #if !defined(NDEBUG) || defined(LLVM_ENABLE_DUMP)
-void CallGraphNode::dump() const { print(dbgs()); }
+void InstructionGraphNode::dump() const { print(dbgs()); }
 #endif
