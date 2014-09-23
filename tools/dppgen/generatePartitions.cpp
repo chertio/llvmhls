@@ -73,6 +73,9 @@ namespace {
     struct DAGPartition{
         // a partition contains a set of dagNode
         std::vector<DAGNode4Partition*> partitionContent;
+
+
+
         bool containMemory;
         bool containLongLatCyc;
 
@@ -143,6 +146,7 @@ namespace {
 
     void generatePartition(std::vector<DAGNode4Partition*> *dag);
 
+    void generateControlFlowPerPartition(Function& F);
     void print(raw_ostream &O, const Module* = 0) const { }
 
     void DFSCluster(DAGNode4Partition* curNode, DAGPartition* curPartition);
@@ -238,6 +242,14 @@ void PartitionGen::generatePartition(std::vector<DAGNode4Partition*> *dag)
     }
 }
 
+
+
+void PartitionGen::generateControlFlowPerPartition(Function &F)
+{
+    // go through every function, and check every
+
+}
+
 // we have a data structure to map instruction to InstructionGraphNodes
 // when we do the partitioning, we
 bool PartitionGen::runOnFunction(Function &F) {
@@ -311,6 +323,25 @@ bool PartitionGen::runOnFunction(Function &F) {
     // we can start building dependencies in the DAGNodePartitions
     // we can start making the partitions
     generatePartition(&collectedDagNode);
+    // now all partitions are made
+    // for each of these partitions, we will generate a control flow
+    // before generating c function
+    generateControlFlowPerPartition(F);
+
+
+
+    dagNodeMap.clear();
+    dagPartitionMap.clear();
+    // empty all the partitions
+    for(unsigned k = 0; k<partitions.size(); k++)
+    {
+        delete partitions.at(k);
+    }
+    partitions.clear();
+    for(unsigned k =0; k<collectedDagNode.size();k++)
+    {
+        delete collectedDagNode.at(k);
+    }
 
     errs() << "\n";
 
