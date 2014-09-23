@@ -34,10 +34,16 @@
 #include "InstructionGraph.h"
 #include "generatePartitionsUtil.h"
 #include <vector>
+#define LONGLATTHRESHOLD 5
 using namespace llvm;
 
 namespace {
     struct DAGNode4Partition;
+    struct DAGPartition;
+    typedef std::map<const Instruction *, DAGNode4Partition *> DagNodeMapTy;
+    typedef std::map<const DAGNode4Partition*, DAGPartition *> DagPartitionMapTy;
+
+
 
     struct DAGNode4Partition{
         std::vector<InstructionGraphNode*>* dagNodeContent;
@@ -53,11 +59,20 @@ namespace {
             hasMemory = false;
             covered = false;
         }
+        void print()
+        {
+            for(unsigned int insI = 0; insI < dagNodeContent->size(); insI++)
+            {
+                Instruction* curIns = dagNodeContent->at(insI)->getInstruction();
+                errs()<<"\t"<<*curIns<<"\n";
+            }
+        }
+
     };
 
     struct DAGPartition{
         // a partition contains a set of dagNode
-        std::vector<DAGNode4Partition> partitionContent;
+        std::vector<DAGNode4Partition*> partitionContent;
         bool containMemory;
         bool containLongLatCyc;
 
@@ -67,15 +82,54 @@ namespace {
             containLongLatCyc = false;
         }
 
-    };
+        void addDagNode(DAGNode4Partition* dagNode,DagPartitionMapTy &nodeToPartitionMap )
+        {
+            dagNode->print();
+            partitionContent.push_back(dagNode);
+            dagNode->covered=true;
+            containMemory |= dagNode->hasMemory;
+            containLongLatCyc |= (dagNode->sccLat >= LONGLATTHRESHOLD);
+            nodeToPartitionMap[dagNode] = this;
+        }
 
+
+
+
+    };
+    static bool needANewPartition(DAGPartition* curPartition, DAGNode4Partition* curNode)
+    {
+        if((curNode->hasMemory  &&  (curPartition->containLongLatCyc || curPartition->containMemory))||
+           ((!curNode->singleIns  && curNode->sccLat >= LONGLATTHRESHOLD)&& (curPartition->containMemory)))
+            return true;
+        else
+            return false;
+    }
+    static void findDependentNodes(DAGNode4Partition* curNode, DagNodeMapTy &nodeLookup, std::vector<DAGNode4Partition*> &depNodes)
+    {
+        // how do we do this?
+        // iterate through the instructionGraphNodes in curNode, and then
+        // for each of them, look at instruction, and then lookup the node
+        // in the map
+        for(unsigned int i=0; i< curNode->dagNodeContent->size(); i++)
+        {
+            InstructionGraphNode* curInsNode = curNode->dagNodeContent->at(i);
+
+            for(InstructionGraphNode::iterator depIns = curInsNode->begin(), depInsE = curInsNode->end();
+                depIns != depInsE; ++depIns)
+            {
+                Instruction* curDepIns = depIns->second->getInstruction();
+                DAGNode4Partition* node2add = nodeLookup[curDepIns];
+                depNodes.push_back(node2add);
+
+            }
+        }
+    }
 
   struct PartitionGen : public FunctionPass {
     static char ID;  // Pass identification, replacement for typeid
 
     //std::vector<DAGNode4Partition*> allDAGNodes;
-    typedef std::map<const Instruction *, DAGNode4Partition *> DagNodeMapTy;
-    typedef std::map<const DAGNode4Partition*, DAGPartition *> DagPartitionMapTy;
+
 
     std::vector<DAGPartition*> partitions;
 
@@ -113,6 +167,20 @@ Y("dpp-gen", "generate decoupled processing functions for each function CFG");
 void PartitionGen::DFSCluster(DAGNode4Partition* curNode, DAGPartition* curPartition)
 {
 
+    if(needANewPartition(curPartition,curNode))
+        return;
+    else
+        curPartition->addDagNode(curNode,  dagPartitionMap);
+
+    // now we shall figure out the next hop
+    std::vector<DAGNode4Partition*> depNodes;
+    findDependentNodes(curNode, dagNodeMap,depNodes);
+    for(unsigned int j = 0; j<depNodes.size(); j++)
+    {
+        DAGNode4Partition* nextNode = depNodes.at(j);
+        if(nextNode->covered==false)
+            DFSCluster(nextNode, curPartition);
+    }
 }
 
 void PartitionGen::generatePartition(std::vector<DAGNode4Partition*> *dag)
@@ -133,20 +201,40 @@ void PartitionGen::generatePartition(std::vector<DAGNode4Partition*> *dag)
             partitions.push_back(curPartition);
         }
         // if curnode has memory or it is long latency cycle
-        else if(curNode->hasMemory || (!curNode->singleIns  && curNode->sccLat >= 5))
+        else if(needANewPartition(curPartition,curNode))
         {
-            if(curPartition->containLongLatCyc || curPartition->containMemory)
-            {
-                // time to start a new partition
-                curPartition = new DAGPartition;
-                curPartition->init();
-                partitions.push_back(curPartition);
-            }
-
+            // time to start a new partition
+            curPartition = new DAGPartition;
+            curPartition->init();
+            partitions.push_back(curPartition);
         }
+
         DFSCluster(curNode, curPartition);
 
 
+    }
+
+    errs()<<"#of partitions :"<<partitions.size()<<"\n";
+    for(unsigned int ai = 0; ai<partitions.size(); ai++)
+    {
+        errs()<<"partitions :"<<ai <<partitions.at(ai)->partitionContent.size()<<"\n";
+    }
+    for(unsigned int ai = 0; ai<partitions.size(); ai++)
+    {
+        DAGPartition* curPar = partitions.at(ai);
+        std::vector<DAGNode4Partition*>* nodeVector = &(curPar->partitionContent);
+        errs()<<"partition"<< ai<<"\n";
+        for(unsigned int nodeI = 0; nodeI <nodeVector->size(); nodeI++)
+        {
+
+            DAGNode4Partition* curNode = nodeVector->at(nodeI);
+            for(unsigned int insI = 0; insI < curNode->dagNodeContent->size(); insI++)
+            {
+                Instruction* curIns = curNode->dagNodeContent->at(insI)->getInstruction();
+                errs()<<"\t"<<*curIns<<"\n";
+            }
+            errs()<<"\n";
+        }
     }
 }
 
@@ -161,7 +249,7 @@ bool PartitionGen::runOnFunction(Function &F) {
     //unsigned sccNum = 0;
     std::vector<DAGNode4Partition*> collectedDagNode;
 
-    errs() << "SCCs for the program in PostOrder:";
+    errs() << "SCCs for the program in PostOrder:"<<F.getName();
     for (scc_iterator<InstructionGraphNode*> SCCI = scc_begin(rootNode),
            E = scc_end(rootNode); SCCI != E; ++SCCI) {
 
@@ -189,15 +277,7 @@ bool PartitionGen::runOnFunction(Function &F) {
           }
           collectedDagNode.push_back(curDagNode);
       }
-      errs()<<"one\n";
-      for (std::vector<InstructionGraphNode*>::const_iterator I = nextSCC.begin(),
-             E = nextSCC.end(); I != E; ++I)
-      {
-        if((*I)->getInstruction())
-            errs() << *((*I)->getInstruction())<< "\n ";
-        if (nextSCC.size() == 1 && SCCI.hasLoop())
-            errs() << " (Has self-loop).";
-      }
+
 
 
       /*errs() << "\nSCC #" << ++sccNum << " : ";
@@ -210,21 +290,21 @@ bool PartitionGen::runOnFunction(Function &F) {
             errs() << " (Has self-loop).";
       }*/
     }
-    errs()<<"here\n";
+    errs()<<"here\n\n\n\n\n\n";
     std::reverse(collectedDagNode.begin(),collectedDagNode.end());
-    for(unsigned int m=0; m <collectedDagNode.size(); m++)
+   /* for(unsigned int m=0; m <collectedDagNode.size(); m++)
     {
-        errs()<<m<<"node\n";
+        //errs()<<m<<"node\n";
         DAGNode4Partition* curNode = collectedDagNode.at(m);
         const std::vector<InstructionGraphNode*> curNodeContent = *(curNode->dagNodeContent);
-        errs()<<curNodeContent.size()<<"\n";
+        //errs()<<curNodeContent.size()<<"\n";
         for (unsigned int mi=0; mi<curNodeContent.size();mi++)
         {
             if((curNodeContent.at(mi))->getInstruction())
               errs() << *((curNodeContent.at(mi))->getInstruction())<< "\n ";
 
         }
-    }
+    }*/
 
 
     // all instructions have been added to the dagNodeMap, collectedDagNode
