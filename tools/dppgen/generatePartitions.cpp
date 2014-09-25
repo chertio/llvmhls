@@ -79,10 +79,13 @@ namespace {
         bool containMemory;
         bool containLongLatCyc;
 
+        bool cycleDetectCovered;
+
         void init()
         {
             containMemory = false;
             containLongLatCyc = false;
+            cycleDetectCovered = false;
         }
 
         void addDagNode(DAGNode4Partition* dagNode,DagPartitionMapTy &nodeToPartitionMap )
@@ -146,10 +149,12 @@ namespace {
 
     void generatePartition(std::vector<DAGNode4Partition*> *dag);
 
-    void generateControlFlowPerPartition(Function& F);
+    void generateControlFlowPerPartition();
     void print(raw_ostream &O, const Module* = 0) const { }
 
     void DFSCluster(DAGNode4Partition* curNode, DAGPartition* curPartition);
+
+    bool DFSFindPartitionCycle(DAGPartition* nextHop);
 
     virtual void getAnalysisUsage(AnalysisUsage &AU) const {
       AU.addRequired<InstructionGraph>();
@@ -244,10 +249,55 @@ void PartitionGen::generatePartition(std::vector<DAGNode4Partition*> *dag)
 
 
 
-void PartitionGen::generateControlFlowPerPartition(Function &F)
+void PartitionGen::generateControlFlowPerPartition()
 {
-    // go through every function, and check every
+    // go through every partition, for each partition
+    // go through all the instructions
+    // for each instruction, find where their operands are from
+    // then these are all the basic blocks we need ? dont we need more
+    // control dependence communication -- lets not have it and check
+    // for cyclic dependence
 
+    // lets check if there is any cycle between the partitions
+
+    for(unsigned int pi = 0; pi < partitions.size(); pi++)
+    {
+        errs()<<pi<<" partition geting\n";
+        DAGPartition* curPart = partitions.at(pi);
+
+        if(DFSFindPartitionCycle(curPart))
+        {
+            errs()<<" cycle discovered quit quit\n";
+            exit(1);
+        }
+
+    }
+    errs()<<" no cycle discovered\n";
+
+}
+bool PartitionGen::DFSFindPartitionCycle(DAGPartition* dp)
+{
+
+    if(dp->cycleDetectCovered)
+        return true;
+
+
+    dp->cycleDetectCovered = true;
+    std::vector<DAGNode4Partition*>* curPartitionContent = &(dp->partitionContent);
+    for(unsigned int ni = 0; ni < curPartitionContent->size();ni++)
+    {
+        DAGNode4Partition* curNode = curPartitionContent->at(ni);
+        DAGPartition* nextHop = dagPartitionMap[curNode];
+        if(nextHop==dp)
+            continue;
+        if(DFSFindPartitionCycle(nextHop))
+        {
+            return true;
+        }
+
+    }
+    dp->cycleDetectCovered = false;
+    return false;
 }
 
 // we have a data structure to map instruction to InstructionGraphNodes
@@ -281,7 +331,10 @@ bool PartitionGen::runOnFunction(Function &F) {
               Instruction* curIns = (*I)->getInstruction();
               curDagNode->sccLat += instructionLatencyLookup(curIns);
               if(curIns->mayReadOrWriteMemory())
+              {
+
                   curDagNode->hasMemory = true;
+              }
 
               DAGNode4Partition *&IGN = this->dagNodeMap[curIns];
               IGN = curDagNode;
@@ -326,7 +379,8 @@ bool PartitionGen::runOnFunction(Function &F) {
     // now all partitions are made
     // for each of these partitions, we will generate a control flow
     // before generating c function
-    generateControlFlowPerPartition(F);
+    errs()<<"before check\n";
+    generateControlFlowPerPartition();
 
 
 
