@@ -51,13 +51,14 @@ namespace {
         int sccLat;
         bool hasMemory;
         bool covered;
-
+        int seqNum;
         void init()
         {
             singleIns = false;
             sccLat = 0;
             hasMemory = false;
             covered = false;
+            seqNum = -1;
         }
         void print()
         {
@@ -184,6 +185,7 @@ void PartitionGen::DFSCluster(DAGNode4Partition* curNode, DAGPartition* curParti
     // now we shall figure out the next hop
     std::vector<DAGNode4Partition*> depNodes;
     findDependentNodes(curNode, dagNodeMap,depNodes);
+    // should sort the vector according to the seqNum of the nodes
     for(unsigned int j = 0; j<depNodes.size(); j++)
     {
         DAGNode4Partition* nextNode = depNodes.at(j);
@@ -192,6 +194,8 @@ void PartitionGen::DFSCluster(DAGNode4Partition* curNode, DAGPartition* curParti
     }
 }
 
+
+#define NEWPARTEVERYSEED
 void PartitionGen::generatePartition(std::vector<DAGNode4Partition*> *dag)
 {
     DAGPartition* curPartition = 0;
@@ -202,7 +206,12 @@ void PartitionGen::generatePartition(std::vector<DAGNode4Partition*> *dag)
         DAGNode4Partition* curNode = dag->at(dagInd);
         if(curNode->covered)
             continue;
+#ifdef NEWPARTEVERYSEED
+        curPartition = new DAGPartition;
+        curPartition->init();
+        partitions.push_back(curPartition);
 
+#else
         if(!curPartition)
         {
             curPartition = new DAGPartition;
@@ -217,7 +226,7 @@ void PartitionGen::generatePartition(std::vector<DAGNode4Partition*> *dag)
             curPartition->init();
             partitions.push_back(curPartition);
         }
-
+#endif
         DFSCluster(curNode, curPartition);
 
 
@@ -287,12 +296,21 @@ bool PartitionGen::DFSFindPartitionCycle(DAGPartition* dp)
     for(unsigned int ni = 0; ni < curPartitionContent->size();ni++)
     {
         DAGNode4Partition* curNode = curPartitionContent->at(ni);
-        DAGPartition* nextHop = dagPartitionMap[curNode];
-        if(nextHop==dp)
-            continue;
-        if(DFSFindPartitionCycle(nextHop))
+        // for this curNode, we need to know its dependent nodes
+        // then each of the dependent node will generate the next hop
+        std::vector<DAGNode4Partition*> depNodes;
+        findDependentNodes(curNode,dagNodeMap,depNodes);
+        for(unsigned int di =0 ; di<depNodes.size(); di++)
         {
-            return true;
+            DAGNode4Partition* nextNode=depNodes.at(di);
+
+            DAGPartition* nextHop = dagPartitionMap[nextNode];
+            if(nextHop==dp)
+                continue;
+            if(DFSFindPartitionCycle(nextHop))
+            {
+                return true;
+            }
         }
 
     }
@@ -308,7 +326,7 @@ bool PartitionGen::runOnFunction(Function &F) {
     InstructionGraphNode* rootNode = getAnalysis<InstructionGraph>().getRoot();
 
 
-    //unsigned sccNum = 0;
+    unsigned sccNum = 0;
     std::vector<DAGNode4Partition*> collectedDagNode;
 
     errs() << "SCCs for the program in PostOrder:"<<F.getName();
@@ -345,7 +363,7 @@ bool PartitionGen::runOnFunction(Function &F) {
 
 
 
-      /*errs() << "\nSCC #" << ++sccNum << " : ";
+      errs() << "\nSCC #" << ++sccNum << " : ";
       for (std::vector<InstructionGraphNode*>::const_iterator I = nextSCC.begin(),
              E = nextSCC.end(); I != E; ++I)
       {
@@ -353,10 +371,42 @@ bool PartitionGen::runOnFunction(Function &F) {
             errs() << *((*I)->getInstruction())<< "\n ";
         if (nextSCC.size() == 1 && SCCI.hasLoop())
             errs() << " (Has self-loop).";
-      }*/
+      }
     }
     errs()<<"here\n\n\n\n\n\n";
     std::reverse(collectedDagNode.begin(),collectedDagNode.end());
+    // now the nodes are topologically shorted
+    // let's check
+    for(unsigned int dnInd =0; dnInd < collectedDagNode.size(); dnInd++)
+    {
+        DAGNode4Partition* curNode = collectedDagNode.at(dnInd);
+        curNode->seqNum = dnInd;
+    }
+    for(unsigned int dnInd =0; dnInd < collectedDagNode.size(); dnInd++)
+    {
+        DAGNode4Partition* curNode = collectedDagNode.at(dnInd);
+        std::vector<DAGNode4Partition*> myDep;
+        findDependentNodes(curNode,this->dagNodeMap,myDep);
+        // check every dep to make sure their seqNum is greater
+        errs()<<"my seq "<<curNode->seqNum<<" : my deps are ";
+        for(unsigned depInd = 0; depInd<myDep.size(); depInd++)
+        {
+            errs()<<myDep.at(depInd)->seqNum<<" ,";
+            if(myDep.at(depInd)->seqNum < curNode->seqNum)
+            {
+                errs()<<"not topologically sorted\n";
+                exit(1);
+
+            }
+
+        }
+        errs()<<"\n";
+    }
+
+
+
+
+
    /* for(unsigned int m=0; m <collectedDagNode.size(); m++)
     {
         //errs()<<m<<"node\n";

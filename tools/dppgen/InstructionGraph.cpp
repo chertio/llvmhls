@@ -38,6 +38,29 @@ void InstructionGraph::addToInstructionGraph(Instruction *I) {
       }
       //Node->addDependentInstruction(getOrInsertInstruction(curIns));
   }
+  // if this instruction is branch, we need to propagate control dependencies
+  // basically the successor's ending branch/return will be depending on
+  // this current branch
+  if(isa<TerminatorInst>(*I))
+  {
+      // the terminator inst of its successors are dependent on it
+      unsigned numSuc = cast<TerminatorInst>(*I).getNumSuccessors();
+      for(unsigned int sucInd=0; sucInd<numSuc; sucInd++)
+      {
+          BasicBlock* curSuc = cast<TerminatorInst>(*I).getSuccessor(sucInd);
+          // try have everybody in the bb being control dependent
+          // to this node
+          for(BasicBlock::iterator BI = curSuc->begin(), BE = curSuc->end(); BI != BE; ++BI)
+          {
+               //addToInstructionGraph(BI);
+               Node->addDependentInstruction(getOrInsertInstruction(BI));
+          }
+
+          //Instruction* endOfSuc = curSuc->getTerminator();
+           //Node->addDependentInstruction(getOrInsertInstruction(endOfSuc));
+      }
+  }
+
   // we need to look at other kinda dependence --- memory?
   if(I->mayReadFromMemory())
   {
@@ -47,6 +70,7 @@ void InstructionGraph::addToInstructionGraph(Instruction *I) {
   {
 
   }
+
 }
 
 void InstructionGraph::getAnalysisUsage(AnalysisUsage &AU) const {
