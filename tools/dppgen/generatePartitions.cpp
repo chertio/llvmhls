@@ -1,4 +1,4 @@
-//===- PrintSCC.cpp - Enumerate SCCs in some key graphs -------------------===//
+//===- generatePartition.cpp - generate instruction partitions for DPP -------------------===//
 //
 //                     The LLVM Compiler Infrastructure
 //
@@ -7,21 +7,7 @@
 //
 //===----------------------------------------------------------------------===//
 //
-// This file provides passes to print out SCCs in a CFG or a CallGraph.
-// Normally, you would not use these passes; instead, you would use the
-// scc_iterator directly to enumerate SCCs and process them in some way.  These
-// passes serve three purposes:
-//
-// (1) As a reference for how to use the scc_iterator.
-// (2) To print out the SCCs for a CFG or a CallGraph:
-//       analyze -print-cfg-sccs            to print the SCCs in each CFG of a module.
-//       analyze -print-cfg-sccs -stats     to print the #SCCs and the maximum SCC size.
-//       analyze -print-cfg-sccs -debug > /dev/null to watch the algorithm in action.
-//
-//     and similarly:
-//       analyze -print-callgraph-sccs [-stats] [-debug] to print SCCs in the CallGraph
-//
-// (3) To test the scc_iterator.
+// This file provides passes to generate partitions from dataflow
 //
 //===----------------------------------------------------------------------===//
 
@@ -34,6 +20,7 @@
 #include "InstructionGraph.h"
 #include "generatePartitionsUtil.h"
 #include <vector>
+#include <queue>
 #define LONGLATTHRESHOLD 5
 using namespace llvm;
 
@@ -154,6 +141,7 @@ namespace {
     void print(raw_ostream &O, const Module* = 0) const { }
 
     void DFSCluster(DAGNode4Partition* curNode, DAGPartition* curPartition);
+    void BFSCluster(DAGNode4Partition* curNode);
 
     bool DFSFindPartitionCycle(DAGPartition* nextHop);
 
@@ -174,6 +162,54 @@ static RegisterPass<PartitionGen>
 Y("dpp-gen", "generate decoupled processing functions for each function CFG");
 
 
+bool compareDagNode(DAGNode4Partition* first, DAGNode4Partition* second)
+{
+    return first->seqNum < second->seqNum;
+}
+void PartitionGen::BFSCluster(DAGNode4Partition* curNode)
+{
+    //if(needANewPartition(curPartition,curNode))
+    //    return;
+    //else
+
+    // create a new partition and add the seed node
+    DAGPartition* curPartition = new DAGPartition;
+    curPartition->init();
+    partitions.push_back(curPartition);
+
+    std::queue<DAGNode4Partition*> storage;
+
+    curPartition->addDagNode(curNode,  dagPartitionMap);
+    storage.push(curNode);
+    //curPartition->addDagNode(curNode,  dagPartitionMap);
+    while(storage.size()!=0)
+    {
+        DAGNode4Partition* nodeCheck = storage.front();
+        storage.pop();
+        std::vector<DAGNode4Partition*> depNodes;
+        findDependentNodes(nodeCheck, dagNodeMap,depNodes);
+        std::sort(depNodes.begin(),depNodes.end(), compareDagNode);
+        for(unsigned int j = 0; j<depNodes.size(); j++)
+        {
+
+            DAGNode4Partition* nextNode = depNodes.at(j);
+            if(nextNode->covered==false)
+            {
+                if(needANewPartition(curPartition,nextNode))
+                {
+                    // we need to create a new partition
+                    curPartition = new DAGPartition;
+                    curPartition->init();
+                    partitions.push_back(curPartition);
+                }
+                curPartition->addDagNode(nextNode,  dagPartitionMap);
+                storage.push(nextNode);
+            }
+        }
+    }
+
+}
+
 void PartitionGen::DFSCluster(DAGNode4Partition* curNode, DAGPartition* curPartition)
 {
 
@@ -185,6 +221,13 @@ void PartitionGen::DFSCluster(DAGNode4Partition* curNode, DAGPartition* curParti
     // now we shall figure out the next hop
     std::vector<DAGNode4Partition*> depNodes;
     findDependentNodes(curNode, dagNodeMap,depNodes);
+    std::sort(depNodes.begin(),depNodes.end(), compareDagNode);
+    // try to see what are the seq
+    for(unsigned int j = 0; j<depNodes.size(); j++)
+    {
+        errs()<<depNodes.at(j)->seqNum<<" ";
+    }
+    errs()<<"\n";
     // should sort the vector according to the seqNum of the nodes
     for(unsigned int j = 0; j<depNodes.size(); j++)
     {
@@ -196,9 +239,9 @@ void PartitionGen::DFSCluster(DAGNode4Partition* curNode, DAGPartition* curParti
 
 
 #define NEWPARTEVERYSEED
+#define USEBFSCLUSTER
 void PartitionGen::generatePartition(std::vector<DAGNode4Partition*> *dag)
 {
-    DAGPartition* curPartition = 0;
 
 
     for(unsigned int dagInd = 0; dagInd < dag->size(); dagInd++)
@@ -206,6 +249,9 @@ void PartitionGen::generatePartition(std::vector<DAGNode4Partition*> *dag)
         DAGNode4Partition* curNode = dag->at(dagInd);
         if(curNode->covered)
             continue;
+#ifdef USEDFSCLUSTER
+        DAGPartition* curPartition = 0;
+
 #ifdef NEWPARTEVERYSEED
         curPartition = new DAGPartition;
         curPartition->init();
@@ -227,7 +273,14 @@ void PartitionGen::generatePartition(std::vector<DAGNode4Partition*> *dag)
             partitions.push_back(curPartition);
         }
 #endif
+        // DFS has problem
         DFSCluster(curNode, curPartition);
+#else
+        BFSCluster(curNode);
+
+#endif
+
+
 
 
     }
