@@ -75,7 +75,15 @@ namespace {
             containLongLatCyc = false;
             cycleDetectCovered = false;
         }
-
+        void print()
+        {
+            for(unsigned int nodeI = 0; nodeI < partitionContent.size(); nodeI++)
+            {
+                DAGNode4Partition* curNode = partitionContent.at(nodeI);
+                curNode->print();
+                errs()<<"\n";
+            }
+        }
         void addDagNode(DAGNode4Partition* dagNode,DagPartitionMapTy &nodeToPartitionMap )
         {
             dagNode->print();
@@ -142,7 +150,7 @@ namespace {
 
     void DFSCluster(DAGNode4Partition* curNode, DAGPartition* curPartition);
     void BFSCluster(DAGNode4Partition* curNode);
-
+    void BarrierCluster(std::vector<DAGNode4Partition*> *dag);
     bool DFSFindPartitionCycle(DAGPartition* nextHop);
 
     virtual void getAnalysisUsage(AnalysisUsage &AU) const {
@@ -166,6 +174,27 @@ bool compareDagNode(DAGNode4Partition* first, DAGNode4Partition* second)
 {
     return first->seqNum < second->seqNum;
 }
+
+void PartitionGen::BarrierCluster(std::vector<DAGNode4Partition*> *dag)
+{
+    DAGPartition* curPartition = new DAGPartition;
+    curPartition->init();
+    partitions.push_back(curPartition);
+
+    for(unsigned int dagInd = 0; dagInd < dag->size(); dagInd++)
+    {
+
+        DAGNode4Partition* curDagNode = dag->at(dagInd);
+        if(needANewPartition(curPartition,curDagNode))
+        {
+            curPartition = new DAGPartition;
+            curPartition->init();
+            partitions.push_back(curPartition);
+        }
+        curPartition->addDagNode(curDagNode,dagPartitionMap);
+    }
+}
+
 void PartitionGen::BFSCluster(DAGNode4Partition* curNode)
 {
     //if(needANewPartition(curPartition,curNode))
@@ -239,10 +268,15 @@ void PartitionGen::DFSCluster(DAGNode4Partition* curNode, DAGPartition* curParti
 
 
 #define NEWPARTEVERYSEED
-#define USEBFSCLUSTER
+//#define USEBFSCLUSTER
+//#define USEBFSCLUSTER
+#define USEBARRIERCLUSTER
 void PartitionGen::generatePartition(std::vector<DAGNode4Partition*> *dag)
 {
 
+#ifdef USEBARRIERCLUSTER
+    BarrierCluster(dag);
+#else
 
     for(unsigned int dagInd = 0; dagInd < dag->size(); dagInd++)
     {
@@ -279,11 +313,8 @@ void PartitionGen::generatePartition(std::vector<DAGNode4Partition*> *dag)
         BFSCluster(curNode);
 
 #endif
-
-
-
-
     }
+#endif
 
     errs()<<"#of partitions :"<<partitions.size()<<"\n";
     for(unsigned int ai = 0; ai<partitions.size(); ai++)
@@ -330,6 +361,18 @@ void PartitionGen::generateControlFlowPerPartition()
         if(DFSFindPartitionCycle(curPart))
         {
             errs()<<" cycle discovered quit quit\n";
+            // now see which partitions are in the cycle
+            for(unsigned int pie = 0; pie < partitions.size(); pie++)
+            {
+                    DAGPartition* curParte = partitions.at(pie);
+                    if(curParte->cycleDetectCovered)
+                    {
+                        errs()<<"cycle contains "<<"\n";
+                        curParte->print();
+                        errs()<< "\n";
+                    }
+            }
+
             exit(1);
         }
 
