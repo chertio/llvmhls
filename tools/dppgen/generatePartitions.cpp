@@ -10,7 +10,7 @@
 // This file provides passes to generate partitions from dataflow
 //
 //===----------------------------------------------------------------------===//
-
+#include <sstream>
 #include "llvm/ADT/SCCIterator.h"
 #include "llvm/Analysis/CallGraph.h"
 #include "llvm/IR/Module.h"
@@ -20,7 +20,9 @@
 #include "InstructionGraph.h"
 #include "generatePartitionsUtil.h"
 #include "llvm/Analysis/Dominators.h"
+#include "llvm/Analysis/PostDominators.h"
 #include <vector>
+#include <string>
 #include <queue>
 #define LONGLATTHRESHOLD 5
 using namespace llvm;
@@ -115,7 +117,7 @@ namespace {
             nodeToPartitionMap[dagNode] = this;
         }
 
-        void generateBBList(DominatorTree* DT)
+        void generateBBList(DominatorTree* DT, PostDominatorTree* PDT)
         {
             BBMap2Ins sourceBBs;
             BBMap2Ins insBBs;
@@ -142,26 +144,96 @@ namespace {
                 }
             }
 
+
+
             // now make the instructions
 
-            // dump out the bbs
+
+
+            // dominator for src and ins BBs
+            // this will be the first basicblock we need to convert
+            // then we shall see where each bb diverge?
+            BasicBlock* dominator=0;
             BasicBlock* prevBB=0;
+            BasicBlock* postDominator=0;
+            BasicBlock* prevBBPost = 0;
+
             for(BBMapIter bmi = sourceBBs.begin(), bme = sourceBBs.end(); bmi!=bme; ++bmi)
             {
                 BasicBlock* curBB=bmi->first;
-                errs()<<curBB->getName()<<"\n";
+                //errs()<<curBB->getName()<<"\n";
                 // now print out the source
 
                 if(prevBB!=0)
                 {
-                    BasicBlock* com = DT->findNearestCommonDominator(prevBB, curBB);
-                    errs()<<"\n"<<com->getName()<<"is the com anc of "<<prevBB->getName()<<" and "<<curBB->getName()<<"\n";
-                    prevBB = com;
+                    dominator = DT->findNearestCommonDominator(prevBB, curBB);
+                    //errs()<<"\n"<<dominator->getName()<<"is the com anc of "<<prevBB->getName()<<" and "<<curBB->getName()<<"\n";
+                    prevBB = dominator;
                 }
                 else
                     prevBB = curBB;
+
+                if(prevBBPost!=0)
+                {
+                    postDominator = PDT->findNearestCommonDominator(prevBBPost,curBB);
+                    //errs()<<"\n"<<postDominator->getName()<<"is the post com dom of "<<prevBBPost->getName()<<" and "<<curBB->getName()<<"\n";
+                    prevBBPost = postDominator;
+                }
+                else
+                    prevBBPost = curBB;
             }
+
+
+            for(BBMapIter bmi = insBBs.begin(), bme = insBBs.end(); bmi!=bme; ++bmi)
+            {
+                BasicBlock* curBB=bmi->first;
+                //errs()<<curBB->getName()<<"\n";
+                // now print out the source
+
+                if(prevBB!=0)
+                {
+                    dominator = DT->findNearestCommonDominator(prevBB, curBB);
+                    //errs()<<"\n"<<dominator->getName()<<"is the com anc of "<<prevBB->getName()<<" and "<<curBB->getName()<<"\n";
+                    prevBB = dominator;
+                }
+                else
+                    prevBB = curBB;
+
+                if(prevBBPost!=0)
+                {
+                    postDominator = PDT->findNearestCommonDominator(prevBBPost,curBB);
+                    errs()<<"\n"<<postDominator->getName()<<"is the post com dom of "<<prevBBPost->getName()<<" and "<<curBB->getName()<<"\n";
+                    prevBBPost = postDominator;
+                }
+                else
+                    prevBBPost = curBB;
+            }
+
+            // let's filter out those irrelevant
+            // how do we do this,
+            // start from each srcBBs, search backward until dominator,
+            // everything in between is to needed, -- if they are not srcBB nor insBBs
+            // their terminator output would be needed
+
+            // then go from each srcBBs and insBBs forward, until post dominator,
+            // everything in between is needed, is it?
+            // in the case of two BBs, if one BB is never reaching another BB
+            // without going through dominator, then when this BB exits, we can
+            // just wait in the dominator, so the procedure should be use
+            // each BB as starting point to search for all other BBs, if any BB
+            // is found all path to that BB should be included? if none can be found
+            // then getting out of this BB is same as getting out of our subgraph
+
+            // so naturally if we have everything within one BB, we just need that BB
+
+
+
+
             errs()<<"done part\n";
+            errs()<<"dominator is "<<dominator->getName()<<" post dom is "<<postDominator->getName()<<"\n";
+
+            // go to release memory here
+
         }
 
 
@@ -225,7 +297,8 @@ namespace {
 
     virtual void getAnalysisUsage(AnalysisUsage &AU) const {
       AU.addRequired<InstructionGraph>();
-      AU.addRequired<DominatorTree>();
+      AU.addRequiredTransitive<DominatorTree>();
+      AU.addRequired<PostDominatorTree>();
       AU.setPreservesAll();
     }
 
@@ -387,6 +460,7 @@ void PartitionGen::generatePartition(std::vector<DAGNode4Partition*> *dag)
     }
 #endif
 
+
     errs()<<"#of partitions :"<<partitions.size()<<"\n";
     for(unsigned int ai = 0; ai<partitions.size(); ai++)
     {
@@ -454,7 +528,8 @@ void PartitionGen::generateControlFlowPerPartition()
     {
         DAGPartition* curPart = partitions.at(partInd);
         DominatorTree* DT  = getAnalysisIfAvailable<DominatorTree>();
-        curPart->generateBBList(DT);
+        PostDominatorTree* PDT = getAnalysisIfAvailable<PostDominatorTree>();
+        curPart->generateBBList(DT, PDT);
 
 
     }
@@ -499,6 +574,25 @@ bool PartitionGen::DFSFindPartitionCycle(DAGPartition* dp)
 bool PartitionGen::runOnFunction(Function &F) {
 
 
+    int bbCount =0;
+
+    for(Function::iterator bbi = F.begin(), bbe = F.end(); bbi!=bbe; ++bbi)
+    {
+        if(bbi->getName().size()==0)
+
+        {
+            std::stringstream ss;
+            ss << "BB_Explicit_" <<bbCount;
+            bbi->setName(ss.str());
+            bbCount+=1;
+        }
+    }
+    for(Function::iterator bbi = F.begin(), bbe = F.end(); bbi!=bbe; ++bbi)
+    {
+        errs()<<bbi->getName()<<"\n";
+    }
+
+
     InstructionGraphNode* rootNode = getAnalysis<InstructionGraph>().getRoot();
 
 
@@ -539,7 +633,7 @@ bool PartitionGen::runOnFunction(Function &F) {
 
 
 
-      errs() << "\nSCC #" << ++sccNum << " : ";
+      /*errs() << "\nSCC #" << ++sccNum << " : ";
       for (std::vector<InstructionGraphNode*>::const_iterator I = nextSCC.begin(),
              E = nextSCC.end(); I != E; ++I)
       {
@@ -547,9 +641,9 @@ bool PartitionGen::runOnFunction(Function &F) {
             errs() << *((*I)->getInstruction())<< "\n ";
         if (nextSCC.size() == 1 && SCCI.hasLoop())
             errs() << " (Has self-loop).";
-      }
+      }*/
     }
-    errs()<<"here\n\n\n\n\n\n";
+    //errs()<<"here\n\n\n\n\n\n";
     std::reverse(collectedDagNode.begin(),collectedDagNode.end());
     // now the nodes are topologically shorted
     // let's check
@@ -564,10 +658,10 @@ bool PartitionGen::runOnFunction(Function &F) {
         std::vector<DAGNode4Partition*> myDep;
         findDependentNodes(curNode,this->dagNodeMap,myDep);
         // check every dep to make sure their seqNum is greater
-        errs()<<"my seq "<<curNode->seqNum<<" : my deps are ";
+        //errs()<<"my seq "<<curNode->seqNum<<" : my deps are ";
         for(unsigned depInd = 0; depInd<myDep.size(); depInd++)
         {
-            errs()<<myDep.at(depInd)->seqNum<<" ,";
+            //errs()<<myDep.at(depInd)->seqNum<<" ,";
             if(myDep.at(depInd)->seqNum < curNode->seqNum)
             {
                 errs()<<"not topologically sorted\n";
