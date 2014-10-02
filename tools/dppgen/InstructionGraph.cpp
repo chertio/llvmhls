@@ -53,7 +53,7 @@ void InstructionGraph::addToInstructionGraph(Instruction *I) {
           for(BasicBlock::iterator BI = curSuc->begin(), BE = curSuc->end(); BI != BE; ++BI)
           {
                //addToInstructionGraph(BI);
-               Node->addDependentInstruction(getOrInsertInstruction(BI));
+               //Node->addDependentInstruction(getOrInsertInstruction(BI));
           }
 
           //Instruction* endOfSuc = curSuc->getTerminator();

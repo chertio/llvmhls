@@ -588,6 +588,7 @@ int main(int argc, char **argv) {
 
   PassRegistry &Registry = *PassRegistry::getPassRegistry();
   initializeInstructionGraphPass(Registry);
+  INITIALIZE_PASS_DEPENDENCY(DominatorTree)
 
   cl::ParseCommandLineOptions(argc, argv,
     "llvm .bc -> .bc modular optimizer and analysis printer\n");

@@ -19,6 +19,7 @@
 #include "llvm/Support/raw_ostream.h"
 #include "InstructionGraph.h"
 #include "generatePartitionsUtil.h"
+#include "llvm/Analysis/Dominators.h"
 #include <vector>
 #include <queue>
 #define LONGLATTHRESHOLD 5
@@ -29,8 +30,28 @@ namespace {
     struct DAGPartition;
     typedef std::map<const Instruction *, DAGNode4Partition *> DagNodeMapTy;
     typedef std::map<const DAGNode4Partition*, DAGPartition *> DagPartitionMapTy;
-
-
+    typedef std::map<BasicBlock*, std::vector<Instruction*>*> BBMap2Ins;
+    typedef BBMap2Ins::iterator BBMapIter;
+    static void addBBInsToMap(BBMap2Ins& map, Instruction* curIns)
+    {
+        BasicBlock* bbKey = curIns->getParent();
+        BBMap2Ins::iterator I = map.find(bbKey);
+        if(I== map.end())
+        {
+            std::vector<Instruction*>* curBBIns = new std::vector<Instruction*>();
+            curBBIns->push_back(curIns);
+            map[bbKey] = curBBIns;
+        }
+        else
+        {
+            std::vector<Instruction*>* curBBIns = map[bbKey];
+            // now check if it is already included
+            if(std::find(curBBIns->begin(),curBBIns->end(),curIns )== curBBIns->end())
+            {
+                curBBIns->push_back(curIns);
+            }
+        }
+    }
 
     struct DAGNode4Partition{
         std::vector<InstructionGraphNode*>* dagNodeContent;
@@ -94,6 +115,55 @@ namespace {
             nodeToPartitionMap[dagNode] = this;
         }
 
+        void generateBBList(DominatorTree* DT)
+        {
+            BBMap2Ins sourceBBs;
+            BBMap2Ins insBBs;
+
+            std::vector<Instruction*> srcInstructions;
+            for(unsigned int nodeInd = 0; nodeInd < partitionContent.size(); nodeInd++)
+            {
+                DAGNode4Partition* curNode = partitionContent.at(nodeInd);
+                for(unsigned int insInd = 0; insInd< curNode->dagNodeContent->size(); insInd++)
+                {
+                    Instruction* curIns = curNode->dagNodeContent->at(insInd)->getInstruction();
+                    addBBInsToMap(insBBs,curIns);
+                    int numOp = curIns->getNumOperands();
+                    for(unsigned int opInd = 0; opInd < numOp; opInd++)
+                    {
+                        Value* curOp = curIns->getOperand(opInd);
+                        if(isa<Instruction>(*curOp))
+                        {
+                            Instruction* srcIns = &(cast<Instruction>(*curOp));
+                            srcInstructions.push_back(srcIns);
+                            addBBInsToMap(sourceBBs,srcIns);
+                        }
+                    }
+                }
+            }
+
+            // now make the instructions
+
+            // dump out the bbs
+            BasicBlock* prevBB=0;
+            for(BBMapIter bmi = sourceBBs.begin(), bme = sourceBBs.end(); bmi!=bme; ++bmi)
+            {
+                BasicBlock* curBB=bmi->first;
+                errs()<<curBB->getName()<<"\n";
+                // now print out the source
+
+                if(prevBB!=0)
+                {
+                    BasicBlock* com = DT->findNearestCommonDominator(prevBB, curBB);
+                    errs()<<"\n"<<com->getName()<<"is the com anc of "<<prevBB->getName()<<" and "<<curBB->getName()<<"\n";
+                    prevBB = com;
+                }
+                else
+                    prevBB = curBB;
+            }
+            errs()<<"done part\n";
+        }
+
 
 
 
@@ -155,6 +225,7 @@ namespace {
 
     virtual void getAnalysisUsage(AnalysisUsage &AU) const {
       AU.addRequired<InstructionGraph>();
+      AU.addRequired<DominatorTree>();
       AU.setPreservesAll();
     }
 
@@ -378,6 +449,15 @@ void PartitionGen::generateControlFlowPerPartition()
 
     }
     errs()<<" no cycle discovered\n";
+    // starting the actual generation of function
+    for(unsigned int partInd = 0; partInd < partitions.size(); partInd++)
+    {
+        DAGPartition* curPart = partitions.at(partInd);
+        DominatorTree* DT  = getAnalysisIfAvailable<DominatorTree>();
+        curPart->generateBBList(DT);
+
+
+    }
 
 }
 bool PartitionGen::DFSFindPartitionCycle(DAGPartition* dp)
