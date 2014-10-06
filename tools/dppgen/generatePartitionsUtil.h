@@ -18,3 +18,17 @@ int instructionLatencyLookup(Instruction* ins)
         return 0;
     return 1;
 }
+std::string replaceAllDotWUS(std::string original)
+{
+   std::replace( original.begin(), original.end(), '.', '_');
+
+}
+
+
+static std::string generateSingleStatement(Instruction* curIns, bool remoteSrc, bool remoteDst)
+{
+    // if it is remote src
+    string a = "f";
+    return a;
+}
+
