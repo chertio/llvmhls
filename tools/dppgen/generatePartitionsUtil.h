@@ -25,10 +25,3 @@ std::string replaceAllDotWUS(std::string original)
 }
 
 
-static std::string generateSingleStatement(Instruction* curIns, bool remoteSrc, bool remoteDst)
-{
-    // if it is remote src
-    string a = "f";
-    return a;
-}
-

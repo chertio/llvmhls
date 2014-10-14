@@ -24,6 +24,7 @@ void InstructionGraph::addToInstructionGraph(Instruction *I) {
   ExternalInsNode->addDependentInstruction(Node);
 
 
+
   // Look for dependent instruction
   for(Value::use_iterator curUser = I->use_begin(), endUser = I->use_end(); curUser != endUser; ++curUser )
   {
@@ -34,6 +35,7 @@ void InstructionGraph::addToInstructionGraph(Instruction *I) {
       }
       else
       {
+
            Node->addDependentInstruction(getOrInsertInstruction( cast<Instruction>(*curUser)));
       }
       //Node->addDependentInstruction(getOrInsertInstruction(curIns));

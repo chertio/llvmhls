@@ -30,11 +30,26 @@ using namespace llvm;
 namespace {
     struct DAGNode4Partition;
     struct DAGPartition;
+    struct PartitionGen;
     typedef std::map<const Instruction *, DAGNode4Partition *> DagNodeMapTy;
     typedef std::map<const DAGNode4Partition*, DAGPartition *> DagPartitionMapTy;
+    // this is used for srcBB and insBB things
     typedef std::map<BasicBlock*, std::vector<Instruction*>*> BBMap2Ins;
+    typedef std::map<DAGPartition*, BBMap2Ins*> partitionToBB2InsInfo;
+    typedef std::map<DAGPartition*, std::vector<BasicBlock*>*> partitionToBBList;
 
     typedef std::map<BasicBlock*, std::vector<std::string>*> BBMap2outStr;
+
+    typedef std::map<Instruction*, std::string> InsMap2Str;
+
+
+
+
+    // this is to keep track of the channels
+    // we map instruction to tagName -- a string denoting the name of the channel
+
+    // we also map tagName to user Partition -- there can be multiple destination
+    typedef std::map<std::string, std::vector<DAGPartition*>*> strMap2PartitionVector;
 
     typedef BBMap2Ins::iterator BBMapIter;
     static void addBBInsToMap(BBMap2Ins& map, Instruction* curIns)
@@ -58,65 +73,37 @@ namespace {
         }
     }
 
-    static void generateCFromBBList(BBMap2Ins& srcBBs, BBMap2Ins& insBBs, std::vector<BasicBlock*>& BBList)
+    static std::string generateTerminatorStr(Instruction* ins)
     {
+        std::string a = "f";
+        // find value
+        return a;
+    }
 
-        // we can generate the definition string, and create a mapping of instruction to def string
+    static std::string generateSingleStatement(Instruction* curIns, bool remoteSrc, bool remoteDst, InsMap2Str& ins2def)
+    {
+        // first we ll see if the output value is defined already
 
-
-        BBMap2outStr bb2Str;
-        for(unsigned int curBBInd = 0; curBBInd < BBList.size(); curBBInd++)
+        // if this is a terminator the the def will be the brTag
+        // the Q has name "'brTag'Q", the actual tag has name 'brTag'
+        // brTag name is formed by concat the srcBB of branch and the dstBBs
+        // it is gonna be a read, then a switch -- with multiple dest
+        if(curIns->isTerminator())
         {
-            BasicBlock* curBB = BBList.at(curBBInd);
-            std::vector<std::string>* curBBStrArray = new std::vector<std::string>();
-            bb2Str[curBB] = curBBStrArray;
-
-            std::string bbname = replaceAllDotWUS( curBB->getName());
-            bbname.append(":\n");
-            curBBStrArray->push_back(bbname);
-
-            if(srcBBs.find(curBB)==srcBBs.end() && insBBs.find(curBB)==insBBs.end())
+            if(remoteSrc)
             {
-                // basicblock takes in a branch tag only
-                Instruction* curTerm = curBB->getTerminator();
-                std::string termStr = generateSingleStatement(curTerm,true,false);
-                curBBStrArray.push_back(termStr);
-                continue;
-            }
-            std::vector<Instruction*>* srcIns = 0;
-            std::vector<Instruction*>* actualIns = 0;
-            if(srcBBs.find(curBB)!=srcBBs.end())
-                srcIns = srcBBs[curBB];
-
-            if(insBBs.find(curBB)!=insBBs.end())
-                actualIns = insBBs[curBB];
-
-
-            for(BasicBlock::iterator insPt = curBB->begin(), insEnd = curBB->end(); insPt < insEnd; insPt++)
-            {
-                if(srcIns!=0 && !std::find(srcIns->begin(),srcIns->end(), insPt)==srcIns->end())
-                {
-                    // this instruction is in the srcBB, meaning its output is used by this partition
-                    // meaning the we should insert a blocking read from FIFO
-
-                    std::string srcInsStr = generateSingleStatement(insPt,true,false);
-                    curBBStrArray->push_back(srcInsStr);
-                }
-
-                if(actualIns!=0 && !std::find(actualIns->begin(),actualIns->end(),insPt)==actualIns->end())
-                {
-                    // this instruction is the actual
-                    std::string actualInsStr = generateSingleStatement(insPt,false,false);
-                    curBBStrArray->push_back(actualInsStr);
-                }
+                // we need to get remote target tag
 
             }
+            // we dont need the the value
+            return generateTerminatorStr(curIns);
         }
 
-        // now we can output
-
-
+        // if it is remote src
+        std::string a = "f";
+        return a;
     }
+
 
     static bool searchToBasicBlock(std::vector<BasicBlock*>& storage, BasicBlock* current, BasicBlock* target, BasicBlock* domInter =0 )
     {
@@ -227,23 +214,80 @@ namespace {
         }
 
     };
+    struct PartitionGen : public FunctionPass {
+      static char ID;  // Pass identification, replacement for typeid
 
+      partitionToBB2InsInfo srcBBsInPartition;
+      partitionToBB2InsInfo insBBsInPartition;
+      // each partition's bb list
+      partitionToBBList allBBsInPartition;
+
+      InsMap2Str ins2Channel;
+      strMap2PartitionVector channelFanOutPartition;
+
+
+      //std::vector<DAGNode4Partition*> allDAGNodes;
+
+
+      std::vector<DAGPartition*> partitions;
+
+      // from instruction to node
+      DagNodeMapTy dagNodeMap;
+      // from node to partition
+      DagPartitionMapTy dagPartitionMap;
+      //
+
+
+      PartitionGen() : FunctionPass(ID) {}
+      bool runOnFunction(Function& func);
+
+      void generatePartition(std::vector<DAGNode4Partition*> *dag);
+
+      void generateControlFlowPerPartition();
+      void print(raw_ostream &O, const Module* = 0) const { }
+
+      void DFSCluster(DAGNode4Partition* curNode, DAGPartition* curPartition);
+      void BFSCluster(DAGNode4Partition* curNode);
+      void BarrierCluster(std::vector<DAGNode4Partition*> *dag);
+      bool DFSFindPartitionCycle(DAGPartition* nextHop);
+
+      virtual void getAnalysisUsage(AnalysisUsage &AU) const {
+        AU.addRequired<InstructionGraph>();
+        AU.addRequiredTransitive<DominatorTree>();
+        AU.addRequired<PostDominatorTree>();
+        AU.setPreservesAll();
+      }
+      DAGPartition* getPartitionFromIns(Instruction* ins)
+      {
+          DAGNode4Partition* node = dagNodeMap[const_cast<Instruction*>(ins)];
+          DAGPartition* part = dagPartitionMap[const_cast<DAGNode4Partition*>(node)];
+          return part;
+      }
+      void generateCFromBBList(DAGPartition* pa);
+
+
+
+    };
     struct DAGPartition{
         // a partition contains a set of dagNode
         std::vector<DAGNode4Partition*> partitionContent;
 
-
+        // let's add the pointer to the maps
 
         bool containMemory;
         bool containLongLatCyc;
 
         bool cycleDetectCovered;
+        //DagNodeMapTy* insToDagNode;
+        //DagPartitionMapTy* dagNodeToPartition;
+        PartitionGen* top;
 
-        void init()
+        void init(PartitionGen* tt )
         {
             containMemory = false;
             containLongLatCyc = false;
             cycleDetectCovered = false;
+            top = tt;
         }
         void print()
         {
@@ -264,10 +308,12 @@ namespace {
             nodeToPartitionMap[dagNode] = this;
         }
 
+
+
         void generateBBList(DominatorTree* DT, PostDominatorTree* PDT)
         {
-            BBMap2Ins sourceBBs;
-            BBMap2Ins insBBs;
+            BBMap2Ins* sourceBBs = new BBMap2Ins;
+            BBMap2Ins* insBBs = new BBMap2Ins;
 
             std::vector<Instruction*> srcInstructions;
             for(unsigned int nodeInd = 0; nodeInd < partitionContent.size(); nodeInd++)
@@ -277,7 +323,7 @@ namespace {
                 {
                     Instruction* curIns = curNode->dagNodeContent->at(insInd)->getInstruction();
 
-                    addBBInsToMap(insBBs,curIns);
+                    addBBInsToMap(*insBBs,curIns);
                     unsigned int numOp = curIns->getNumOperands();
                     for(unsigned int opInd = 0; opInd < numOp; opInd++)
                     {
@@ -286,7 +332,7 @@ namespace {
                         {
                             Instruction* srcIns = &(cast<Instruction>(*curOp));
                             srcInstructions.push_back(srcIns);
-                            addBBInsToMap(sourceBBs,srcIns);
+                            addBBInsToMap(*sourceBBs,srcIns);
                         }
                     }
                 }
@@ -306,7 +352,7 @@ namespace {
             BasicBlock* postDominator=0;
             BasicBlock* prevBBPost = 0;
 
-            for(BBMapIter bmi = sourceBBs.begin(), bme = sourceBBs.end(); bmi!=bme; ++bmi)
+            for(BBMapIter bmi = sourceBBs->begin(), bme = sourceBBs->end(); bmi!=bme; ++bmi)
             {
                 BasicBlock* curBB=bmi->first;
                 //errs()<<curBB->getName()<<"\n";
@@ -332,7 +378,7 @@ namespace {
             }
 
 
-            for(BBMapIter bmi = insBBs.begin(), bme = insBBs.end(); bmi!=bme; ++bmi)
+            for(BBMapIter bmi = insBBs->begin(), bme = insBBs->end(); bmi!=bme; ++bmi)
             {
                 BasicBlock* curBB=bmi->first;
                 //errs()<<curBB->getName()<<"\n";
@@ -373,47 +419,42 @@ namespace {
             // then getting out of this BB is same as getting out of our subgraph
 
             // so naturally if we have everything within one BB, we just need that BB
-            std::vector<BasicBlock*> AllBBs; // some of these BBs wont be in the map, in which case, we just need the terminator
-            AllBBs.push_back(dominator);
+            std::vector<BasicBlock*>* AllBBs = new std::vector<BasicBlock*>();
+            // some of these BBs wont be in the map, in which case, we just need the terminator
+            AllBBs->push_back(dominator);
 
-            addPathBBsToBBMap(sourceBBs,dominator,AllBBs);
-            addPathBBsToBBMap(insBBs,dominator,AllBBs);
+            addPathBBsToBBMap(*sourceBBs,dominator,*AllBBs);
+            addPathBBsToBBMap(*insBBs,dominator,*AllBBs);
             // now  we do the n^2 check to see if anybody goes to anybody else?
 //errs()<<"done adding map\n";
-            for(BBMapIter bmi = sourceBBs.begin(), bme = sourceBBs.end(); bmi!=bme; ++bmi)
+            for(BBMapIter bmi = sourceBBs->begin(), bme = sourceBBs->end(); bmi!=bme; ++bmi)
             {
                 BasicBlock* curBB=bmi->first;
                 std::vector<BasicBlock*> curPathStorage;
 
-                searchToGroupAndAdd(curBB,dominator,sourceBBs,curPathStorage,AllBBs);
+                searchToGroupAndAdd(curBB,dominator,*sourceBBs,curPathStorage,*AllBBs);
                 // same thing for insBB
-                searchToGroupAndAdd(curBB,dominator,insBBs,curPathStorage,AllBBs);
+                searchToGroupAndAdd(curBB,dominator,*insBBs,curPathStorage,*AllBBs);
 
             }
-            for(BBMapIter bmi = insBBs.begin(), bme = insBBs.end(); bmi!=bme; ++bmi)
+            for(BBMapIter bmi = insBBs->begin(), bme = insBBs->end(); bmi!=bme; ++bmi)
             {
                 BasicBlock* curBB=bmi->first;
                 std::vector<BasicBlock*> curPathStorage;
 
-                searchToGroupAndAdd(curBB,dominator,sourceBBs,curPathStorage,AllBBs);
+                searchToGroupAndAdd(curBB,dominator,*sourceBBs,curPathStorage,*AllBBs);
                 // same thing for insBB
-                searchToGroupAndAdd(curBB,dominator,insBBs,curPathStorage,AllBBs);
+                searchToGroupAndAdd(curBB,dominator,*insBBs,curPathStorage,*AllBBs);
 
             }
 
             // now all the basicblocks are added into the allBBs
+            (top->srcBBsInPartition)[this]=sourceBBs;
+            (top->insBBsInPartition)[this]=insBBs;
+            (top->allBBsInPartition)[this]=AllBBs;
 
 
 
-
-            errs()<<"done part\n";
-            errs()<<"[\n";
-            for(unsigned int allBBInd = 0; allBBInd < AllBBs.size(); allBBInd++)
-            {
-                errs()<<AllBBs.at(allBBInd)->getName();
-                errs()<<"\n";
-            }
-            errs()<<"]\n";
 
 
 
@@ -457,43 +498,7 @@ namespace {
         }
     }
 
-  struct PartitionGen : public FunctionPass {
-    static char ID;  // Pass identification, replacement for typeid
 
-    //std::vector<DAGNode4Partition*> allDAGNodes;
-
-
-    std::vector<DAGPartition*> partitions;
-
-    // from instruction to node
-    DagNodeMapTy dagNodeMap;
-    // from node to partition
-    DagPartitionMapTy dagPartitionMap;
-
-    PartitionGen() : FunctionPass(ID) {}
-    bool runOnFunction(Function& func);
-
-    void generatePartition(std::vector<DAGNode4Partition*> *dag);
-
-    void generateControlFlowPerPartition();
-    void print(raw_ostream &O, const Module* = 0) const { }
-
-    void DFSCluster(DAGNode4Partition* curNode, DAGPartition* curPartition);
-    void BFSCluster(DAGNode4Partition* curNode);
-    void BarrierCluster(std::vector<DAGNode4Partition*> *dag);
-    bool DFSFindPartitionCycle(DAGPartition* nextHop);
-
-    virtual void getAnalysisUsage(AnalysisUsage &AU) const {
-      AU.addRequired<InstructionGraph>();
-      AU.addRequiredTransitive<DominatorTree>();
-      AU.addRequired<PostDominatorTree>();
-      AU.setPreservesAll();
-    }
-
-
-
-
-  };
 
 }
 
@@ -510,7 +515,7 @@ bool compareDagNode(DAGNode4Partition* first, DAGNode4Partition* second)
 void PartitionGen::BarrierCluster(std::vector<DAGNode4Partition*> *dag)
 {
     DAGPartition* curPartition = new DAGPartition;
-    curPartition->init();
+    curPartition->init(this);
     partitions.push_back(curPartition);
 
     for(unsigned int dagInd = 0; dagInd < dag->size(); dagInd++)
@@ -520,7 +525,7 @@ void PartitionGen::BarrierCluster(std::vector<DAGNode4Partition*> *dag)
         if(needANewPartition(curPartition,curDagNode))
         {
             curPartition = new DAGPartition;
-            curPartition->init();
+            curPartition->init(this);
             partitions.push_back(curPartition);
         }
         curPartition->addDagNode(curDagNode,dagPartitionMap);
@@ -535,7 +540,7 @@ void PartitionGen::BFSCluster(DAGNode4Partition* curNode)
 
     // create a new partition and add the seed node
     DAGPartition* curPartition = new DAGPartition;
-    curPartition->init();
+    curPartition->init(this);
     partitions.push_back(curPartition);
 
     std::queue<DAGNode4Partition*> storage;
@@ -560,7 +565,7 @@ void PartitionGen::BFSCluster(DAGNode4Partition* curNode)
                 {
                     // we need to create a new partition
                     curPartition = new DAGPartition;
-                    curPartition->init();
+                    curPartition->init(this);
                     partitions.push_back(curPartition);
                 }
                 curPartition->addDagNode(nextNode,  dagPartitionMap);
@@ -713,8 +718,26 @@ void PartitionGen::generateControlFlowPerPartition()
         PostDominatorTree* PDT = getAnalysisIfAvailable<PostDominatorTree>();
         curPart->generateBBList(DT, PDT);
 
+        errs()<<"done part\n";
+        errs()<<"[\n";
+        std::vector<BasicBlock*>* AllBBs
+                = allBBsInPartition[curPart];
+        for(unsigned int allBBInd = 0; allBBInd < AllBBs->size(); allBBInd++)
+        {
+            errs()<<AllBBs->at(allBBInd)->getName();
+            errs()<<"\n";
+        }
+        errs()<<"]\n";
 
     }
+    // all BB list generated, lets check the partitions
+    // now one by one we will generate the C code for each partition
+    for(unsigned int partInd = 0; partInd < partitions.size(); partInd++)
+    {
+        DAGPartition* curPart = partitions.at(partInd);
+        generateCFromBBList(curPart);
+    }
+
 
 }
 bool PartitionGen::DFSFindPartitionCycle(DAGPartition* dp)
@@ -751,6 +774,98 @@ bool PartitionGen::DFSFindPartitionCycle(DAGPartition* dp)
     return false;
 }
 
+void PartitionGen::generateCFromBBList(DAGPartition* pa)
+{
+    //BBMap2Ins& srcBBs, BBMap2Ins& insBBs, std::vector<BasicBlock*>& BBList
+    BBMap2Ins* srcBBs = srcBBsInPartition[pa];
+    BBMap2Ins* insBBs = insBBsInPartition[pa];
+    std::vector<BasicBlock*>* BBList = allBBsInPartition[pa];
+    // we can generate the definition string, and create a mapping of instruction to def string
+    InsMap2Str ins2Def;
+
+
+
+    BBMap2outStr bb2Str;
+    for(unsigned int curBBInd = 0; curBBInd < BBList-size(); curBBInd++)
+    {
+        BasicBlock* curBB = BBList->at(curBBInd);
+        std::vector<std::string>* curBBStrArray = new std::vector<std::string>();
+        bb2Str[curBB] = curBBStrArray;
+
+        std::string bbname = replaceAllDotWUS( curBB->getName());
+        bbname.append(":\n");
+        curBBStrArray->push_back(bbname);
+
+        if(srcBBs->find(curBB)==srcBBs->end() && insBBs->find(curBB)==insBBs->end())
+        {
+            // basicblock takes in a branch tag only -- definitely not sending stuff to remote
+            Instruction* curTerm = curBB->getTerminator();
+            std::string termStr = generateSingleStatement(curTerm,true,false,ins2Def);
+            curBBStrArray->push_back(termStr);
+            continue;
+        }
+        std::vector<Instruction*>* srcIns = 0;
+        std::vector<Instruction*>* actualIns = 0;
+        if(srcBBs.find(curBB)!=srcBBs.end())
+            srcIns = srcBBs[curBB];
+
+        if(insBBs.find(curBB)!=insBBs.end())
+            actualIns = insBBs[curBB];
+
+
+        for(BasicBlock::iterator insPt = curBB->begin(), insEnd = curBB->end(); insPt != insEnd; insPt++)
+        {
+            if(srcIns!=0 && !(std::find(srcIns->begin(),srcIns->end(), insPt)==srcIns->end()))
+            {
+                // this instruction is in the srcBB, meaning its output is used by this partition
+                // meaning the we should insert a blocking read from FIFO
+
+                std::string srcInsStr = generateSingleStatement(insPt,true,false,ins2Def);
+                curBBStrArray->push_back(srcInsStr);
+            }
+
+            if(actualIns!=0 && !(std::find(actualIns->begin(),actualIns->end(),insPt)==actualIns->end()))
+            {
+                // this instruction is the actual, let's see if this ins is used by
+                // instruction in other partition
+                DAGPartition* curInsPart = getPartitionFromIns(insPt);
+                // now check all its user to see if it is being used by others
+                // if it is then we should also add an entry in the channel list
+                // also if this is an terminator, it may not have any use?
+                if(insPt->isTerminator())
+                {
+
+                    // are there other partitions having the same basicblock
+                    for(unsigned sid = 0; sid < partitions.size(); sid++)
+                    {
+                        DAGPartition* destPart = partitions.at(sid);
+                        std::vector<BasicBlock*>* destPartBBs = allBBsInPartition[destPart];
+                        if(std::find(destPartBBs->begin(),destPartBBs->end(),curBB)!=destPartBBs->end())
+                        {
+                            //we need fanout
+                        }
+                    }
+                }
+                for(Value::use_iterator curUser = insPt->use_begin(), endUser = insPt->use_end(); curUser != endUser; ++curUser )
+                {
+
+                }
+
+
+                std::string actualInsStr = generateSingleStatement(insPt,false,false,ins2Def);
+                curBBStrArray->push_back(actualInsStr);
+            }
+
+
+
+        }
+    }
+
+    // now we can output
+
+
+}
+*/
 // we have a data structure to map instruction to InstructionGraphNodes
 // when we do the partitioning, we
 bool PartitionGen::runOnFunction(Function &F) {
