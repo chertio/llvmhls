@@ -222,6 +222,7 @@ namespace {
       // each partition's bb list
       partitionToBBList allBBsInPartition;
 
+      int channelID;
       InsMap2Str ins2Channel;
       strMap2PartitionVector channelFanOutPartition;
 
@@ -264,7 +265,8 @@ namespace {
           return part;
       }
       void generateCFromBBList(DAGPartition* pa);
-
+      void addChannelAndDepPartition(bool &thereIsPartitionReceiving, Instruction* insPt,
+                                                   std::string& channelStr, DAGPartition* destPart, int channelType);
 
 
     };
@@ -773,6 +775,25 @@ bool PartitionGen::DFSFindPartitionCycle(DAGPartition* dp)
     dp->cycleDetectCovered = false;
     return false;
 }
+void PartitionGen::addChannelAndDepPartition(bool &thereIsPartitionReceiving, Instruction* insPt,
+                                             std::string& channelStr, DAGPartition* destPart,int channelType)
+{
+    if(!thereIsPartitionReceiving)
+    {
+        channelStr= generateChannelString(channelType,this->channelID,replaceAllDotWUS(insPt->getParent()->getName()));
+        ins2Channel[insPt]= channelStr;
+
+    }
+
+    std::vector<DAGPartition*>* channelToDestPartitions = channelFanOutPartition[channelStr];
+
+    if(!thereIsPartitionReceiving)
+        channelToDestPartitions = new std::vector<DAGPartition*>();
+
+
+    channelToDestPartitions->push_back(destPart);
+    thereIsPartitionReceiving=true;
+}
 
 void PartitionGen::generateCFromBBList(DAGPartition* pa)
 {
@@ -786,7 +807,7 @@ void PartitionGen::generateCFromBBList(DAGPartition* pa)
 
 
     BBMap2outStr bb2Str;
-    for(unsigned int curBBInd = 0; curBBInd < BBList-size(); curBBInd++)
+    for(unsigned int curBBInd = 0; curBBInd < BBList->size(); curBBInd++)
     {
         BasicBlock* curBB = BBList->at(curBBInd);
         std::vector<std::string>* curBBStrArray = new std::vector<std::string>();
@@ -806,11 +827,11 @@ void PartitionGen::generateCFromBBList(DAGPartition* pa)
         }
         std::vector<Instruction*>* srcIns = 0;
         std::vector<Instruction*>* actualIns = 0;
-        if(srcBBs.find(curBB)!=srcBBs.end())
-            srcIns = srcBBs[curBB];
+        if(srcBBs->find(curBB)!=srcBBs->end())
+            srcIns = (*srcBBs)[curBB];
 
-        if(insBBs.find(curBB)!=insBBs.end())
-            actualIns = insBBs[curBB];
+        if(insBBs->find(curBB)!=insBBs->end())
+            actualIns = (*insBBs)[curBB];
 
 
         for(BasicBlock::iterator insPt = curBB->begin(), insEnd = curBB->end(); insPt != insEnd; insPt++)
@@ -835,22 +856,49 @@ void PartitionGen::generateCFromBBList(DAGPartition* pa)
                 if(insPt->isTerminator())
                 {
 
+                    bool thereIsPartitionReceiving = false;
+                    std::string channelStr;
+
                     // are there other partitions having the same basicblock
                     for(unsigned sid = 0; sid < partitions.size(); sid++)
                     {
                         DAGPartition* destPart = partitions.at(sid);
+                        if(curInsPart == destPart)
+                            continue;
                         std::vector<BasicBlock*>* destPartBBs = allBBsInPartition[destPart];
+
                         if(std::find(destPartBBs->begin(),destPartBBs->end(),curBB)!=destPartBBs->end())
                         {
-                            //we need fanout
+                            // add the branchtage channel
+                            addChannelAndDepPartition(thereIsPartitionReceiving,insPt,channelStr,destPart,0);
+
                         }
                     }
                 }
-                for(Value::use_iterator curUser = insPt->use_begin(), endUser = insPt->use_end(); curUser != endUser; ++curUser )
+                else
                 {
+                    bool thereIsPartitionReceiving = false;
+                    std::string channelStr;
 
+                    for(Value::use_iterator curUser = insPt->use_begin(), endUser = insPt->use_end(); curUser != endUser; ++curUser )
+                    {
+                        // now we look at each use, these instruction belows to some DAGNode which belongs to some
+                        // DAGPartition
+                        if(!isa<Instruction>(*curUser))
+                        {
+                            errs()<<"instruction used by non instruction\n";
+                            exit(1);
+                        }
+
+                        DAGPartition* curUsePart = getPartitionFromIns(cast<Instruction>(*curUser));
+                        if(curUsePart == curInsPart)
+                            continue;
+
+                         // add the data channel to the database
+                         addChannelAndDepPartition(thereIsPartitionReceiving,insPt,channelStr,curUsePart,1);
+
+                    }
                 }
-
 
                 std::string actualInsStr = generateSingleStatement(insPt,false,false,ins2Def);
                 curBBStrArray->push_back(actualInsStr);
@@ -865,7 +913,7 @@ void PartitionGen::generateCFromBBList(DAGPartition* pa)
 
 
 }
-*/
+
 // we have a data structure to map instruction to InstructionGraphNodes
 // when we do the partitioning, we
 bool PartitionGen::runOnFunction(Function &F) {

@@ -23,5 +23,19 @@ std::string replaceAllDotWUS(std::string original)
    std::replace( original.begin(), original.end(), '.', '_');
 
 }
-
+std::string generateChannelString(int type, int& id, std::string source)
+{
+    // type 0, branch tage channel
+    // type 1, data channel
+    std::string channelTypeStr;
+    if(type == 0)
+        channelTypeStr = "brTag";
+    else
+        channelTypeStr = "data";
+    std::ostringstream ss;
+    ss << id;
+    id++;
+    std::string final = channelTypeStr+ss.str()+source;
+    return final;
+}
 
