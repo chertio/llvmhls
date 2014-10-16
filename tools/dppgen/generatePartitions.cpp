@@ -80,7 +80,8 @@ namespace {
         return a;
     }
 
-    static std::string generateSingleStatement(Instruction* curIns, bool remoteSrc, bool remoteDst, InsMap2Str& ins2def)
+    static std::string generateSingleStatement(Instruction* curIns, bool remoteSrc, bool remoteDst, InsMap2Str& ins2def,
+                                               int seqNum,std::vector<std::string>& partitionDecStr)
     {
         // first we ll see if the output value is defined already
 
@@ -88,15 +89,52 @@ namespace {
         // the Q has name "'brTag'Q", the actual tag has name 'brTag'
         // brTag name is formed by concat the srcBB of branch and the dstBBs
         // it is gonna be a read, then a switch -- with multiple dest
-        if(curIns->isTerminator())
+        int channelType = (curIns->isTerminator())? 0:1;
+
+        std::string potentialChannelStr = generateChannelString(channelType,seqNum,curIns->getParent()->getName());
+        std::string varDecStr = generateVariableStr(ins,seqNum);
+        partitionDecStr.push_back(varDecStr);
+        std::string varName = generateVariableName(ins,seqNum);
+        ins2def[curIns]=varName;
+
+        std::string rtStr;
+        if(curIns->isTerminator()&&!isa<ReturnInst>(*curIns))
         {
+            // as a terminator, we should check if this dude has
+            // any successor
+
+            unsigned numSuc = cast<TerminatorInst>(*curIns).getNumSuccessors();
+            assert(numSuc < 255);
+
+
             if(remoteSrc)
             {
                 // we need to get remote target tag
+                rtStr+="pop("+potentialChannelStr+","+varName+");\n";
+                rtStr+="switch("+varName+")\n";
+                rtStr+="{\n";
+
+                for(unsigned int sucCount=0; sucCount<numSuc; sucCount++ )
+                {
+                    BasicBlock* curSuc = cast<TerminatorInst>(*curIns).getSuccessor(sucCount);
+                    rtStr+="\tcase "+int2Str(sucCount)+":\n";
+                    rtStr+="\tgoto "+curSuc->getName()+";\n";
+                }
+
+                rtStr+="}\n";
 
             }
+            else
+            {
+                // this is local source, so we figure out the operand instruction
+                // use, it is the first operand normally
+
+
+            }
+
+
             // we dont need the the value
-            return generateTerminatorStr(curIns);
+            //return generateTerminatorStr(curIns);
         }
 
         // if it is remote src
@@ -222,7 +260,7 @@ namespace {
       // each partition's bb list
       partitionToBBList allBBsInPartition;
 
-      int channelID;
+
       InsMap2Str ins2Channel;
       strMap2PartitionVector channelFanOutPartition;
 
@@ -776,11 +814,11 @@ bool PartitionGen::DFSFindPartitionCycle(DAGPartition* dp)
     return false;
 }
 void PartitionGen::addChannelAndDepPartition(bool &thereIsPartitionReceiving, Instruction* insPt,
-                                             std::string& channelStr, DAGPartition* destPart,int channelType)
+                                             std::string& channelStr, DAGPartition* destPart,int channelType, int insSeqNum)
 {
     if(!thereIsPartitionReceiving)
     {
-        channelStr= generateChannelString(channelType,this->channelID,replaceAllDotWUS(insPt->getParent()->getName()));
+        channelStr= generateChannelString(channelType,insSeqNum,insPt->getParent()->getName());
         ins2Channel[insPt]= channelStr;
 
     }
@@ -806,14 +844,16 @@ void PartitionGen::generateCFromBBList(DAGPartition* pa)
 
 
 
-    BBMap2outStr bb2Str;
+    //BBMap2outStr bb2Str;
+    std::vector<std::vector<std::string>*> curPartitionBBStr;
+    std::vector<std::string> partitionDecStr;
     for(unsigned int curBBInd = 0; curBBInd < BBList->size(); curBBInd++)
     {
         BasicBlock* curBB = BBList->at(curBBInd);
         std::vector<std::string>* curBBStrArray = new std::vector<std::string>();
-        bb2Str[curBB] = curBBStrArray;
-
-        std::string bbname = replaceAllDotWUS( curBB->getName());
+        //bb2Str[curBB] = curBBStrArray;
+        curPartitionBBStr.push_back(curBBStrArray);
+        std::string bbname =  curBB->getName();
         bbname.append(":\n");
         curBBStrArray->push_back(bbname);
 
@@ -821,7 +861,10 @@ void PartitionGen::generateCFromBBList(DAGPartition* pa)
         {
             // basicblock takes in a branch tag only -- definitely not sending stuff to remote
             Instruction* curTerm = curBB->getTerminator();
-            std::string termStr = generateSingleStatement(curTerm,true,false,ins2Def);
+            // shouldnt be return coz the return block isnt a path
+            assert(!isa<ReturnInst>(*curTerm));
+            int seqNum = curTerm->getParent()->getInstList().size()-1;
+            std::string termStr = generateSingleStatement(curTerm,true,false,ins2Def,seqNum,partitionDecStr);
             curBBStrArray->push_back(termStr);
             continue;
         }
@@ -832,16 +875,32 @@ void PartitionGen::generateCFromBBList(DAGPartition* pa)
 
         if(insBBs->find(curBB)!=insBBs->end())
             actualIns = (*insBBs)[curBB];
-
-
+    
+        // now this bb is either a srcBB or actualInsBB
+        int instructionSeq = -1;
         for(BasicBlock::iterator insPt = curBB->begin(), insEnd = curBB->end(); insPt != insEnd; insPt++)
         {
+            instructionSeq ++;
+            // it is possible that this instruction is not in srcBB nor insBB
+            // then this is not converted to c, but if this is the terminator
+            // we need t read the branch tag unless its return
+            if(srcIns!=0 && (std::find(srcIns->begin(),srcIns->end(), insPt)==srcIns->end()) &&
+               actualIns!=0 && (std::find(actualIns->begin(),actualIns->end(),insPt)==actualIns->end())
+             )
+            {
+                if(insPt->isTerminator() && !isa<ReturnInst>(*insPt) )
+                {
+                    std::string srcInsStr = generateSingleStatement(insPt,true,false,ins2Def,instructionSeq,partitionDecStr);
+                    curBBStrArray->push_back(srcInsStr);
+                }
+            }
+
             if(srcIns!=0 && !(std::find(srcIns->begin(),srcIns->end(), insPt)==srcIns->end()))
             {
                 // this instruction is in the srcBB, meaning its output is used by this partition
                 // meaning the we should insert a blocking read from FIFO
 
-                std::string srcInsStr = generateSingleStatement(insPt,true,false,ins2Def);
+                std::string srcInsStr = generateSingleStatement(insPt,true,false,ins2Def,instructionSeq,partitionDecStr);
                 curBBStrArray->push_back(srcInsStr);
             }
 
@@ -853,11 +912,10 @@ void PartitionGen::generateCFromBBList(DAGPartition* pa)
                 // now check all its user to see if it is being used by others
                 // if it is then we should also add an entry in the channel list
                 // also if this is an terminator, it may not have any use?
-                if(insPt->isTerminator())
+                bool thereIsPartitionReceiving = false;
+                std::string channelStr;
+                if(insPt->isTerminator()&& !isa<ReturnInst>(*insPt))
                 {
-
-                    bool thereIsPartitionReceiving = false;
-                    std::string channelStr;
 
                     // are there other partitions having the same basicblock
                     for(unsigned sid = 0; sid < partitions.size(); sid++)
@@ -870,15 +928,13 @@ void PartitionGen::generateCFromBBList(DAGPartition* pa)
                         if(std::find(destPartBBs->begin(),destPartBBs->end(),curBB)!=destPartBBs->end())
                         {
                             // add the branchtage channel
-                            addChannelAndDepPartition(thereIsPartitionReceiving,insPt,channelStr,destPart,0);
+                            addChannelAndDepPartition(thereIsPartitionReceiving,insPt,channelStr,destPart,0,instructionSeq);
 
                         }
                     }
                 }
                 else
                 {
-                    bool thereIsPartitionReceiving = false;
-                    std::string channelStr;
 
                     for(Value::use_iterator curUser = insPt->use_begin(), endUser = insPt->use_end(); curUser != endUser; ++curUser )
                     {
@@ -895,12 +951,12 @@ void PartitionGen::generateCFromBBList(DAGPartition* pa)
                             continue;
 
                          // add the data channel to the database
-                         addChannelAndDepPartition(thereIsPartitionReceiving,insPt,channelStr,curUsePart,1);
+                         addChannelAndDepPartition(thereIsPartitionReceiving,insPt,channelStr,curUsePart,1,instructionSeq);
 
                     }
                 }
 
-                std::string actualInsStr = generateSingleStatement(insPt,false,false,ins2Def);
+                std::string actualInsStr = generateSingleStatement(insPt,false,thereIsPartitionReceiving,ins2Def,instructionSeq,partitionDecStr);
                 curBBStrArray->push_back(actualInsStr);
             }
 
@@ -930,6 +986,11 @@ bool PartitionGen::runOnFunction(Function &F) {
             ss << "BB_Explicit_" <<bbCount;
             bbi->setName(ss.str());
             bbCount+=1;
+        }
+        else
+        {
+            std::string legal = replaceAllDotWUS(bbi->getName());
+            bbi->setName(legal);
         }
     }
     for(Function::iterator bbi = F.begin(), bbe = F.end(); bbi!=bbe; ++bbi)
