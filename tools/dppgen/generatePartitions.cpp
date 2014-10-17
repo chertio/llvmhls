@@ -19,6 +19,7 @@
 #include "llvm/Support/raw_ostream.h"
 #include "InstructionGraph.h"
 #include "generatePartitionsUtil.h"
+#include "generateCInstruction.h"
 #include "llvm/Analysis/Dominators.h"
 #include "llvm/Analysis/PostDominators.h"
 #include <vector>
@@ -80,7 +81,7 @@ namespace {
         return a;
     }
 
-    static std::string generateSingleStatement(Instruction* curIns, bool remoteSrc, bool remoteDst, InsMap2Str& ins2def,
+    static std::string generateSingleStatement(Instruction* curIns, bool remoteSrc, bool remoteDst,
                                                int seqNum,std::vector<std::string>& partitionDecStr)
     {
         // first we ll see if the output value is defined already
@@ -89,45 +90,34 @@ namespace {
         // the Q has name "'brTag'Q", the actual tag has name 'brTag'
         // brTag name is formed by concat the srcBB of branch and the dstBBs
         // it is gonna be a read, then a switch -- with multiple dest
-        int channelType = (curIns->isTerminator())? 0:1;
-
-        std::string potentialChannelStr = generateChannelString(channelType,seqNum,curIns->getParent()->getName());
         std::string varDecStr = generateVariableStr(ins,seqNum);
         partitionDecStr.push_back(varDecStr);
         std::string varName = generateVariableName(ins,seqNum);
-        ins2def[curIns]=varName;
 
         std::string rtStr;
+        //special case when it is a remote control flow change
+        //read locally
         if(curIns->isTerminator()&&!isa<ReturnInst>(*curIns))
         {
             // as a terminator, we should check if this dude has
             // any successor
-
             unsigned numSuc = cast<TerminatorInst>(*curIns).getNumSuccessors();
             assert(numSuc < 255);
-
-
             if(remoteSrc)
             {
-                // we need to get remote target tag
-                rtStr+="pop("+potentialChannelStr+","+varName+");\n";
-                rtStr+="switch("+varName+")\n";
-                rtStr+="{\n";
-
-                for(unsigned int sucCount=0; sucCount<numSuc; sucCount++ )
-                {
-                    BasicBlock* curSuc = cast<TerminatorInst>(*curIns).getSuccessor(sucCount);
-                    rtStr+="\tcase "+int2Str(sucCount)+":\n";
-                    rtStr+="\tgoto "+curSuc->getName()+";\n";
-                }
-
-                rtStr+="}\n";
+                return generateGettingRemoteBranchTag(*curIns,seqNum);
 
             }
             else
             {
-                // this is local source, so we figure out the operand instruction
-                // use, it is the first operand normally
+                // we generate the local non return terminator
+                // and possibly write the tag into the channel
+                //FIXME: there will be cases where the branch may take the execution
+                // out of the partition, we need to add an END: label later, to collect
+                // all these
+                rtStr = generateControlFlow(cast<TerminatorInst>(*curIns),remoteDst,seqNum);
+
+
 
 
             }
@@ -136,6 +126,10 @@ namespace {
             // we dont need the the value
             //return generateTerminatorStr(curIns);
         }
+        // if this is return, it should be pretty easy.
+
+
+        // if this is
 
         // if it is remote src
         std::string a = "f";
@@ -840,7 +834,7 @@ void PartitionGen::generateCFromBBList(DAGPartition* pa)
     BBMap2Ins* insBBs = insBBsInPartition[pa];
     std::vector<BasicBlock*>* BBList = allBBsInPartition[pa];
     // we can generate the definition string, and create a mapping of instruction to def string
-    InsMap2Str ins2Def;
+    //InsMap2Str ins2Def; // wont be necessary
 
 
 
@@ -864,7 +858,7 @@ void PartitionGen::generateCFromBBList(DAGPartition* pa)
             // shouldnt be return coz the return block isnt a path
             assert(!isa<ReturnInst>(*curTerm));
             int seqNum = curTerm->getParent()->getInstList().size()-1;
-            std::string termStr = generateSingleStatement(curTerm,true,false,ins2Def,seqNum,partitionDecStr);
+            std::string termStr = generateSingleStatement(curTerm,true,false,seqNum,partitionDecStr);
             curBBStrArray->push_back(termStr);
             continue;
         }
@@ -890,7 +884,7 @@ void PartitionGen::generateCFromBBList(DAGPartition* pa)
             {
                 if(insPt->isTerminator() && !isa<ReturnInst>(*insPt) )
                 {
-                    std::string srcInsStr = generateSingleStatement(insPt,true,false,ins2Def,instructionSeq,partitionDecStr);
+                    std::string srcInsStr = generateSingleStatement(insPt,true,false,instructionSeq,partitionDecStr);
                     curBBStrArray->push_back(srcInsStr);
                 }
             }
@@ -900,7 +894,7 @@ void PartitionGen::generateCFromBBList(DAGPartition* pa)
                 // this instruction is in the srcBB, meaning its output is used by this partition
                 // meaning the we should insert a blocking read from FIFO
 
-                std::string srcInsStr = generateSingleStatement(insPt,true,false,ins2Def,instructionSeq,partitionDecStr);
+                std::string srcInsStr = generateSingleStatement(insPt,true,false,instructionSeq,partitionDecStr);
                 curBBStrArray->push_back(srcInsStr);
             }
 
@@ -940,23 +934,17 @@ void PartitionGen::generateCFromBBList(DAGPartition* pa)
                     {
                         // now we look at each use, these instruction belows to some DAGNode which belongs to some
                         // DAGPartition
-                        if(!isa<Instruction>(*curUser))
-                        {
-                            errs()<<"instruction used by non instruction\n";
-                            exit(1);
-                        }
+                        assert(isa<Instruction>(*curUser),"instruction used by non instruction\n");
 
                         DAGPartition* curUsePart = getPartitionFromIns(cast<Instruction>(*curUser));
                         if(curUsePart == curInsPart)
                             continue;
-
                          // add the data channel to the database
                          addChannelAndDepPartition(thereIsPartitionReceiving,insPt,channelStr,curUsePart,1,instructionSeq);
-
                     }
                 }
 
-                std::string actualInsStr = generateSingleStatement(insPt,false,thereIsPartitionReceiving,ins2Def,instructionSeq,partitionDecStr);
+                std::string actualInsStr = generateSingleStatement(insPt,false,thereIsPartitionReceiving,instructionSeq,partitionDecStr);
                 curBBStrArray->push_back(actualInsStr);
             }
 
