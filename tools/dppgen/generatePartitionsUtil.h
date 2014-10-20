@@ -31,6 +31,6 @@ std::string int2Str(int in)
 std::string replaceAllDotWUS(std::string original)
 {
    std::replace( original.begin(), original.end(), '.', '_');
-
+   return original;
 }
 #endif

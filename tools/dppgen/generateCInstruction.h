@@ -10,10 +10,11 @@
 #include "llvm/Support/raw_ostream.h"
 #include "InstructionGraph.h"
 #include "generatePartitionsUtil.h"
+#include <string>
 #define ENDBLOCK "END"
 std::string generateVariableName(Instruction* ins, int seqNum)
 {
-    std::string rtVarName=ins->getParent()->getName();
+    std::string rtVarName= ins->getParent()->getName();
 
     rtVarName = rtVarName+int2Str(seqNum);
     return rtVarName;
@@ -47,7 +48,7 @@ std::string generateVariableType(Instruction* ins)
         return varType;
 
     }
-    switch(ins->getType())
+    switch(ins->getType()->getTypeID())
     {
         case Type::VoidTyID:
             varType="";
@@ -97,7 +98,8 @@ std::string generateVariableStr(Instruction* ins, int seqNum)
     if(varType.length()==0)
         rtVarName="";
     std::string rtStr;
-    rtStr = varType+" "+rtVarName+";";
+    rtStr = varType+" ";
+    rtStr = rtStr +rtVarName+";";
     return rtStr;
 }
 
@@ -120,7 +122,7 @@ std::string generateGenericSwitchStatement(std::string varName,bool explicitCase
                                            std::vector<std::string>* tgtLabel,std::string defaultDest,
                                            bool remoteDst=false,std::string channelName="", unsigned int defaultSeq=0)
 {
-    assert((!explicitCase)||(caseVal->size()==tgtLabel->size()),"unmatched dest in switch");
+    assert((!explicitCase)||(caseVal->size()==tgtLabel->size()));
     std::string rtStr="";
     rtStr+= rtStr+"switch("+varName+")\n";
     rtStr+="{\n";
@@ -158,7 +160,7 @@ std::string generateGettingRemoteBranchTag(TerminatorInst& curIns, int seqNum)
     std::string rtStr="";
     int channelType =  0;
     std::string channelStr = generateChannelString(channelType,seqNum,curIns.getParent()->getName());
-    std::string varName = generateVariableName(ins,seqNum);
+    std::string varName = generateVariableName(&curIns,seqNum);
     unsigned numSuc = curIns.getNumSuccessors();
     assert(numSuc < 255 && numSuc>0);
 
@@ -167,53 +169,157 @@ std::string generateGettingRemoteBranchTag(TerminatorInst& curIns, int seqNum)
     // if this is a unconditional branch we just do it
     if(numSuc==1)
     {
-        BasicBlock* curSuc = cast<TerminatorInst>(*curIns).getSuccessor(0);
-        rtStr=rtStr+"goto "+curSuc->getName()+";\n";
+        BasicBlock* curSuc = curIns.getSuccessor(0);
+        std::string sucName =  curSuc->getName();
+        rtStr= rtStr+"goto ";
+        rtStr= rtStr+ sucName;
+        rtStr = rtStr +";\n";
         return rtStr;
     }
     std::vector<std::string> allTgt;
     for(unsigned int sucCount=0; sucCount<numSuc; sucCount++ )
     {
-        BasicBlock* curSuc = cast<TerminatorInst>(*curIns).getSuccessor(sucCount);
-        allTgt.pop_back(curSuc->getName());
+        BasicBlock* curSuc = curIns.getSuccessor(sucCount);
+        allTgt.push_back(   curSuc->getName() );
     }
     rtStr = rtStr+generateGenericSwitchStatement(varName,0,0,&allTgt,ENDBLOCK);
     return rtStr;
 
 }
+std::string generateGettingRemoteData(Instruction& curIns, int seqNum)
+{
+    std::string rtStr="";
+    int channelType =  1;
+    std::string channelStr = generateChannelString(channelType,seqNum,curIns.getParent()->getName());
+    std::string varName = generateVariableName(&curIns,seqNum);
+    rtStr = rtStr+"pop("+channelStr+","+varName+");\n";
+    return rtStr;
+}
+
+std::string generateOperandStr(Value* operand)
+{
+    std::string rtStr;
+    if(isa<Instruction>(*operand))
+    {
+        Instruction& curIns = cast<Instruction>(*operand);
+        // got to generate the varname
+        int seqNum = getInstructionSeqNum(&curIns);
+        std::string varName = generateVariableName(&curIns,seqNum);
+        rtStr = varName;
+    }
+    else
+    {
+        rtStr = operand->getName();
+    }
+    return rtStr;
+}
+
+std:: string generateBinaryOperations(BinaryOperator& curIns, bool remoteDst,int seqNum )
+{
+    std::string rtStr="";
+    int channelType =  1;
+    std::string channelStr = generateChannelString(channelType,seqNum,curIns.getParent()->getName());
+    std::string varName = generateVariableName(&curIns,seqNum);
+    // need to get the operand
+    // they can be instruction, they can be functional argument or they can be
+    // constant -- we need to get operand var name when
+    // two operand
+    Value* firstOperand = curIns.getOperand(0);
+    Value* secondOperand = curIns.getOperand(1);
+    std::string firstOperandStr = generateOperandStr(firstOperand);
+    std::string secondOperandStr = generateOperandStr(secondOperand);
+
+    // generate the actual computation
+    switch(curIns.getOpcode())
+    {
+    case Instruction::Add:
+    case Instruction::FAdd:
+        rtStr = rtStr + firstOperandStr + "+";
+        break;
+    case Instruction::Sub:
+    case Instruction::FSub:
+        rtStr = rtStr + firstOperandStr + "-";
+        break;
+    case Instruction::Mul:
+    case Instruction::FMul:
+        rtStr = rtStr + firstOperandStr + "*";
+        break;
+    case Instruction::UDiv:
+    case Instruction::SDiv:
+    case Instruction::FDiv:
+        rtStr = rtStr + firstOperandStr + "/";
+        break;
+    case Instruction::URem:
+    case Instruction::SRem:
+    case Instruction::FRem:
+        rtStr = rtStr + firstOperandStr + "%";
+        break;
+    case Instruction::Shl:
+        rtStr = rtStr + firstOperandStr + "<<";
+        break;
+    case Instruction::LShr:
+    case Instruction::AShr:
+        rtStr = rtStr + firstOperandStr + ">>";
+        break;
+    case Instruction::And:
+        rtStr = rtStr + firstOperandStr + "&";
+        break;
+    case Instruction::Or:
+        rtStr = rtStr + firstOperandStr + "|";
+        break;
+    case Instruction::Xor:
+        rtStr = rtStr + firstOperandStr +"^";
+        break;
+    default:
+        errs()<<"Unrecognized binary Ops\n";
+        exit(1);
+
+    }
+    rtStr = rtStr + secondOperandStr+ ";\n";
+    if(remoteDst)
+    {
+        rtStr=rtStr+"push ("+channelStr+","+varName+");\n";
+    }
+    return rtStr;
+}
 
 std::string generateControlFlow(TerminatorInst& curIns,bool remoteDst, int seqNum)
 {
     // we currently deal with br and switch only
-    assert(isa<BranchInst>(curIns) || isa<SwitchInst>(curIns) , "unhandled control flow statement");
+    assert(isa<BranchInst>(curIns) || isa<SwitchInst>(curIns) );
     std::string rtStr="";
-    std::string channelName = generateChannelString(0, seqNum,curIns->getParent()->getName());
+    std::string channelName = generateChannelString(0, seqNum, curIns.getParent()->getName());
     if(isa<BranchInst>(curIns))
     {
-        BranchInst& bi = cast<BranchInst>curIns;
+        BranchInst& bi = cast<BranchInst>(curIns);
+        std::string firstSucName= bi.getSuccessor(0)->getName();
         if(bi.isUnconditional())
         {
             if(remoteDst)
             {
                 rtStr=rtStr+"push ("+channelName+",1);\n";
             }
-            rtStr=rtStr+"goto "+ bi.getSuccessor(0)->getName()+";\n";
+            rtStr=rtStr+"goto ";
+
+            rtStr=rtStr+firstSucName +";\n";
         }
         else
         {
             Value* condVal = bi.getCondition();
-            assert(isa<Instruction>(*condVal),"br variable not from instruction");
+            assert(isa<Instruction>(*condVal));
             Instruction* valGenIns = &(cast<Instruction>(*condVal));
             std::string switchVar = generateVariableName(valGenIns);
             rtStr="if("+switchVar+"){\n";
             if(remoteDst)
                 rtStr=rtStr+"push ("+channelName+",0);\n";
-            rtStr=rtStr+"goto "+bi.getSuccessor(0)->getName()+";}\n";
+            rtStr=rtStr+"goto "+firstSucName+";}\n";
 
-            rtStr="else{\n";
+            rtStr=rtStr+"else{\n";
             if(remoteDst)
                 rtStr=rtStr+"push ("+channelName+",1);\n";
-            rtStr=rtStr+"goto "+bi.getSuccessor(1)->getName()+";}\n";
+
+            std::string secondSucName = bi.getSuccessor(1)->getName();
+            rtStr=rtStr+"goto "+secondSucName+";}\n";
 
         }
 
@@ -222,7 +328,7 @@ std::string generateControlFlow(TerminatorInst& curIns,bool remoteDst, int seqNu
     {
         // this is when its a switch
         // we need to build a set of potential destination/case values
-        SwitchInst& si = cast<SwitchInst>curIns;
+        SwitchInst& si = cast<SwitchInst>(curIns);
         std::vector<std::string> caseVal;
         std::vector<std::string> allTgt;
         std::string defaultDest=ENDBLOCK;
@@ -233,63 +339,41 @@ std::string generateControlFlow(TerminatorInst& curIns,bool remoteDst, int seqNu
             ConstantInt* curCaseVal = si.findCaseDest(curBB);
             if(curCaseVal==NULL)
             {
-                defaultDest = curBB->getName();
+                defaultDest =  curBB->getName();
                 defaultSeq=sucInd;
             }
             else
             {
-                allTgt.push_back(curBB->getName());
-                caseVal.push_back(curCaseVal->getValue().toString());
+                allTgt.push_back( curBB->getName());
+                caseVal.push_back(curCaseVal->getValue().toString(10,true));
             }
 
         }
-        std::string varName = generateVariableName(curIns,seqNum);
+        std::string varName = generateVariableName(&curIns,seqNum);
         rtStr = generateGenericSwitchStatement(varName,true,&caseVal,&allTgt,defaultDest,true,channelName,defaultSeq);
     }
     return rtStr;
 
     // for branch, we can convert it to switch statement as well
-    Value* varGen = curIns.getOperand(0);
-    // let's figure out the
-    assert(isa<Instruction>(*varGen),"switch variable not from instruction");
-    Instruction* valGenIns = &(cast<Instruction>(*varGen));
 
-    std::string switchVar = generateVariableName(valGenIns);
-    std::string rtStr;
-    // if there is remote, we got to decide the output first
-
-    // this is local source, so we figure out the operand instruction
-    // use, it is the first operand normally
-    for(unsigned int operandInd = 0; operandInd<curIns->getNumOperands(); operandInd++)
-    {
-        Value* curOp = curIns->getOperand(operandInd);
-        if(curOp.getType()==Type::IntegerTyID)
-        {
-            assert(isa<Instruction>(curOp));
-            Instruction* srcIns =&(cast<Instruction>(curOp));
-            // now we find the varName corresponding to srcIns
-            std::string varNameFromSrc = generateVariableName(srcIns);
-
-
-        }
-    }
-
-    rtStr+="switch("+varName+")\n";
-    rtStr+="{\n";
-
-    for(unsigned int sucCount=0; sucCount<numSuc; sucCount++ )
-    {
-        BasicBlock* curSuc = cast<TerminatorInst>(*curIns).getSuccessor(sucCount);
-        rtStr+="\tcase "+int2Str(sucCount)+":\n";
-        rtStr+="\tgoto "+curSuc->getName()+";\n";
-    }
-
-    rtStr+="}\n";
 
 }
 std::string generateReturn(ReturnInst& curIns)
 {
-
+    std::string rtStr="return ";
+    if(curIns.getReturnValue()->getType()->getTypeID()==Type::VoidTyID)
+    {
+        return rtStr+"void;\n";
+    }
+    else
+    {
+        // find the variable name
+        Value* retVal = curIns.getReturnValue();
+        assert(isa<Instruction>(*condVal));
+        Instruction* valGenIns = &(cast<Instruction>(*retVal));
+        std::string retVar = generateVariableName(valGenIns);
+        rtStr=rtStr+retVar+";\n";
+    }
 }
 
 #endif
