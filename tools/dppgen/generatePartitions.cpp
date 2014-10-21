@@ -140,9 +140,12 @@ namespace {
             else
                 rtStr =generateBinaryOperations(cast<BinaryOperator>(*curIns), remoteDst, seqNum);
         }
-        else
+        else if(curIns->getOpcode()<=Instruction::MemoryOpsEnd &&curIns->getOpcode() >= Instruction::MemoryOpsBegin  )
         {
-
+            if(remoteSrc)
+                rtStr = generateGettingRemoteData(*curIns,seqNum);
+            else
+                rtStr = generateMemoryOperations(*curIns,remoteDst, seqNum);
         }
 
         // if this is

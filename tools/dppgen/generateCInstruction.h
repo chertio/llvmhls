@@ -78,6 +78,10 @@ std::string generateVariableType(Instruction* ins)
         //StructTyID,      ///< 12: Structures
         //ArrayTyID,       ///< 13: Arrays
         case Type::PointerTyID:
+        // well this is likely a getElementPtr thing
+        // we need to find out what type it is pointing to
+
+
             varType ="void* ";
             break;
         //VectorTyID,      ///< 15: SIMD 'packed' format, or other vector type
@@ -87,7 +91,12 @@ std::string generateVariableType(Instruction* ins)
     }
 
 }
-
+std::string generatePushOp(std::string varName, std::string channelName)
+{
+    std::string rtStr;
+    rtStr=rtStr+"push ("+channelName+","+varName+");\n";
+    return rtStr;
+}
 
 std::string generateVariableStr(Instruction* ins, int seqNum)
 {
@@ -118,6 +127,24 @@ std::string generateChannelString(int type, int seqNum, std::string source)
     return final;
 }
 
+std::string generateOperandStr(Value* operand)
+{
+    std::string rtStr;
+    if(isa<Instruction>(*operand))
+    {
+        Instruction& curIns = cast<Instruction>(*operand);
+        // got to generate the varname
+        int seqNum = getInstructionSeqNum(&curIns);
+        std::string varName = generateVariableName(&curIns,seqNum);
+        rtStr = varName;
+    }
+    else
+    {
+        rtStr = operand->getName();
+    }
+    return rtStr;
+}
+
 std::string generateGenericSwitchStatement(std::string varName,bool explicitCase, std::vector<std::string>* caseVal,
                                            std::vector<std::string>* tgtLabel,std::string defaultDest,
                                            bool remoteDst=false,std::string channelName="", unsigned int defaultSeq=0)
@@ -139,7 +166,9 @@ std::string generateGenericSwitchStatement(std::string varName,bool explicitCase
         {
             // we need to push something to the channel
             // this should be which target it is
-            rtStr+="\tpush ("+channelName+","+int2Str(successorSeqNum)+");\n";
+            rtStr+="\t";
+            rtStr+=generatePushOp(int2Str(successorSeqNum),channelName);
+
 
         }
         rtStr+="\tgoto "+tgtLabel->at(sucCount)+";\n";
@@ -149,7 +178,8 @@ std::string generateGenericSwitchStatement(std::string varName,bool explicitCase
     rtStr+="default:\n";
     if(remoteDst)
     {
-        rtStr+="\tpush ("+channelName+","+int2Str(defaultSeq)+");\n";
+        rtStr+="\t";
+        rtStr+=generatePushOp(int2Str(defaultSeq),channelName);
     }
     rtStr+="\tgoto "+defaultDest+ ";}\n";
     return rtStr;
@@ -196,22 +226,51 @@ std::string generateGettingRemoteData(Instruction& curIns, int seqNum)
     return rtStr;
 }
 
-std::string generateOperandStr(Value* operand)
+std::string generateMemoryOperations(Instruction& curIns, bool remoteDst, int seqNum)
 {
-    std::string rtStr;
-    if(isa<Instruction>(*operand))
+    std::string rtStr="";
+    int channelType =  1;
+    std::string channelStr = generateChannelString(channelType,seqNum,curIns.getParent()->getName());
+    std::string varName = generateVariableName(&curIns,seqNum);
+    switch(curIns.getOpcode())
     {
-        Instruction& curIns = cast<Instruction>(*operand);
-        // got to generate the varname
-        int seqNum = getInstructionSeqNum(&curIns);
-        std::string varName = generateVariableName(&curIns,seqNum);
-        rtStr = varName;
+    case Instruction::Alloca:
+        // just generate a declaration
+        rtStr = generateVariableStr(&curIns,seqNum);
+        break;
+    case Instruction::Load:
+        LoadInst& li = cast<LoadInst>(curIns);
+        Value* ptrVal = li.getPointerOperand();
+        std::string ptrStr = generateOperandStr(ptrVal);
+        rtStr = rtStr + varName+"= *("+ptrStr+");\n";
+        break;
+    case Instruction::Store:
+        StoreInst& si = cast<StoreInst>(curIns);
+        Value* ptrVal = si.getPointerOperand();
+        Value* val = si.getValueOperand();
+        std::string ptrStr = generateOperandStr(ptrVal);
+        std::string valStr = generateOperandStr(val);
+        rtStr = rtStr + "*("+ptrStr+") = "+valStr+";\n";
+
+        break;
+    case Instruction::GetElementPtr:
+        GetElementPtrInst& gepi = cast<GetElementPtrInst>(curIns);
+        Value* ptr = gepi.getPointerOperand();
+
+        std::string ptrStr = generateOperandStr( ptr);
+
+        SmallVector<Value*, 16> Idxs(gepi.idx_begin(), gepi.idx_end());
+        Type *ElTy = GetElementPtrInst::getIndexedType(gepi.getPointerOperandType(), Idxs);
+
+        ElTy->getTypeID()
+
+        break;
+    default:
+        errs()<<"unhandled instruction\n";
+        exit(0);
     }
-    else
-    {
-        rtStr = operand->getName();
-    }
-    return rtStr;
+
+
 }
 
 std:: string generateBinaryOperations(BinaryOperator& curIns, bool remoteDst,int seqNum )
@@ -278,7 +337,7 @@ std:: string generateBinaryOperations(BinaryOperator& curIns, bool remoteDst,int
     rtStr = rtStr + secondOperandStr+ ";\n";
     if(remoteDst)
     {
-        rtStr=rtStr+"push ("+channelStr+","+varName+");\n";
+        rtStr=rtStr+generatePushOp(varName,channelStr);
     }
     return rtStr;
 }
@@ -297,7 +356,7 @@ std::string generateControlFlow(TerminatorInst& curIns,bool remoteDst, int seqNu
         {
             if(remoteDst)
             {
-                rtStr=rtStr+"push ("+channelName+",1);\n";
+                rtStr=rtStr+generatePushOp("1",channelName);
             }
             rtStr=rtStr+"goto ";
 
@@ -311,12 +370,12 @@ std::string generateControlFlow(TerminatorInst& curIns,bool remoteDst, int seqNu
             std::string switchVar = generateVariableName(valGenIns);
             rtStr="if("+switchVar+"){\n";
             if(remoteDst)
-                rtStr=rtStr+"push ("+channelName+",0);\n";
+                rtStr=rtStr+generatePushOp("0",channelName);
             rtStr=rtStr+"goto "+firstSucName+";}\n";
 
             rtStr=rtStr+"else{\n";
             if(remoteDst)
-                rtStr=rtStr+"push ("+channelName+",1);\n";
+                rtStr=rtStr+generatePushOp(1,channelName);
 
             std::string secondSucName = bi.getSuccessor(1)->getName();
             rtStr=rtStr+"goto "+secondSucName+";}\n";
