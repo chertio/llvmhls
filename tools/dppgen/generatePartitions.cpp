@@ -39,7 +39,7 @@ namespace {
     typedef std::map<DAGPartition*, BBMap2Ins*> partitionToBB2InsInfo;
     typedef std::map<DAGPartition*, std::vector<BasicBlock*>*> partitionToBBList;
 
-    typedef std::map<BasicBlock*, std::vector<std::string>*> BBMap2outStr;
+
 
     typedef std::map<Instruction*, std::string> InsMap2Str;
 
@@ -82,7 +82,7 @@ namespace {
     }
 
     static std::string generateSingleStatement(Instruction* curIns, bool remoteSrc, bool remoteDst,
-                                               int seqNum,std::vector<std::string>& partitionDecStr)
+                                               int seqNum,std::vector<std::string>& partitionDecStr, BBMap2outStr* phiPreAssign =0)
     {
         // first we ll see if the output value is defined already
 
@@ -140,12 +140,51 @@ namespace {
             else
                 rtStr =generateBinaryOperations(cast<BinaryOperator>(*curIns), remoteDst, seqNum);
         }
-        else if(curIns->getOpcode()<=Instruction::MemoryOpsEnd &&curIns->getOpcode() >= Instruction::MemoryOpsBegin  )
+        else if(curIns->getOpcode()<Instruction::MemoryOpsEnd &&curIns->getOpcode() >= Instruction::MemoryOpsBegin  )
         {
             if(remoteSrc)
                 rtStr = generateGettingRemoteData(*curIns,seqNum);
             else
                 rtStr = generateMemoryOperations(*curIns,remoteDst, seqNum);
+        }
+        else if(curIns->getOpcode()<Instruction::CastOpsEnd && curIns->getOpcode()>= Instruction::CastOpsBegin)
+        {
+            if(remoteSrc)
+                rtStr = generateGettingRemoteData(*curIns,seqNum);
+            else
+                rtStr = generateCastOperations(*curIns, remoteDst, seqNum);
+        }
+        // other operators --- we only deal with Phi and Select
+        // how do we do phi?
+        // we need to find all the predecessors of the current basic block
+        else if(curIns->getOpcode()==Instruction::PHI)
+        {
+            if(remoteSrc)
+                rtStr = generateGettingRemoteData(*curIns,seqNum);
+            else
+            {
+
+                rtStr = generatePhiNode(cast<PHINode>(*curIns), remoteDst, seqNum, phiPreAssign);
+            }
+
+        }
+        else if(curIns->getOpcode()==Instruction::Select)
+        {
+            if(remoteSrc)
+                rtStr = generateGettingRemoteData(*curIns,seqNum);
+            else
+            {
+                rtStr = generateSelectOperations(cast<SelectInst>(*curIns), remoteDst, seqNum);
+            }
+        }
+        else if(curIns->getOpcode()==Instruction::ICmp || curIns->getOpcode()==Instruction::FCmp)
+        {
+
+        }
+        else
+        {
+            errs()<<" problem unhandled instruction in generate single statement";
+            exit(1);
         }
 
         // if this is
@@ -894,8 +933,14 @@ void PartitionGen::generateCFromBBList(DAGPartition* pa)
 
 
     //BBMap2outStr bb2Str;
+    // each vector of string's last string is the terminator,
+    // when we finally output the strings, we need to check if there is any phi
+    // node inserted assignment before the terminator
     std::vector<std::vector<std::string>*> curPartitionBBStr;
     std::vector<std::string> partitionDecStr;
+    BBMap2outStr phiPreAssign;
+
+
     for(unsigned int curBBInd = 0; curBBInd < BBList->size(); curBBInd++)
     {
         BasicBlock* curBB = BBList->at(curBBInd);
@@ -1014,7 +1059,7 @@ void PartitionGen::generateCFromBBList(DAGPartition* pa)
                     }
                 }
                 errs()<<"done add channel";
-                std::string actualInsStr = generateSingleStatement(insPt,false,thereIsPartitionReceiving,instructionSeq,partitionDecStr);
+                std::string actualInsStr = generateSingleStatement(insPt,false,thereIsPartitionReceiving,instructionSeq,partitionDecStr,&phiPreAssign);
                 curBBStrArray->push_back(actualInsStr);
                 errs()<<"done actual\n";
             }
@@ -1026,6 +1071,10 @@ void PartitionGen::generateCFromBBList(DAGPartition* pa)
     // FIXME: we check all potential successors in our partition's each basicblock's terminator,
     // then if the successor is not in our BBList, we then put the name of these partition
     // to after END
+    // generateEndBlock
+    std::string endgroup = generateEndBlock(BBList);
+    // the only guy who do not need to reside on the while 1 loop is the dude with the
+    // terminator of the entry block
 
     // now we can output
 

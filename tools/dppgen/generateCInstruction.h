@@ -12,6 +12,9 @@
 #include "generatePartitionsUtil.h"
 #include <string>
 #define ENDBLOCK "END"
+
+typedef std::map<BasicBlock*, std::vector<std::string>*> BBMap2outStr;
+
 std::string generateVariableName(Instruction* ins, int seqNum)
 {
     std::string rtVarName= ins->getParent()->getName();
@@ -38,6 +41,42 @@ std::string generateVariableName(Instruction* ins)
     int seqNum = getInstructionSeqNum(ins);
     return generateVariableName(ins, seqNum);
 }
+std::string generateGetElementPtrInstVarDec(Instruction& ins)
+{
+    std::string varType;
+    if(!isa<GetElementPtrInst>(ins))
+    {
+        errs()<<"returning pointer type but not getele\n";
+        exit(1);
+    }
+    GetElementPtrInst& gepi = cast<GetElementPtrInst>(ins);
+    SmallVector<Value*, 16> Idxs(gepi.idx_begin(), gepi.idx_end());
+    Type *ElTy = GetElementPtrInst::getIndexedType(gepi.getPointerOperandType(), Idxs);
+    // now check what is it refered to
+    switch(ElTy->getTypeID())
+    {
+        case Type::IntegerTyID:
+            varType="int* ";
+            break;
+        case Type::FloatTyID:
+            varType="float* ";
+            break;
+        case Type::DoubleTyID:
+            varType ="double* ";
+            break;
+        case Type::HalfTyID:
+            varType="short* ";
+            break;
+        //FIXME: need to recursively get the pointer type?
+        case Type::PointerTyID:
+        default:
+            varType ="void* ";
+
+    }
+    return varType;
+}
+
+
 
 std::string generateVariableType(Instruction* ins)
 {
@@ -80,9 +119,8 @@ std::string generateVariableType(Instruction* ins)
         case Type::PointerTyID:
         // well this is likely a getElementPtr thing
         // we need to find out what type it is pointing to
+            varType = generateGetElementPtrInstVarDec(*ins);
 
-
-            varType ="void* ";
             break;
         //VectorTyID,      ///< 15: SIMD 'packed' format, or other vector type
         default:
@@ -225,6 +263,115 @@ std::string generateGettingRemoteData(Instruction& curIns, int seqNum)
     rtStr = rtStr+"pop("+channelStr+","+varName+");\n";
     return rtStr;
 }
+std::string generateLoadInstruction(LoadInst& li, std::string varName)
+{
+
+    Value* ptrVal = li.getPointerOperand();
+    std::string ptrStr = generateOperandStr(ptrVal);
+    return varName+"= *("+ptrStr+");\n";
+}
+std::string generateStoreInstruction(StoreInst& si )
+{
+
+    Value* ptrVal = si.getPointerOperand();
+    Value* val = si.getValueOperand();
+    std::string ptrStr = generateOperandStr(ptrVal);
+    std::string valStr = generateOperandStr(val);
+    std::string rtStr ="*("+ptrStr+") = "+valStr+";\n";
+    return rtStr;
+}
+std::string generateGetElementPtrInstruction(GetElementPtrInst& gepi, std::string varName)
+{
+
+    Value* ptr = gepi.getPointerOperand();
+    std::string ptrStr = generateOperandStr( ptr);
+
+    std::string offSetStr = generateOperandStr(gepi.getOperand(1));
+    // check the index array and do additions
+    std::string rtStr = varName+"= "+ptrStr+"+"+offSetStr+";\n";
+    return rtStr;
+}
+std::string generateEndBlock(std::vector<BasicBlock*>* BBList )
+{
+    std::vector<BasicBlock*> outsideBBs;
+
+    for(unsigned int bbInd = 0; bbInd < BBList->size(); bbInd++)
+    {
+        BasicBlock* curBB = BBList->at(bbInd);
+        TerminatorInst* bTerm = curBB->getTerminator();
+        for(unsigned int sucInd = 0; sucInd < bTerm->getNumSuccessors(); sucInd)
+        {
+            BasicBlock* curSuc = bTerm->getSuccessor(sucInd);
+            if(std::find(BBList->begin(),BBList->end(),curSuc) == BBList->end()  )
+            {
+                // add the curSuc to outsideBBs if it is not already there
+                if(std::find(outsideBBs.begin(),outsideBBs.end(),curSuc) == outsideBBs.end() )
+                {
+                    outsideBBs.push_back(curSuc);
+                }
+            }
+        }
+    }
+    // now generate the endblock
+    std::string rtStr=ENDBLOCK;
+    rtStr += ":\n";
+    for(unsigned int k = 0; k<outsideBBs.size(); k++)
+    {
+        rtStr += outsideBBs.at(k)->getName();
+        rtStr += ":\n";
+
+    }
+    return rtStr;
+
+}
+
+std::string generateSelectOperations(SelectInst& curIns,bool remoteDst,int seqNum)
+{
+    std::string rtStr="";
+    int channelType =  1;
+    std::string channelStr = generateChannelString(channelType,seqNum,curIns.getParent()->getName());
+    std::string varName = generateVariableName(&curIns,seqNum);
+    std::string condStr  = generateOperandStr( curIns.getCondition());
+    std::string trueStr = generateOperandStr( curIns.getTrueValue());
+    std::string falseStr = generateOperandStr( curIns.getFalseValue());
+    rtStr+= varName+" = "+condStr+"?"+trueStr+":"+falseStr+";\n";
+    if(remoteDst)
+        rtStr=rtStr+generatePushOp(varName,channelStr);
+    return rtStr;
+
+
+}
+
+
+std::string generatePhiNode(PHINode& curIns,bool remoteDst,int seqNum,
+                                  BBMap2outStr* preAssign)
+{
+    std::string rtStr="";
+    int channelType =  1;
+    std::string channelStr = generateChannelString(channelType,seqNum,curIns.getParent()->getName());
+    std::string varName = generateVariableName(&curIns,seqNum);
+    for(unsigned int inBlockInd = 0; inBlockInd<curIns.getNumIncomingValues();inBlockInd++)
+    {
+        BasicBlock* curPred = curIns.getIncomingBlock(inBlockInd);
+        Value* curPredVal = curIns.getIncomingValueForBlock(curPred);
+        // now we check if the BB has a vector of strings, if not we add one
+        if(preAssign->find(curPred)==preAssign->end())
+        {
+            std::vector<std::string>*& predPhiStrings = (*preAssign)[curPred];
+            predPhiStrings = new std::vector<std::string>();
+        }
+        // now we generate the string, its essentially,
+        std::string valueStr = generateOperandStr(curPredVal);
+        std::string preAssignStr = varName+"="+valueStr+";\n";
+        ((*preAssign)[curPred])->push_back(preAssignStr);
+    }
+    if(remoteDst)
+    {
+        rtStr=rtStr+generatePushOp(varName,channelStr);
+    }
+    return rtStr;
+
+}
 
 std::string generateMemoryOperations(Instruction& curIns, bool remoteDst, int seqNum)
 {
@@ -239,37 +386,61 @@ std::string generateMemoryOperations(Instruction& curIns, bool remoteDst, int se
         rtStr = generateVariableStr(&curIns,seqNum);
         break;
     case Instruction::Load:
-        LoadInst& li = cast<LoadInst>(curIns);
-        Value* ptrVal = li.getPointerOperand();
-        std::string ptrStr = generateOperandStr(ptrVal);
-        rtStr = rtStr + varName+"= *("+ptrStr+");\n";
+        //LoadInst& li = cast<LoadInst>(curIns);
+        rtStr+=generateLoadInstruction(cast<LoadInst>(curIns),varName);
         break;
     case Instruction::Store:
-        StoreInst& si = cast<StoreInst>(curIns);
-        Value* ptrVal = si.getPointerOperand();
-        Value* val = si.getValueOperand();
-        std::string ptrStr = generateOperandStr(ptrVal);
-        std::string valStr = generateOperandStr(val);
-        rtStr = rtStr + "*("+ptrStr+") = "+valStr+";\n";
-
+        rtStr+=generateStoreInstruction(cast<StoreInst>(curIns));
         break;
     case Instruction::GetElementPtr:
-        GetElementPtrInst& gepi = cast<GetElementPtrInst>(curIns);
-        Value* ptr = gepi.getPointerOperand();
-
-        std::string ptrStr = generateOperandStr( ptr);
-
-        SmallVector<Value*, 16> Idxs(gepi.idx_begin(), gepi.idx_end());
-        Type *ElTy = GetElementPtrInst::getIndexedType(gepi.getPointerOperandType(), Idxs);
-
-        ElTy->getTypeID()
-
+        rtStr+=generateGetElementPtrInstruction( cast<GetElementPtrInst>(curIns), varName);
         break;
     default:
         errs()<<"unhandled instruction\n";
         exit(0);
     }
+    if(remoteDst)
+    {
+        rtStr=rtStr+generatePushOp(varName,channelStr);
+    }
 
+    return rtStr;
+
+}
+std::string generateSimpleAssign(Instruction& curIns, std::string varName)
+{
+    std::string rtStr = varName;
+    std::string originalVal = generateOperandStr( curIns.getOperand(0));
+    rtStr += "=" + originalVal+";\n";
+    return rtStr;
+}
+
+
+std::string generateCastOperations(Instruction& curIns, bool remoteDst, int seqNum)
+{
+    std::string rtStr="";
+    int channelType =  1;
+    std::string channelStr = generateChannelString(channelType,seqNum,curIns.getParent()->getName());
+    std::string varName = generateVariableName(&curIns,seqNum);
+    switch(curIns.getOpcode())
+    {
+    case Instruction::Trunc:
+    case Instruction::ZExt:
+    case Instruction::SExt:
+    case Instruction::BitCast:
+        // just generate a declaration
+        rtStr += generateSimpleAssign(curIns,varName);
+        break;
+    default:
+        errs()<<"unhandled cast instruction\n"<<curIns;
+        exit(0);
+    }
+    if(remoteDst)
+    {
+        rtStr=rtStr+generatePushOp(varName,channelStr);
+    }
+
+    return rtStr;
 
 }
 
@@ -375,7 +546,7 @@ std::string generateControlFlow(TerminatorInst& curIns,bool remoteDst, int seqNu
 
             rtStr=rtStr+"else{\n";
             if(remoteDst)
-                rtStr=rtStr+generatePushOp(1,channelName);
+                rtStr=rtStr+generatePushOp("1",channelName);
 
             std::string secondSucName = bi.getSuccessor(1)->getName();
             rtStr=rtStr+"goto "+secondSucName+";}\n";
