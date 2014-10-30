@@ -1,3 +1,5 @@
+#ifndef GENPART_H
+#define GENPART_H
 //===- generatePartition.cpp - generate instruction partitions for DPP -------------------===//
 //
 //                     The LLVM Compiler Infrastructure
@@ -28,7 +30,6 @@
 #define LONGLATTHRESHOLD 5
 using namespace llvm;
 
-namespace {
     struct DAGNode4Partition;
     struct DAGPartition;
     struct PartitionGen;
@@ -74,12 +75,12 @@ namespace {
         }
     }
 
-    static std::string generateTerminatorStr(Instruction* ins)
+    /*static std::string generateTerminatorStr(Instruction* ins)
     {
         std::string a = "f";
         // find value
         return a;
-    }
+    }*/
 
     static std::string generateSingleStatement(Instruction* curIns, bool remoteSrc, bool remoteDst,
                                                int seqNum,std::vector<std::string>& partitionDecStr, BBMap2outStr* phiPreAssign =0)
@@ -180,6 +181,13 @@ namespace {
         else if(curIns->getOpcode()==Instruction::ICmp || curIns->getOpcode()==Instruction::FCmp)
         {
 
+            // got to generate the cmpare statement
+            if(remoteSrc)
+                rtStr = generateGettingRemoteData(*curIns,seqNum);
+            else
+            {
+                rtStr = generateCmpOperations(cast<CmpInst>(*curIns), remoteDst, seqNum);
+            }
         }
         else
         {
@@ -305,7 +313,7 @@ namespace {
     };
     struct PartitionGen : public FunctionPass {
       static char ID;  // Pass identification, replacement for typeid
-
+      raw_ostream &Out;
       partitionToBB2InsInfo srcBBsInPartition;
       partitionToBB2InsInfo insBBsInPartition;
       // each partition's bb list
@@ -327,9 +335,13 @@ namespace {
       DagPartitionMapTy dagPartitionMap;
       //
 
-
-      PartitionGen() : FunctionPass(ID) {}
+      //PartitionGen() : FunctionPass(ID){}
+      PartitionGen(raw_ostream &out) : FunctionPass(ID),Out(out) {}
       bool runOnFunction(Function& func);
+      /*void initializeOut(raw_ostream &out)
+      {
+          Out(out);
+      }*/
 
       void generatePartition(std::vector<DAGNode4Partition*> *dag);
 
@@ -622,17 +634,19 @@ errs()<<"=======================================================================
 
 
 
-}
+
 
 char PartitionGen::ID = 0;
-static RegisterPass<PartitionGen>
-Y("dpp-gen", "generate decoupled processing functions for each function CFG");
+//static RegisterPass<PartitionGen>
+//Y("dpp-gen", "generate decoupled processing functions for each function CFG");
 
 
 bool compareDagNode(DAGNode4Partition* first, DAGNode4Partition* second)
 {
     return first->seqNum < second->seqNum;
 }
+
+
 
 void PartitionGen::BarrierCluster(std::vector<DAGNode4Partition*> *dag)
 {
@@ -898,14 +912,12 @@ bool PartitionGen::DFSFindPartitionCycle(DAGPartition* dp)
 void PartitionGen::addChannelAndDepPartition(bool &thereIsPartitionReceiving, Instruction* insPt,
                                              std::string& channelStr, DAGPartition* destPart,int channelType, int insSeqNum)
 {
-    errs()<<"mmmm\n";
     if(!thereIsPartitionReceiving)
     {
         channelStr= generateChannelString(channelType,insSeqNum,insPt->getParent()->getName());
         //ins2Channel[insPt]= channelStr;
 
     }
-errs()<<"mmmm2 " << channelStr<< thereIsPartitionReceiving <<"\n";
     std::vector<DAGPartition*>*& channelToDestPartitions = channelFanOutPartition[channelStr];
 
     if(thereIsPartitionReceiving)
@@ -914,11 +926,8 @@ errs()<<"mmmm2 " << channelStr<< thereIsPartitionReceiving <<"\n";
     if(!thereIsPartitionReceiving)
         channelToDestPartitions = new std::vector<DAGPartition*>();
 
-errs()<<"mmmm3\n";
-errs()<<channelToDestPartitions->size()<<"\n";
     channelToDestPartitions->push_back(destPart);
     thereIsPartitionReceiving=true;
-    errs()<<"mmmm4\n";
 }
 
 void PartitionGen::generateCFromBBList(DAGPartition* pa)
@@ -969,7 +978,7 @@ void PartitionGen::generateCFromBBList(DAGPartition* pa)
 
         if(insBBs->find(curBB)!=insBBs->end())
             actualIns = (*insBBs)[curBB];
-    
+
         // now this bb is either a srcBB or actualInsBB
         int instructionSeq = -1;
         for(BasicBlock::iterator insPt = curBB->begin(), insEnd = curBB->end(); insPt != insEnd; insPt++)
@@ -1072,11 +1081,48 @@ void PartitionGen::generateCFromBBList(DAGPartition* pa)
     // then if the successor is not in our BBList, we then put the name of these partition
     // to after END
     // generateEndBlock
+    errs()<<"before endgroup\n";
     std::string endgroup = generateEndBlock(BBList);
     // the only guy who do not need to reside on the while 1 loop is the dude with the
     // terminator of the entry block
-
+    errs()<<"after endgroup\n";
     // now we can output
+
+    for(unsigned decInd = 0; decInd<partitionDecStr.size(); decInd++)
+    {
+        std::string curDec = partitionDecStr.at(decInd);
+        this->Out<<curDec<<"\n";
+    }
+
+    for(unsigned int s=0; s < curPartitionBBStr.size(); s++)
+    {
+        std::vector<std::string>* curBBStr = curPartitionBBStr.at(s);
+        BasicBlock* curBB = BBList->at(s);
+        // now traverse it
+
+        for(unsigned int k =0; k<curBBStr->size(); k++)
+        {
+            if(k==curBBStr->size()-1)
+            {
+                //FIXME: only when the last ins is terminator
+                // when we do this phi assignment
+                //need to do the phi thing
+                if(phiPreAssign.find(curBB)!=phiPreAssign.end())
+                {
+                    std::vector<std::string>* allPhiStr = phiPreAssign[curBB];
+                    for(unsigned phiInd = 0; phiInd < allPhiStr->size(); phiInd++)
+                    {
+                        errs()<<"              "<<allPhiStr->at(phiInd)<<"\n";
+                        this->Out<<allPhiStr->at(phiInd)<<"\n";
+                    }
+
+                }
+            }
+            this->Out<<curBBStr->at(k)<<"\n";
+        }
+    }
+    this->Out<<"=========================================================================\n";
+
 
 
 }
@@ -1247,3 +1293,6 @@ bool PartitionGen::runOnFunction(Function &F) {
   return true;
 }
 
+
+
+#endif

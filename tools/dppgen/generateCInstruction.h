@@ -3,7 +3,9 @@
 
 #include "llvm/Support/IncludeFile.h"
 #include "llvm/IR/Instruction.h"
+#include "llvm/IR/InstrTypes.h"
 #include "llvm/ADT/APInt.h"
+#include "llvm/ADT/SmallVector.h"
 #include "llvm/IR/Constants.h"
 #include "llvm/Pass.h"
 #include "llvm/Support/CFG.h"
@@ -170,15 +172,24 @@ std::string generateOperandStr(Value* operand)
     std::string rtStr;
     if(isa<Instruction>(*operand))
     {
+        errs()<<" if k\n";
         Instruction& curIns = cast<Instruction>(*operand);
         // got to generate the varname
         int seqNum = getInstructionSeqNum(&curIns);
         std::string varName = generateVariableName(&curIns,seqNum);
         rtStr = varName;
     }
+    else if(isa<Constant>(*operand))
+    {
+        Constant& curCon = cast<Constant>(*operand);
+        rtStr = getConstantStr(curCon);
+
+    }
     else
     {
+
         rtStr = operand->getName();
+
     }
     return rtStr;
 }
@@ -297,9 +308,10 @@ std::string generateEndBlock(std::vector<BasicBlock*>* BBList )
 
     for(unsigned int bbInd = 0; bbInd < BBList->size(); bbInd++)
     {
+
         BasicBlock* curBB = BBList->at(bbInd);
         TerminatorInst* bTerm = curBB->getTerminator();
-        for(unsigned int sucInd = 0; sucInd < bTerm->getNumSuccessors(); sucInd)
+        for(unsigned int sucInd = 0; sucInd < bTerm->getNumSuccessors(); sucInd++)
         {
             BasicBlock* curSuc = bTerm->getSuccessor(sucInd);
             if(std::find(BBList->begin(),BBList->end(),curSuc) == BBList->end()  )
@@ -322,6 +334,95 @@ std::string generateEndBlock(std::vector<BasicBlock*>* BBList )
 
     }
     return rtStr;
+
+}
+std::string generateCmpOperations(CmpInst& curIns, bool remoteDst, int seqNum)
+{
+
+    int channelType = 1;
+
+    std::string channelStr = generateChannelString(channelType,seqNum,curIns.getParent()->getName());
+    std::string varName = generateVariableName(&curIns,seqNum);
+    //int numberOfOperands = curIns.getNumOperands();
+    std::string firstVal = generateOperandStr(curIns.getOperand(0));
+    std::string secondVal = generateOperandStr(curIns.getOperand(1));
+    bool def=false;
+    std::string constBool="";
+    std::string cmpOperator="";
+    switch(curIns.getPredicate())
+    {
+          case CmpInst::FCMP_FALSE:
+            def=true;
+            constBool+="0";
+            break;
+          case CmpInst::FCMP_TRUE:
+            def=true;
+            constBool+="1";
+            break;
+          case CmpInst::ICMP_EQ:
+          case CmpInst::FCMP_OEQ:
+          case CmpInst::FCMP_UEQ:
+            cmpOperator+="==";
+            break;
+          case CmpInst::ICMP_SGT:
+          case CmpInst::ICMP_UGT:
+
+          case CmpInst::FCMP_UGT:
+          case CmpInst::FCMP_OGT:
+            cmpOperator+=">";
+            break;
+
+          case CmpInst::ICMP_SGE:
+          case CmpInst::ICMP_UGE:
+
+          case CmpInst::FCMP_UGE:
+          case CmpInst::FCMP_OGE:
+            cmpOperator+=">=";
+            break;
+
+          case CmpInst::ICMP_SLT:
+          case CmpInst::ICMP_ULT:
+          case CmpInst::FCMP_ULT:
+          case CmpInst::FCMP_OLT:
+            cmpOperator+="<";
+            break;
+          case CmpInst::ICMP_ULE:
+          case CmpInst::ICMP_SLE:
+          case CmpInst::FCMP_ULE:
+          case CmpInst::FCMP_OLE:
+            cmpOperator+="<=";
+            break;
+          case CmpInst::ICMP_NE:
+          case CmpInst::FCMP_UNE:
+          case CmpInst::FCMP_ONE:
+            cmpOperator+="!=";
+            break;
+
+          default:
+            errs()<<"unhandled cmp type\n";
+            exit(1);
+
+
+
+    }
+    std::string rtStr="";
+    if(def)
+    {
+        rtStr+= varName+"="+ constBool+";\n";
+    }
+    else
+    {
+        rtStr+= varName+" = "+firstVal+cmpOperator;
+        rtStr = rtStr+" "+secondVal+";\n";
+    }
+    //std::string condStr  = generateOperandStr( curIns.getCondition());
+    //std::string trueStr = generateOperandStr( curIns.getTrueValue());
+    //std::string falseStr = generateOperandStr( curIns.getFalseValue());
+    //rtStr+= varName+" = "+condStr+"?"+trueStr+":"+falseStr+";\n";
+    if(remoteDst)
+        rtStr=rtStr+generatePushOp(varName,channelStr);
+    return rtStr;
+
 
 }
 
@@ -458,7 +559,7 @@ std:: string generateBinaryOperations(BinaryOperator& curIns, bool remoteDst,int
     Value* secondOperand = curIns.getOperand(1);
     std::string firstOperandStr = generateOperandStr(firstOperand);
     std::string secondOperandStr = generateOperandStr(secondOperand);
-
+    rtStr+=varName+"=";
     // generate the actual computation
     switch(curIns.getOpcode())
     {
@@ -590,10 +691,11 @@ std::string generateControlFlow(TerminatorInst& curIns,bool remoteDst, int seqNu
 }
 std::string generateReturn(ReturnInst& curIns)
 {
+
     std::string rtStr="return ";
-    if(curIns.getReturnValue()->getType()->getTypeID()==Type::VoidTyID)
+    if(curIns.getReturnValue()==0)
     {
-        return rtStr+"void;\n";
+        rtStr = rtStr+"void;\n";
     }
     else
     {
@@ -603,7 +705,9 @@ std::string generateReturn(ReturnInst& curIns)
         Instruction* valGenIns = &(cast<Instruction>(*retVal));
         std::string retVar = generateVariableName(valGenIns);
         rtStr=rtStr+retVar+";\n";
+
     }
+    return rtStr;
 }
 
 #endif
