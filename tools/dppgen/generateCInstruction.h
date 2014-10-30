@@ -17,6 +17,13 @@
 
 typedef std::map<BasicBlock*, std::vector<std::string>*> BBMap2outStr;
 
+struct argPair
+{
+    std::string argType;
+    std::string argName;
+    int size;
+};
+
 std::string generateVariableName(Instruction* ins, int seqNum)
 {
     std::string rtVarName= ins->getParent()->getName();
@@ -234,12 +241,26 @@ std::string generateGenericSwitchStatement(std::string varName,bool explicitCase
     return rtStr;
 }
 
-std::string generateGettingRemoteBranchTag(TerminatorInst& curIns, int seqNum)
+argPair* createFifoArg(std::string channelName, std::string type, int size)
+{
+    argPair* s = new argPair;
+    s->argName = channelName;
+    s->argType = type;
+    s->size = size;
+    return s;
+}
+
+std::string generateGettingRemoteBranchTag(TerminatorInst& curIns, int seqNum, std::vector<argPair*>& p)
 {
     std::string rtStr="";
     int channelType =  0;
     std::string channelStr = generateChannelString(channelType,seqNum,curIns.getParent()->getName());
     std::string varName = generateVariableName(&curIns,seqNum);
+
+    // the name of the argument is gonna be the name of the channel
+    // type of the channel is gonna be char?
+    p.push_back(createFifoArg(channelStr,"char",8));
+
     unsigned numSuc = curIns.getNumSuccessors();
     assert(numSuc < 255 && numSuc>0);
 
@@ -614,7 +635,7 @@ std:: string generateBinaryOperations(BinaryOperator& curIns, bool remoteDst,int
     return rtStr;
 }
 
-std::string generateControlFlow(TerminatorInst& curIns,bool remoteDst, int seqNum)
+std::string generateControlFlow(TerminatorInst& curIns,bool remoteDst, int seqNum, std::vector<argPair*>& fifoArgs, std::vector<argPair*>& functionArgs)
 {
     // we currently deal with br and switch only
     assert(isa<BranchInst>(curIns) || isa<SwitchInst>(curIns) );
@@ -629,6 +650,7 @@ std::string generateControlFlow(TerminatorInst& curIns,bool remoteDst, int seqNu
             if(remoteDst)
             {
                 rtStr=rtStr+generatePushOp("1",channelName);
+                // this is a fifo args
             }
             rtStr=rtStr+"goto ";
 
@@ -680,8 +702,15 @@ std::string generateControlFlow(TerminatorInst& curIns,bool remoteDst, int seqNu
             }
 
         }
-        std::string varName = generateVariableName(&curIns,seqNum);
-        rtStr = generateGenericSwitchStatement(varName,true,&caseVal,&allTgt,defaultDest,true,channelName,defaultSeq);
+
+        // if this is local, this value doesnt exist -- it should assume
+        // the value of the instruction generating the value -- or constant
+        // -- or whatever
+        // anyhow, generateOperand
+        //FIXME
+        //std::string varName = generateVariableName(&curIns,seqNum);
+        std::string switchName = generateOperandStr(si.getCondition());
+        rtStr += generateGenericSwitchStatement(switchName,true,&caseVal,&allTgt,defaultDest,true,channelName,defaultSeq);
     }
     return rtStr;
 
@@ -701,7 +730,7 @@ std::string generateReturn(ReturnInst& curIns)
     {
         // find the variable name
         Value* retVal = curIns.getReturnValue();
-        assert(isa<Instruction>(*condVal));
+        assert(isa<Instruction>(*retVal));
         Instruction* valGenIns = &(cast<Instruction>(*retVal));
         std::string retVar = generateVariableName(valGenIns);
         rtStr=rtStr+retVar+";\n";

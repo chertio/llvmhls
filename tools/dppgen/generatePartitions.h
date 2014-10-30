@@ -83,7 +83,9 @@ using namespace llvm;
     }*/
 
     static std::string generateSingleStatement(Instruction* curIns, bool remoteSrc, bool remoteDst,
-                                               int seqNum,std::vector<std::string>& partitionDecStr, BBMap2outStr* phiPreAssign =0)
+                                               int seqNum,std::vector<std::string>& partitionDecStr, BBMap2outStr* phiPreAssign =0,
+                                               std::vector<argPair*>& functionArgs, std::vector<argPair*>& fifoArgs
+                                                )
     {
         // first we ll see if the output value is defined already
 
@@ -91,8 +93,20 @@ using namespace llvm;
         // the Q has name "'brTag'Q", the actual tag has name 'brTag'
         // brTag name is formed by concat the srcBB of branch and the dstBBs
         // it is gonna be a read, then a switch -- with multiple dest
+
+        // sometimes a varDec is not needed, if this is a terminator, and
+        // this is actual...note we are pushing the seq number of successors
+        // and they are not named
+
         std::string varDecStr = generateVariableStr(curIns,seqNum);
-        partitionDecStr.push_back(varDecStr);
+        if(curIns->isTerminator() && !remoteSrc   )
+        {
+            // do nothing?
+        }
+        else
+        {
+            partitionDecStr.push_back(varDecStr);
+        }
         //std::string varName = generateVariableName(curIns,seqNum);
 
         std::string rtStr;
@@ -106,7 +120,9 @@ using namespace llvm;
             assert(numSuc < 255);
             if(remoteSrc)
             {
-                rtStr = generateGettingRemoteBranchTag(cast<TerminatorInst>(*curIns),seqNum);
+                // apparently we will need a remote src -- we need an argument
+
+                rtStr = generateGettingRemoteBranchTag(cast<TerminatorInst>(*curIns),seqNum, fifoArgs);
                 //errs()<<rtStr;
 
             }
@@ -117,7 +133,7 @@ using namespace llvm;
                 //FIXME: there will be cases where the branch may take the execution
                 // out of the partition, we need to add an END: label later, to collect
                 // all these
-                rtStr = generateControlFlow(cast<TerminatorInst>(*curIns),remoteDst,seqNum);
+                rtStr = generateControlFlow(cast<TerminatorInst>(*curIns),remoteDst,seqNum, fifoArgs, functionArgs);
 
                 //errs()<<rtStr;
 
@@ -314,12 +330,14 @@ using namespace llvm;
     struct PartitionGen : public FunctionPass {
       static char ID;  // Pass identification, replacement for typeid
       raw_ostream &Out;
+      raw_ostream &fifoDes;
+      Function* curFunc;
       partitionToBB2InsInfo srcBBsInPartition;
       partitionToBB2InsInfo insBBsInPartition;
       // each partition's bb list
       partitionToBBList allBBsInPartition;
 
-
+      static int partGenId;
       InsMap2Str ins2Channel;
       strMap2PartitionVector channelFanOutPartition;
 
@@ -336,7 +354,7 @@ using namespace llvm;
       //
 
       //PartitionGen() : FunctionPass(ID){}
-      PartitionGen(raw_ostream &out) : FunctionPass(ID),Out(out) {}
+      PartitionGen(raw_ostream &out, raw_ostream &out2) : FunctionPass(ID),Out(out),fifoDes(out2) {}
       bool runOnFunction(Function& func);
       /*void initializeOut(raw_ostream &out)
       {
@@ -637,6 +655,7 @@ errs()<<"=======================================================================
 
 
 char PartitionGen::ID = 0;
+int PartitionGen::partGenId = 0;
 //static RegisterPass<PartitionGen>
 //Y("dpp-gen", "generate decoupled processing functions for each function CFG");
 
@@ -949,6 +968,19 @@ void PartitionGen::generateCFromBBList(DAGPartition* pa)
     std::vector<std::string> partitionDecStr;
     BBMap2outStr phiPreAssign;
 
+    //FIXME
+    // we need to figure out the argument, these includes
+    // the argument from the function -- these can be given to every partition
+    // they may not always use it;
+    // then we have those FIFOs --- in and out FIFOs
+    std::vector<argPair*> functionArgs;
+    std::vector<argPair*> fifoArgs;
+
+    // this is also the place where we generate the connection
+    // description?
+
+
+
 
     for(unsigned int curBBInd = 0; curBBInd < BBList->size(); curBBInd++)
     {
@@ -967,7 +999,7 @@ void PartitionGen::generateCFromBBList(DAGPartition* pa)
             // shouldnt be return coz the return block isnt a path
             assert(!isa<ReturnInst>(*curTerm));
             int seqNum = curTerm->getParent()->getInstList().size()-1;
-            std::string termStr = generateSingleStatement(curTerm,true,false,seqNum,partitionDecStr);
+            std::string termStr = generateSingleStatement(curTerm,true,false,seqNum,partitionDecStr, functionArgs, fifoArgs);
             curBBStrArray->push_back(termStr);
             continue;
         }
@@ -1002,6 +1034,25 @@ void PartitionGen::generateCFromBBList(DAGPartition* pa)
                 }
             }
 
+            // another case is one of srcIns & actualIns is zero, but the non zero one
+            // does not contain this instruction....
+            if(srcIns!=0 && actualIns==0)
+            {
+                if(std::find(srcIns->begin(),srcIns->end(), insPt)==srcIns->end())
+                {
+                    if(insPt->isTerminator() && !isa<ReturnInst>(*insPt) )
+                        curBBStrArray->push_back(generateSingleStatement(insPt,true,false,instructionSeq,partitionDecStr));
+                }
+            }
+            if(srcIns==0 && actualIns!=0)
+            {
+                if(std::find(actualIns->begin(),actualIns->end(),insPt)==actualIns->end())
+                {
+                    if(insPt->isTerminator() && !isa<ReturnInst>(*insPt) )
+                        curBBStrArray->push_back(generateSingleStatement(insPt,true,false,instructionSeq,partitionDecStr));
+                }
+            }
+
             if(srcIns!=0 && !(std::find(srcIns->begin(),srcIns->end(), insPt)==srcIns->end()))
             {
                 //
@@ -1016,7 +1067,6 @@ void PartitionGen::generateCFromBBList(DAGPartition* pa)
                     curBBStrArray->push_back(srcInsStr);
                 }
             }
-
             if(actualIns!=0 && !(std::find(actualIns->begin(),actualIns->end(),insPt)==actualIns->end()))
             {
                 errs()<<"actual   "<<cast<Instruction>(*insPt)<<"\n";
@@ -1078,7 +1128,7 @@ void PartitionGen::generateCFromBBList(DAGPartition* pa)
 
         }
     }
-    // FIXME: we check all potential successors in our partition's each basicblock's terminator,
+    // FIXME: we check all potential successors in our partitcurFuncion's each basicblock's terminator,
     // then if the successor is not in our BBList, we then put the name of these partition
     // to after END
     // generateEndBlock
@@ -1089,11 +1139,27 @@ void PartitionGen::generateCFromBBList(DAGPartition* pa)
     errs()<<"after endgroup\n";
     // now we can output
 
+
+//generate function name
+    this->Out<<curFunc->getName()<<int2Str(partGenId);
+    this->Out<<"(";
+    /*****this is the part where we make the argument*****/
+
+    /*****end****/
+    this->Out<<"){";
+
+
+
     for(unsigned decInd = 0; decInd<partitionDecStr.size(); decInd++)
     {
         std::string curDec = partitionDecStr.at(decInd);
         this->Out<<curDec<<"\n";
     }
+
+    // FIXMEhow do we know if we should be put in a while loop?
+    // if the dominator basic block is in a loop..
+    // how do we determine that? we can just do a dfs for itself
+    //
 
     for(unsigned int s=0; s < curPartitionBBStr.size(); s++)
     {
@@ -1119,10 +1185,19 @@ void PartitionGen::generateCFromBBList(DAGPartition* pa)
 
                 }
             }
-            this->Out<<curBBStr->at(k)<<"\n";
+            this->Out<<curBBStr->at(k);
         }
     }
-    this->Out<<"=========================================================================\n";
+
+    // now we output the endgroup
+    this->Out<<endgroup;
+    //FIXME if we have while(1)
+
+    this->Out<<"\n}";
+
+
+    partGenId++;
+    this->Out<<"//=========================================================================\n";
 
 
 
@@ -1132,6 +1207,7 @@ void PartitionGen::generateCFromBBList(DAGPartition* pa)
 // when we do the partitioning, we
 bool PartitionGen::runOnFunction(Function &F) {
 
+    curFunc = &F;
 
     int bbCount =0;
 

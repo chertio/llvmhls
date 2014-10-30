@@ -66,6 +66,10 @@ static cl::opt<std::string>
 OutputFilename("o", cl::desc("Override output filename"),
                cl::value_desc("filename"));
 
+static cl::opt<std::string>
+OutputFIFOFilename("fdes", cl::desc("FIFO connection description"),
+               cl::value_desc("filename"));
+
 
 static cl::opt<bool>
 NoOutput("disable-output",
@@ -158,9 +162,33 @@ int main(int argc, char **argv) {
     }
   }
 
+  // a separate stream
+  OwningPtr<tool_output_file> fdesOut;
+
+  // do the samething for FIFO description
+  if (NoOutput) {
+    if (!OutputFIFOFilename.empty())
+      errs() << "WARNING: The -fdes (fifo des filename) option is ignored when\n"
+                "the --disable-output option is used.\n";
+  } else {
+    // Default to standard output.
+    if (OutputFIFOFilename.empty())
+      OutputFilename = "-";
+
+    std::string ErrorInfo;
+    fdesOut.reset(new tool_output_file(OutputFIFOFilename.c_str(), ErrorInfo,
+                                   sys::fs::F_None));
+    if (!ErrorInfo.empty()) {
+      errs() << ErrorInfo << '\n';
+      return 1;
+    }
+  }
+
+
+
 
   PassManager Passes;
-  PartitionGen* pg = new PartitionGen(Out->os());
+  PartitionGen* pg = new PartitionGen(Out->os(),fdesOut->os());
 
   Passes.add(pg );
   // Create a new optimization pass for each one specified on the command line
