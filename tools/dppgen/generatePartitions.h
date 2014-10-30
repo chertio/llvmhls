@@ -988,6 +988,7 @@ void PartitionGen::generateCFromBBList(DAGPartition* pa)
             // it is possible that this instruction is not in srcBB nor insBB
             // then this is not converted to c, but if this is the terminator
             // we need t read the branch tag unless its return
+            //FIXME -- what is srcIns!=0 but actualIns==0?
             if(srcIns!=0 && (std::find(srcIns->begin(),srcIns->end(), insPt)==srcIns->end()) &&
                actualIns!=0 && (std::find(actualIns->begin(),actualIns->end(),insPt)==actualIns->end())
              )
