@@ -148,14 +148,18 @@ using namespace llvm;
             // remote can never have remote src
             // the ins generating the return value
             // has remote src
-            rtStr = rtStr+ generateReturn(cast<ReturnInst>(*curIns));
+            // it is possible it has functional argument as argument
+            rtStr = rtStr+ generateReturn(cast<ReturnInst>(*curIns), functionArgs);
         }
         else if(curIns->isBinaryOp())
         {
             if(remoteSrc)
-                rtStr =generateGettingRemoteData(*curIns,seqNum);
+                rtStr =generateGettingRemoteData(*curIns,seqNum,fifoArgs);
             else
-                rtStr =generateBinaryOperations(cast<BinaryOperator>(*curIns), remoteDst, seqNum);
+            {
+                // this may have stuff from the function arg, also may write to fifo args
+                rtStr =generateBinaryOperations(cast<BinaryOperator>(*curIns), remoteDst, seqNum, fifoArgs, functionArgs);
+            }
         }
         else if(curIns->getOpcode()<Instruction::MemoryOpsEnd &&curIns->getOpcode() >= Instruction::MemoryOpsBegin  )
         {
@@ -1020,7 +1024,6 @@ void PartitionGen::generateCFromBBList(DAGPartition* pa)
             // it is possible that this instruction is not in srcBB nor insBB
             // then this is not converted to c, but if this is the terminator
             // we need t read the branch tag unless its return
-            //FIXME -- what is srcIns!=0 but actualIns==0?
             if(srcIns!=0 && (std::find(srcIns->begin(),srcIns->end(), insPt)==srcIns->end()) &&
                actualIns!=0 && (std::find(actualIns->begin(),actualIns->end(),insPt)==actualIns->end())
              )

@@ -22,6 +22,8 @@ struct argPair
     std::string argType;
     std::string argName;
     int size;
+    // 0 means read, 1 means write, 2 means read/write
+    char dir;
 };
 
 std::string generateVariableName(Instruction* ins, int seqNum)
@@ -44,6 +46,7 @@ int getInstructionSeqNum(Instruction* ins)
     }
     return seqNum;
 }
+
 
 std::string generateVariableName(Instruction* ins)
 {
@@ -86,17 +89,29 @@ std::string generateGetElementPtrInstVarDec(Instruction& ins)
 }
 
 
-
-std::string generateVariableType(Instruction* ins)
+std::string generateVariableType(Value* valPtr)
 {
-    std::string varType;
-    if(ins->isTerminator()&&!isa<ReturnInst>(*ins))
-    {
-        varType = "char";
-        return varType;
 
+
+    std::string varType;
+
+    if(isa<Instruction>(*valPtr))
+    {
+        Instruction* ins =0;
+        ins = &(cast<Instruction>(*valPtr));
+        // a special case for generating the branches
+        // they might be used to communicate control
+        // dependencies thus need a type
+        if(ins->isTerminator()&&!isa<ReturnInst>(*ins))
+        {
+            varType = "char";
+            return varType;
+
+        }
     }
-    switch(ins->getType()->getTypeID())
+
+
+    switch(valPtr->getType()->getTypeID())
     {
         case Type::VoidTyID:
             varType="";
@@ -241,14 +256,16 @@ std::string generateGenericSwitchStatement(std::string varName,bool explicitCase
     return rtStr;
 }
 
-argPair* createFifoArg(std::string channelName, std::string type, int size)
+argPair* createArg(std::string channelName, std::string type, int size, int dir)
 {
     argPair* s = new argPair;
     s->argName = channelName;
     s->argType = type;
     s->size = size;
+    s->dir = dir;
     return s;
 }
+
 
 std::string generateGettingRemoteBranchTag(TerminatorInst& curIns, int seqNum, std::vector<argPair*>& p)
 {
@@ -259,7 +276,7 @@ std::string generateGettingRemoteBranchTag(TerminatorInst& curIns, int seqNum, s
 
     // the name of the argument is gonna be the name of the channel
     // type of the channel is gonna be char?
-    p.push_back(createFifoArg(channelStr,"char",8));
+    p.push_back(createArg(channelStr,"char",8,0));
 
     unsigned numSuc = curIns.getNumSuccessors();
     assert(numSuc < 255 && numSuc>0);
@@ -286,12 +303,13 @@ std::string generateGettingRemoteBranchTag(TerminatorInst& curIns, int seqNum, s
     return rtStr;
 
 }
-std::string generateGettingRemoteData(Instruction& curIns, int seqNum)
+std::string generateGettingRemoteData(Instruction& curIns, int seqNum, std::vector<argPair*>& fifoArgs)
 {
     std::string rtStr="";
     int channelType =  1;
     std::string channelStr = generateChannelString(channelType,seqNum,curIns.getParent()->getName());
     std::string varName = generateVariableName(&curIns,seqNum);
+    fifoArgs.push_back(createArg(channelStr,generateVariableType(&curIns),curIns.getType()->getScalarSizeInBits(),0 ) );
     rtStr = rtStr+"pop("+channelStr+","+varName+");\n";
     return rtStr;
 }
@@ -566,7 +584,7 @@ std::string generateCastOperations(Instruction& curIns, bool remoteDst, int seqN
 
 }
 
-std:: string generateBinaryOperations(BinaryOperator& curIns, bool remoteDst,int seqNum )
+std:: string generateBinaryOperations(BinaryOperator& curIns, bool remoteDst,int seqNum, std::vector<argPair*>& fifoArgs, std::vector<argPair*>& functionArgs )
 {
     std::string rtStr="";
     int channelType =  1;
@@ -578,6 +596,16 @@ std:: string generateBinaryOperations(BinaryOperator& curIns, bool remoteDst,int
     // two operand
     Value* firstOperand = curIns.getOperand(0);
     Value* secondOperand = curIns.getOperand(1);
+    // now check if these operands are from the function argument
+    if(isa<Argument>(*firstOperand))
+    {
+        functionArgs.push_back(createArg(firstOperand->getName(), generateVariableType(firstOperand),firstOperand->getType()->getScalarSizeInBits(),0 ) );
+    }
+    if(isa<Argument>(*secondOperand))
+    {
+        functionArgs.push_back(createArg(secondOperand->getName(), generateVariableType(secondOperand),secondOperand->getType()->getScalarSizeInBits(),0));
+    }
+
     std::string firstOperandStr = generateOperandStr(firstOperand);
     std::string secondOperandStr = generateOperandStr(secondOperand);
     rtStr+=varName+"=";
@@ -631,6 +659,7 @@ std:: string generateBinaryOperations(BinaryOperator& curIns, bool remoteDst,int
     if(remoteDst)
     {
         rtStr=rtStr+generatePushOp(varName,channelStr);
+        fifoArgs.push_back(createArg(channelStr, generateVariableType(&curIns),curIns.getType()->getScalarSizeInBits(),1 ) );
     }
     return rtStr;
 }
@@ -651,6 +680,7 @@ std::string generateControlFlow(TerminatorInst& curIns,bool remoteDst, int seqNu
             {
                 rtStr=rtStr+generatePushOp("1",channelName);
                 // this is a fifo args
+
             }
             rtStr=rtStr+"goto ";
 
@@ -659,9 +689,20 @@ std::string generateControlFlow(TerminatorInst& curIns,bool remoteDst, int seqNu
         else
         {
             Value* condVal = bi.getCondition();
-            assert(isa<Instruction>(*condVal));
-            Instruction* valGenIns = &(cast<Instruction>(*condVal));
-            std::string switchVar = generateVariableName(valGenIns);
+            assert(isa<Instruction>(*condVal) || isa<Argument>(*condVal) );
+
+            std::string switchVar="";
+            if(isa<Argument>(*condVal))
+            {
+                Argument* valArg = &(cast<Argument>(*condVal));
+                swtichVar+= valArg->getName();
+                functionArgs.push_back(createArg(valArg->getName(), generateVariableType(valArg), valArg->getType()->getScalarSizeInBits(),0   ));
+            }
+            else
+            {
+                Instruction* valGenIns = &(cast<Instruction>(*condVal));
+                switchVar += generateVariableName(valGenIns);
+            }
             rtStr="if("+switchVar+"){\n";
             if(remoteDst)
                 rtStr=rtStr+generatePushOp("0",channelName);
@@ -710,15 +751,27 @@ std::string generateControlFlow(TerminatorInst& curIns,bool remoteDst, int seqNu
         //FIXME
         //std::string varName = generateVariableName(&curIns,seqNum);
         std::string switchName = generateOperandStr(si.getCondition());
+        // I guess there is a possibility this is from the function argument
+
+        if(isa<Argument>(*(si.getCondition())))
+        {
+            // need to add it to the function arg list
+            Value* valArg = si.getCondition();
+            functionArgs.push_back(createArg(valArg->getName(),generateVariableType(valArg), valArg->getType()->getScalarSizeInBits(),0 ));
+        }
+
         rtStr += generateGenericSwitchStatement(switchName,true,&caseVal,&allTgt,defaultDest,true,channelName,defaultSeq);
+
     }
+    if(remoteDst)
+        fifoArgs.push_back(createArg(channelName,"char",8,1));
     return rtStr;
 
     // for branch, we can convert it to switch statement as well
 
 
 }
-std::string generateReturn(ReturnInst& curIns)
+std::string generateReturn(ReturnInst& curIns, std::vector<argPair*>& functionArgs)
 {
 
     std::string rtStr="return ";
@@ -730,9 +783,19 @@ std::string generateReturn(ReturnInst& curIns)
     {
         // find the variable name
         Value* retVal = curIns.getReturnValue();
-        assert(isa<Instruction>(*retVal));
-        Instruction* valGenIns = &(cast<Instruction>(*retVal));
-        std::string retVar = generateVariableName(valGenIns);
+        assert(isa<Instruction>(*retVal) || isa<Argument>(*retVal));
+        std::string retVar="";
+        if(isa<Instruction>(*retVal))
+        {
+            Instruction* valGenIns = &(cast<Instruction>(*retVal));
+            retVar += generateVariableName(valGenIns);
+
+        }
+        else
+        {
+            retVar += retVal->getName();
+            functionArgs.push_back(createArg(retVal->getName(),generateVariableType(retVal),retVal->getType()->getScalarSizeInBits(),0 ));
+        }
         rtStr=rtStr+retVar+";\n";
 
     }
