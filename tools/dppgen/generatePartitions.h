@@ -83,8 +83,8 @@ using namespace llvm;
     }*/
 
     static std::string generateSingleStatement(Instruction* curIns, bool remoteSrc, bool remoteDst,
-                                               int seqNum,std::vector<std::string>& partitionDecStr, BBMap2outStr* phiPreAssign =0,
-                                               std::vector<argPair*>& functionArgs, std::vector<argPair*>& fifoArgs
+                                               int seqNum,std::vector<std::string>& partitionDecStr,
+                                               std::vector<argPair*>& functionArgs, std::vector<argPair*>& fifoArgs, BBMap2outStr* phiPreAssign =0
                                                 )
     {
         // first we ll see if the output value is defined already
@@ -164,16 +164,16 @@ using namespace llvm;
         else if(curIns->getOpcode()<Instruction::MemoryOpsEnd &&curIns->getOpcode() >= Instruction::MemoryOpsBegin  )
         {
             if(remoteSrc)
-                rtStr = generateGettingRemoteData(*curIns,seqNum);
+                rtStr = generateGettingRemoteData(*curIns,seqNum,fifoArgs);
             else
-                rtStr = generateMemoryOperations(*curIns,remoteDst, seqNum);
+                rtStr = generateMemoryOperations(*curIns,remoteDst, seqNum,fifoArgs, functionArgs);
         }
         else if(curIns->getOpcode()<Instruction::CastOpsEnd && curIns->getOpcode()>= Instruction::CastOpsBegin)
         {
             if(remoteSrc)
-                rtStr = generateGettingRemoteData(*curIns,seqNum);
+                rtStr = generateGettingRemoteData(*curIns,seqNum,fifoArgs);
             else
-                rtStr = generateCastOperations(*curIns, remoteDst, seqNum);
+                rtStr = generateCastOperations(*curIns, remoteDst, seqNum,fifoArgs,functionArgs);
         }
         // other operators --- we only deal with Phi and Select
         // how do we do phi?
@@ -181,21 +181,21 @@ using namespace llvm;
         else if(curIns->getOpcode()==Instruction::PHI)
         {
             if(remoteSrc)
-                rtStr = generateGettingRemoteData(*curIns,seqNum);
+                rtStr = generateGettingRemoteData(*curIns,seqNum,fifoArgs);
             else
             {
 
-                rtStr = generatePhiNode(cast<PHINode>(*curIns), remoteDst, seqNum, phiPreAssign);
+                rtStr = generatePhiNode(cast<PHINode>(*curIns), remoteDst, seqNum, phiPreAssign,fifoArgs,functionArgs);
             }
 
         }
         else if(curIns->getOpcode()==Instruction::Select)
         {
             if(remoteSrc)
-                rtStr = generateGettingRemoteData(*curIns,seqNum);
+                rtStr = generateGettingRemoteData(*curIns,seqNum,fifoArgs);
             else
             {
-                rtStr = generateSelectOperations(cast<SelectInst>(*curIns), remoteDst, seqNum);
+                rtStr = generateSelectOperations(cast<SelectInst>(*curIns), remoteDst, seqNum,fifoArgs,functionArgs);
             }
         }
         else if(curIns->getOpcode()==Instruction::ICmp || curIns->getOpcode()==Instruction::FCmp)
@@ -203,10 +203,10 @@ using namespace llvm;
 
             // got to generate the cmpare statement
             if(remoteSrc)
-                rtStr = generateGettingRemoteData(*curIns,seqNum);
+                rtStr = generateGettingRemoteData(*curIns,seqNum,fifoArgs);
             else
             {
-                rtStr = generateCmpOperations(cast<CmpInst>(*curIns), remoteDst, seqNum);
+                rtStr = generateCmpOperations(cast<CmpInst>(*curIns), remoteDst, seqNum,fifoArgs,functionArgs);
             }
         }
         else
@@ -1003,7 +1003,7 @@ void PartitionGen::generateCFromBBList(DAGPartition* pa)
             // shouldnt be return coz the return block isnt a path
             assert(!isa<ReturnInst>(*curTerm));
             int seqNum = curTerm->getParent()->getInstList().size()-1;
-            std::string termStr = generateSingleStatement(curTerm,true,false,seqNum,partitionDecStr, functionArgs, fifoArgs);
+            std::string termStr = generateSingleStatement(curTerm,true,false,seqNum,partitionDecStr,functionArgs, fifoArgs);
             curBBStrArray->push_back(termStr);
             continue;
         }
@@ -1032,7 +1032,7 @@ void PartitionGen::generateCFromBBList(DAGPartition* pa)
 
                 if(insPt->isTerminator() && !isa<ReturnInst>(*insPt) )
                 {
-                    std::string srcInsStr = generateSingleStatement(insPt,true,false,instructionSeq,partitionDecStr);
+                    std::string srcInsStr = generateSingleStatement(insPt,true,false,instructionSeq,partitionDecStr, functionArgs,fifoArgs);
                     curBBStrArray->push_back(srcInsStr);
                 }
             }
@@ -1044,7 +1044,7 @@ void PartitionGen::generateCFromBBList(DAGPartition* pa)
                 if(std::find(srcIns->begin(),srcIns->end(), insPt)==srcIns->end())
                 {
                     if(insPt->isTerminator() && !isa<ReturnInst>(*insPt) )
-                        curBBStrArray->push_back(generateSingleStatement(insPt,true,false,instructionSeq,partitionDecStr));
+                        curBBStrArray->push_back(generateSingleStatement(insPt,true,false,instructionSeq,partitionDecStr,functionArgs,fifoArgs));
                 }
             }
             if(srcIns==0 && actualIns!=0)
@@ -1052,7 +1052,7 @@ void PartitionGen::generateCFromBBList(DAGPartition* pa)
                 if(std::find(actualIns->begin(),actualIns->end(),insPt)==actualIns->end())
                 {
                     if(insPt->isTerminator() && !isa<ReturnInst>(*insPt) )
-                        curBBStrArray->push_back(generateSingleStatement(insPt,true,false,instructionSeq,partitionDecStr));
+                        curBBStrArray->push_back(generateSingleStatement(insPt,true,false,instructionSeq,partitionDecStr,functionArgs,fifoArgs));
                 }
             }
 
@@ -1066,7 +1066,7 @@ void PartitionGen::generateCFromBBList(DAGPartition* pa)
                 if(actualIns==0 || (actualIns!=0 && (std::find(actualIns->begin(),actualIns->end(),insPt)==actualIns->end())))
                 {
                     errs()<<"src   "<<cast<Instruction>(*insPt)<<"\n";
-                    std::string srcInsStr = generateSingleStatement(insPt,true,false,instructionSeq,partitionDecStr);
+                    std::string srcInsStr = generateSingleStatement(insPt,true,false,instructionSeq,partitionDecStr,functionArgs,fifoArgs);
                     curBBStrArray->push_back(srcInsStr);
                 }
             }
@@ -1122,7 +1122,7 @@ void PartitionGen::generateCFromBBList(DAGPartition* pa)
                     }
                 }
                 errs()<<"done add channel";
-                std::string actualInsStr = generateSingleStatement(insPt,false,thereIsPartitionReceiving,instructionSeq,partitionDecStr,&phiPreAssign);
+                std::string actualInsStr = generateSingleStatement(insPt,false,thereIsPartitionReceiving,instructionSeq,partitionDecStr,functionArgs,fifoArgs,&phiPreAssign);
                 curBBStrArray->push_back(actualInsStr);
                 errs()<<"done actual\n";
             }
@@ -1147,6 +1147,38 @@ void PartitionGen::generateCFromBBList(DAGPartition* pa)
     this->Out<<curFunc->getName()<<int2Str(partGenId);
     this->Out<<"(";
     /*****this is the part where we make the argument*****/
+    for(unsigned k=0; k<functionArgs.size();k++)
+    {
+        argPair* curP = functionArgs.at(k);
+        // make sure there is no repeat
+        bool added = false;
+        for(unsigned ki=0; ki<k; ki++)
+        {
+            // check if we already seen it
+            argPair* checkP = functionArgs.at(ki);
+            if(checkP->argName.compare( curP->argName)==0)
+            {
+                added = true;
+                break;
+            }
+        }
+        if(!added)
+        {
+            std::string argDec = generateArgStr(curP);
+            if(k!=0)
+                this->Out<<",\n";
+            this->Out<<argDec;
+        }
+    }
+
+    for(unsigned k=0; k<fifoArgs.size(); k++)
+    {
+        argPair* curP = fifoArgs.at(k);
+        std::string argDec = generateArgStr(curP);
+        if(k!=0)
+            this->Out<<",\n";
+        this->Out<<argDec;
+    }
 
     /*****end****/
     this->Out<<"){";
@@ -1201,7 +1233,15 @@ void PartitionGen::generateCFromBBList(DAGPartition* pa)
 
     partGenId++;
     this->Out<<"//=========================================================================\n";
-
+    // clear the functionArgs and fifoArgs vector
+    for(unsigned k =0; k< functionArgs.size(); k++)
+    {
+        delete functionArgs.at(k);
+    }
+    for(unsigned k =0; k<fifoArgs.size();k++)
+    {
+        delete fifoArgs.at(k);
+    }
 
 
 }

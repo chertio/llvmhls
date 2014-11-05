@@ -26,6 +26,13 @@ struct argPair
     char dir;
 };
 
+
+std::string generateArgStr(argPair* ap)
+{
+    return ap->argType + ap->argName;
+}
+
+
 std::string generateVariableName(Instruction* ins, int seqNum)
 {
     std::string rtVarName= ins->getParent()->getName();
@@ -87,12 +94,8 @@ std::string generateGetElementPtrInstVarDec(Instruction& ins)
     }
     return varType;
 }
-
-
-std::string generateVariableType(Value* valPtr)
+std::string generateFifoType(Value* valPtr)
 {
-
-
     std::string varType;
 
     if(isa<Instruction>(*valPtr))
@@ -104,7 +107,7 @@ std::string generateVariableType(Value* valPtr)
         // dependencies thus need a type
         if(ins->isTerminator()&&!isa<ReturnInst>(*ins))
         {
-            varType = "char";
+            varType = "char* ";
             return varType;
 
         }
@@ -143,8 +146,78 @@ std::string generateVariableType(Value* valPtr)
         case Type::PointerTyID:
         // well this is likely a getElementPtr thing
         // we need to find out what type it is pointing to
-            varType = generateGetElementPtrInstVarDec(*ins);
+            if(isa<Instruction>(*valPtr))
+            {
+                Instruction* ins = &(cast<Instruction>(*valPtr));
+                varType = generateGetElementPtrInstVarDec(*ins);
+            }
+            break;
+        //VectorTyID,      ///< 15: SIMD 'packed' format, or other vector type
+        default:
+            errs()<<"unhandled type, exit\n";
+            exit(1);
+    }
+}
 
+std::string generateVariableType(Value* valPtr)
+{
+
+
+    std::string varType;
+
+    if(isa<Instruction>(*valPtr))
+    {
+        Instruction* ins =0;
+        ins = &(cast<Instruction>(*valPtr));
+        // a special case for generating the branches
+        // they might be used to communicate control
+        // dependencies thus need a type
+        if(ins->isTerminator()&&!isa<ReturnInst>(*ins))
+        {
+            varType = "char ";
+            return varType;
+
+        }
+    }
+
+
+    switch(valPtr->getType()->getTypeID())
+    {
+        case Type::VoidTyID:
+            varType="";
+            break;
+        case Type::HalfTyID:
+            varType="short ";
+            break;
+        case Type::FloatTyID:
+            varType="float ";
+            break;
+        case Type::DoubleTyID:
+            varType ="double ";
+            break;
+        //X86_FP80TyID,    ///<  4: 80-bit floating point type (X87)
+        //FP128TyID,       ///<  5: 128-bit floating point type (112-bit mantissa)
+        //PPC_FP128TyID,   ///<  6: 128-bit floating point type (two 64-bits, PowerPC)
+        //LabelTyID,       ///<  7: Labels
+        //MetadataTyID,    ///<  8: Metadata
+        //X86_MMXTyID,     ///<  9: MMX vectors (64 bits, X86 specific)
+
+    // Derived types... see DerivedTypes.h file.
+    // Make sure FirstDerivedTyID stays up to date!
+        case Type::IntegerTyID:     ///< 10: Arbitrary bit width integers
+            varType ="int ";
+            break;
+        //FunctionTyID,    ///< 11: Functions
+        //StructTyID,      ///< 12: Structures
+        //ArrayTyID,       ///< 13: Arrays
+        case Type::PointerTyID:
+        // well this is likely a getElementPtr thing
+        // we need to find out what type it is pointing to
+            if(isa<Instruction>(*valPtr))
+            {
+                Instruction* ins = &(cast<Instruction>(*valPtr));
+                varType = generateGetElementPtrInstVarDec(*ins);
+            }
             break;
         //VectorTyID,      ///< 15: SIMD 'packed' format, or other vector type
         default:
@@ -276,7 +349,7 @@ std::string generateGettingRemoteBranchTag(TerminatorInst& curIns, int seqNum, s
 
     // the name of the argument is gonna be the name of the channel
     // type of the channel is gonna be char?
-    p.push_back(createArg(channelStr,"char",8,0));
+    p.push_back(createArg(channelStr,"char* ",8,0));
 
     unsigned numSuc = curIns.getNumSuccessors();
     assert(numSuc < 255 && numSuc>0);
@@ -313,30 +386,46 @@ std::string generateGettingRemoteData(Instruction& curIns, int seqNum, std::vect
     rtStr = rtStr+"pop("+channelStr+","+varName+");\n";
     return rtStr;
 }
-std::string generateLoadInstruction(LoadInst& li, std::string varName)
+std::string generateLoadInstruction(LoadInst& li, std::string varName,std::vector<argPair*>& functionArgs)
 {
 
     Value* ptrVal = li.getPointerOperand();
+    // the pointer operand is not a functional argument normally?
+    if(isa<Argument>(*ptrVal))
+        functionArgs.push_back(createArg(ptrVal->getName(),generateVariableType(ptrVal),ptrVal->getType()->getScalarSizeInBits(),0));
     std::string ptrStr = generateOperandStr(ptrVal);
     return varName+"= *("+ptrStr+");\n";
 }
-std::string generateStoreInstruction(StoreInst& si )
+std::string generateStoreInstruction(StoreInst& si,std::vector<argPair*>& functionArgs )
 {
 
     Value* ptrVal = si.getPointerOperand();
     Value* val = si.getValueOperand();
+    if(isa<Argument>(*ptrVal))
+        functionArgs.push_back(createArg(ptrVal->getName(),generateVariableType(ptrVal),ptrVal->getType()->getScalarSizeInBits(),0));
+    if(isa<Argument>(*val))
+        functionArgs.push_back(createArg(val->getName(),generateVariableType(val),val->getType()->getScalarSizeInBits(),0));
+
     std::string ptrStr = generateOperandStr(ptrVal);
+
     std::string valStr = generateOperandStr(val);
+
     std::string rtStr ="*("+ptrStr+") = "+valStr+";\n";
     return rtStr;
 }
-std::string generateGetElementPtrInstruction(GetElementPtrInst& gepi, std::string varName)
+std::string generateGetElementPtrInstruction(GetElementPtrInst& gepi, std::string varName,std::vector<argPair*>& functionArgs )
 {
 
     Value* ptr = gepi.getPointerOperand();
+    if(isa<Argument>(*ptr))
+        functionArgs.push_back(createArg(ptr->getName(),generateVariableType(ptr),ptr->getType()->getScalarSizeInBits(),0));
     std::string ptrStr = generateOperandStr( ptr);
 
-    std::string offSetStr = generateOperandStr(gepi.getOperand(1));
+    Value* offsetVal = gepi.getOperand(1);
+    if(isa<Argument>(*offsetVal))
+        functionArgs.push_back(createArg(offsetVal->getName(),generateVariableType(offsetVal),offsetVal->getType()->getScalarSizeInBits(),0));
+
+    std::string offSetStr = generateOperandStr(offsetVal);
     // check the index array and do additions
     std::string rtStr = varName+"= "+ptrStr+"+"+offSetStr+";\n";
     return rtStr;
@@ -375,7 +464,7 @@ std::string generateEndBlock(std::vector<BasicBlock*>* BBList )
     return rtStr;
 
 }
-std::string generateCmpOperations(CmpInst& curIns, bool remoteDst, int seqNum)
+std::string generateCmpOperations(CmpInst& curIns, bool remoteDst, int seqNum,std::vector<argPair*>& fifoArgs,std::vector<argPair*>& functionArgs )
 {
 
     int channelType = 1;
@@ -383,8 +472,20 @@ std::string generateCmpOperations(CmpInst& curIns, bool remoteDst, int seqNum)
     std::string channelStr = generateChannelString(channelType,seqNum,curIns.getParent()->getName());
     std::string varName = generateVariableName(&curIns,seqNum);
     //int numberOfOperands = curIns.getNumOperands();
-    std::string firstVal = generateOperandStr(curIns.getOperand(0));
-    std::string secondVal = generateOperandStr(curIns.getOperand(1));
+
+    Value* first = curIns.getOperand(0);
+    Value* second = curIns.getOperand(1);
+    if(isa<Argument>(*first))
+    {
+        functionArgs.push_back(createArg(first->getName(),generateVariableType(first),first->getType()->getScalarSizeInBits(),0));
+    }
+    if(isa<Argument>(*second))
+    {
+        functionArgs.push_back(createArg(second->getName(),generateVariableType(second),second->getType()->getScalarSizeInBits(),0));
+    }
+
+    std::string firstVal = generateOperandStr(first);
+    std::string secondVal = generateOperandStr(second);
     bool def=false;
     std::string constBool="";
     std::string cmpOperator="";
@@ -459,24 +560,49 @@ std::string generateCmpOperations(CmpInst& curIns, bool remoteDst, int seqNum)
     //std::string falseStr = generateOperandStr( curIns.getFalseValue());
     //rtStr+= varName+" = "+condStr+"?"+trueStr+":"+falseStr+";\n";
     if(remoteDst)
+    {
         rtStr=rtStr+generatePushOp(varName,channelStr);
+        fifoArgs.push_back(createArg(channelStr,generateVariableType(&curIns),curIns.getType()->getScalarSizeInBits(),1));
+    }
     return rtStr;
 
 
 }
 
-std::string generateSelectOperations(SelectInst& curIns,bool remoteDst,int seqNum)
+std::string generateSelectOperations(SelectInst& curIns,bool remoteDst,int seqNum,std::vector<argPair*>& functionArgs, std::vector<argPair*>& fifoArgs)
 {
     std::string rtStr="";
     int channelType =  1;
     std::string channelStr = generateChannelString(channelType,seqNum,curIns.getParent()->getName());
     std::string varName = generateVariableName(&curIns,seqNum);
-    std::string condStr  = generateOperandStr( curIns.getCondition());
-    std::string trueStr = generateOperandStr( curIns.getTrueValue());
-    std::string falseStr = generateOperandStr( curIns.getFalseValue());
+
+    Value* condVal =  curIns.getCondition();
+    std::string condStr  = generateOperandStr(condVal);
+    Value* trueVal =  curIns.getTrueValue();
+    std::string trueStr = generateOperandStr(trueVal );
+    Value* falseVal = curIns.getFalseValue();
+    std::string falseStr = generateOperandStr(falseVal);
+    // any of cond true false can come from function args
+    if(isa<Argument>(*(condVal)))
+    {
+        functionArgs.push_back(createArg(condVal->getName(),generateVariableType(condVal),condVal->getType()->getScalarSizeInBits(),0));
+    }
+    if(isa<Argument>(*(trueVal)))
+    {
+        functionArgs.push_back(createArg(trueVal->getName(),generateVariableType(trueVal),trueVal->getType()->getScalarSizeInBits(),0));
+    }
+    if(isa<Argument>(*(falseVal)))
+    {
+        functionArgs.push_back(createArg(falseVal->getName(),generateVariableType(falseVal),falseVal->getType()->getScalarSizeInBits(),0));
+    }
+
+
     rtStr+= varName+" = "+condStr+"?"+trueStr+":"+falseStr+";\n";
     if(remoteDst)
+    {
+        fifoArgs.push_back(createArg(channelStr,generateVariableType(&curIns),curIns.getType()->getScalarSizeInBits(),1));
         rtStr=rtStr+generatePushOp(varName,channelStr);
+    }
     return rtStr;
 
 
@@ -484,7 +610,7 @@ std::string generateSelectOperations(SelectInst& curIns,bool remoteDst,int seqNu
 
 
 std::string generatePhiNode(PHINode& curIns,bool remoteDst,int seqNum,
-                                  BBMap2outStr* preAssign)
+                                  BBMap2outStr* preAssign,std::vector<argPair*>& functionArgs, std::vector<argPair*>& fifoArgs)
 {
     std::string rtStr="";
     int channelType =  1;
@@ -494,6 +620,11 @@ std::string generatePhiNode(PHINode& curIns,bool remoteDst,int seqNum,
     {
         BasicBlock* curPred = curIns.getIncomingBlock(inBlockInd);
         Value* curPredVal = curIns.getIncomingValueForBlock(curPred);
+
+        if(isa<Argument>(*curPredVal))
+        {
+            functionArgs.push_back(createArg(curPredVal->getName(),generateVariableType(curPredVal),curPredVal->getType()->getScalarSizeInBits(),0));
+        }
         // now we check if the BB has a vector of strings, if not we add one
         if(preAssign->find(curPred)==preAssign->end())
         {
@@ -507,13 +638,14 @@ std::string generatePhiNode(PHINode& curIns,bool remoteDst,int seqNum,
     }
     if(remoteDst)
     {
+        fifoArgs.push_back(createArg(channelStr,generateVariableType(&curIns),curIns.getType()->getScalarSizeInBits(),1));
         rtStr=rtStr+generatePushOp(varName,channelStr);
     }
     return rtStr;
 
 }
 
-std::string generateMemoryOperations(Instruction& curIns, bool remoteDst, int seqNum)
+std::string generateMemoryOperations(Instruction& curIns, bool remoteDst, int seqNum,std::vector<argPair*>& fifoArgs, std::vector<argPair*>& functionArgs)
 {
     std::string rtStr="";
     int channelType =  1;
@@ -527,13 +659,13 @@ std::string generateMemoryOperations(Instruction& curIns, bool remoteDst, int se
         break;
     case Instruction::Load:
         //LoadInst& li = cast<LoadInst>(curIns);
-        rtStr+=generateLoadInstruction(cast<LoadInst>(curIns),varName);
+        rtStr+=generateLoadInstruction(cast<LoadInst>(curIns),varName,functionArgs);
         break;
     case Instruction::Store:
-        rtStr+=generateStoreInstruction(cast<StoreInst>(curIns));
+        rtStr+=generateStoreInstruction(cast<StoreInst>(curIns),functionArgs);
         break;
     case Instruction::GetElementPtr:
-        rtStr+=generateGetElementPtrInstruction( cast<GetElementPtrInst>(curIns), varName);
+        rtStr+=generateGetElementPtrInstruction( cast<GetElementPtrInst>(curIns), varName,functionArgs);
         break;
     default:
         errs()<<"unhandled instruction\n";
@@ -541,6 +673,8 @@ std::string generateMemoryOperations(Instruction& curIns, bool remoteDst, int se
     }
     if(remoteDst)
     {
+        fifoArgs.push_back(createArg(channelStr,generateVariableType(&curIns),curIns.getType()->getScalarSizeInBits(),1));
+
         rtStr=rtStr+generatePushOp(varName,channelStr);
     }
 
@@ -550,18 +684,20 @@ std::string generateMemoryOperations(Instruction& curIns, bool remoteDst, int se
 std::string generateSimpleAssign(Instruction& curIns, std::string varName)
 {
     std::string rtStr = varName;
-    std::string originalVal = generateOperandStr( curIns.getOperand(0));
+    Value* v = curIns.getOperand(0);
+    std::string originalVal = generateOperandStr(v );
     rtStr += "=" + originalVal+";\n";
     return rtStr;
 }
 
 
-std::string generateCastOperations(Instruction& curIns, bool remoteDst, int seqNum)
+std::string generateCastOperations(Instruction& curIns, bool remoteDst, int seqNum,std::vector<argPair*>& functionArgs, std::vector<argPair*>& fifoArgs)
 {
     std::string rtStr="";
     int channelType =  1;
     std::string channelStr = generateChannelString(channelType,seqNum,curIns.getParent()->getName());
     std::string varName = generateVariableName(&curIns,seqNum);
+    Value* oriv =0;
     switch(curIns.getOpcode())
     {
     case Instruction::Trunc:
@@ -570,6 +706,9 @@ std::string generateCastOperations(Instruction& curIns, bool remoteDst, int seqN
     case Instruction::BitCast:
         // just generate a declaration
         rtStr += generateSimpleAssign(curIns,varName);
+        oriv = curIns.getOperand(0);
+        if(isa<Argument>(*(oriv)))
+            functionArgs.push_back(createArg(oriv->getName(),generateVariableType(oriv),oriv->getType()->getScalarSizeInBits(),0));
         break;
     default:
         errs()<<"unhandled cast instruction\n"<<curIns;
@@ -577,6 +716,7 @@ std::string generateCastOperations(Instruction& curIns, bool remoteDst, int seqN
     }
     if(remoteDst)
     {
+        fifoArgs.push_back(createArg(channelStr,generateVariableType(&curIns),curIns.getType()->getScalarSizeInBits(),1));
         rtStr=rtStr+generatePushOp(varName,channelStr);
     }
 
@@ -695,7 +835,7 @@ std::string generateControlFlow(TerminatorInst& curIns,bool remoteDst, int seqNu
             if(isa<Argument>(*condVal))
             {
                 Argument* valArg = &(cast<Argument>(*condVal));
-                swtichVar+= valArg->getName();
+                switchVar+= valArg->getName();
                 functionArgs.push_back(createArg(valArg->getName(), generateVariableType(valArg), valArg->getType()->getScalarSizeInBits(),0   ));
             }
             else
@@ -794,7 +934,8 @@ std::string generateReturn(ReturnInst& curIns, std::vector<argPair*>& functionAr
         else
         {
             retVar += retVal->getName();
-            functionArgs.push_back(createArg(retVal->getName(),generateVariableType(retVal),retVal->getType()->getScalarSizeInBits(),0 ));
+            if(isa<Argument>(*retVal))
+                functionArgs.push_back(createArg(retVal->getName(),generateVariableType(retVal),retVal->getType()->getScalarSizeInBits(),0 ));
         }
         rtStr=rtStr+retVar+";\n";
 
