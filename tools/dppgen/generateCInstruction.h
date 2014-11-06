@@ -120,13 +120,13 @@ std::string generateFifoType(Value* valPtr)
             varType="";
             break;
         case Type::HalfTyID:
-            varType="short ";
+            varType="short* ";
             break;
         case Type::FloatTyID:
-            varType="float ";
+            varType="float* ";
             break;
         case Type::DoubleTyID:
-            varType ="double ";
+            varType ="double* ";
             break;
         //X86_FP80TyID,    ///<  4: 80-bit floating point type (X87)
         //FP128TyID,       ///<  5: 128-bit floating point type (112-bit mantissa)
@@ -138,7 +138,7 @@ std::string generateFifoType(Value* valPtr)
     // Derived types... see DerivedTypes.h file.
     // Make sure FirstDerivedTyID stays up to date!
         case Type::IntegerTyID:     ///< 10: Arbitrary bit width integers
-            varType ="int ";
+            varType ="int* ";
             break;
         //FunctionTyID,    ///< 11: Functions
         //StructTyID,      ///< 12: Structures
@@ -382,7 +382,7 @@ std::string generateGettingRemoteData(Instruction& curIns, int seqNum, std::vect
     int channelType =  1;
     std::string channelStr = generateChannelString(channelType,seqNum,curIns.getParent()->getName());
     std::string varName = generateVariableName(&curIns,seqNum);
-    fifoArgs.push_back(createArg(channelStr,generateVariableType(&curIns),curIns.getType()->getScalarSizeInBits(),0 ) );
+    fifoArgs.push_back(createArg(channelStr,generateFifoType(&curIns),curIns.getType()->getScalarSizeInBits(),0 ) );
     rtStr = rtStr+"pop("+channelStr+","+varName+");\n";
     return rtStr;
 }
@@ -562,7 +562,7 @@ std::string generateCmpOperations(CmpInst& curIns, bool remoteDst, int seqNum,st
     if(remoteDst)
     {
         rtStr=rtStr+generatePushOp(varName,channelStr);
-        fifoArgs.push_back(createArg(channelStr,generateVariableType(&curIns),curIns.getType()->getScalarSizeInBits(),1));
+        fifoArgs.push_back(createArg(channelStr,generateFifoType(&curIns),curIns.getType()->getScalarSizeInBits(),1));
     }
     return rtStr;
 
@@ -600,7 +600,7 @@ std::string generateSelectOperations(SelectInst& curIns,bool remoteDst,int seqNu
     rtStr+= varName+" = "+condStr+"?"+trueStr+":"+falseStr+";\n";
     if(remoteDst)
     {
-        fifoArgs.push_back(createArg(channelStr,generateVariableType(&curIns),curIns.getType()->getScalarSizeInBits(),1));
+        fifoArgs.push_back(createArg(channelStr,generateFifoType(&curIns),curIns.getType()->getScalarSizeInBits(),1));
         rtStr=rtStr+generatePushOp(varName,channelStr);
     }
     return rtStr;
@@ -638,7 +638,7 @@ std::string generatePhiNode(PHINode& curIns,bool remoteDst,int seqNum,
     }
     if(remoteDst)
     {
-        fifoArgs.push_back(createArg(channelStr,generateVariableType(&curIns),curIns.getType()->getScalarSizeInBits(),1));
+        fifoArgs.push_back(createArg(channelStr,generateFifoType(&curIns),curIns.getType()->getScalarSizeInBits(),1));
         rtStr=rtStr+generatePushOp(varName,channelStr);
     }
     return rtStr;
@@ -673,7 +673,7 @@ std::string generateMemoryOperations(Instruction& curIns, bool remoteDst, int se
     }
     if(remoteDst)
     {
-        fifoArgs.push_back(createArg(channelStr,generateVariableType(&curIns),curIns.getType()->getScalarSizeInBits(),1));
+        fifoArgs.push_back(createArg(channelStr,generateFifoType(&curIns),curIns.getType()->getScalarSizeInBits(),1));
 
         rtStr=rtStr+generatePushOp(varName,channelStr);
     }
@@ -716,7 +716,7 @@ std::string generateCastOperations(Instruction& curIns, bool remoteDst, int seqN
     }
     if(remoteDst)
     {
-        fifoArgs.push_back(createArg(channelStr,generateVariableType(&curIns),curIns.getType()->getScalarSizeInBits(),1));
+        fifoArgs.push_back(createArg(channelStr,generateFifoType(&curIns),curIns.getType()->getScalarSizeInBits(),1));
         rtStr=rtStr+generatePushOp(varName,channelStr);
     }
 
@@ -799,7 +799,7 @@ std:: string generateBinaryOperations(BinaryOperator& curIns, bool remoteDst,int
     if(remoteDst)
     {
         rtStr=rtStr+generatePushOp(varName,channelStr);
-        fifoArgs.push_back(createArg(channelStr, generateVariableType(&curIns),curIns.getType()->getScalarSizeInBits(),1 ) );
+        fifoArgs.push_back(createArg(channelStr, generateFifoType(&curIns),curIns.getType()->getScalarSizeInBits(),1 ) );
     }
     return rtStr;
 }
@@ -904,7 +904,7 @@ std::string generateControlFlow(TerminatorInst& curIns,bool remoteDst, int seqNu
 
     }
     if(remoteDst)
-        fifoArgs.push_back(createArg(channelName,"char",8,1));
+        fifoArgs.push_back(createArg(channelName,"char* ",8,1));
     return rtStr;
 
     // for branch, we can convert it to switch statement as well

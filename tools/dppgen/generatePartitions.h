@@ -1177,6 +1177,8 @@ void PartitionGen::generateCFromBBList(DAGPartition* pa)
         std::string argDec = generateArgStr(curP);
         if(k!=0)
             this->Out<<",\n";
+        else if(functionArgs.size()!=0)
+            this->Out<<",\n";
         this->Out<<argDec;
     }
 
