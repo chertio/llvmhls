@@ -53,9 +53,9 @@ using namespace llvm;
 // The OptimizationList is automatically populated with registered Passes by the
 // PassNameParser.
 //
-static cl::list<const PassInfo*, bool, PassNameParser>
+/*static cl::list<const PassInfo*, bool, PassNameParser>
 PassList(cl::desc("Optimizations available:"));
-
+*/
 // Other command line options...
 //
 static cl::opt<std::string>
@@ -75,7 +75,12 @@ static cl::opt<bool>
 NoOutput("disable-output",
          cl::desc("Do not write result bitcode file"), cl::Hidden);
 
+
 static cl::opt<bool>
+NoControlFlowDup("disable-cf-dup",
+         cl::desc("Do not duplicate control flows between different stages"), cl::Hidden);
+
+/*static cl::opt<bool>
 UnitAtATime("funit-at-a-time",
             cl::desc("Enable IPO. This is same as llvm-gcc's -funit-at-a-time"),
             cl::init(true));
@@ -93,15 +98,13 @@ static cl::opt<bool>
 DisableSLPVectorization("disable-slp-vectorization",
                         cl::desc("Disable the slp vectorization pass"),
                         cl::init(false));
-
+*/
 // ---------- Define Printers for module and function passes ------------
 
 
 static inline void addPass(PassManagerBase &PM, Pass *P) {
   // Add the pass to the pass manager...
   PM.add(P);
-
-
 }
 
 
@@ -218,7 +221,9 @@ int main(int argc, char **argv) {
 
   // Declare success.
   if (!NoOutput )
+  {
     Out->keep();
-
+    fdesOut->keep();
+  }
   return 0;
 }

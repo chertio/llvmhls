@@ -158,7 +158,7 @@ std::string generateFifoType(Value* valPtr)
             exit(1);
     }
 }
-
+//FIXME: this whole function should be rewritten
 std::string generateVariableType(Value* valPtr)
 {
 
@@ -217,6 +217,14 @@ std::string generateVariableType(Value* valPtr)
             {
                 Instruction* ins = &(cast<Instruction>(*valPtr));
                 varType = generateGetElementPtrInstVarDec(*ins);
+            }
+            else
+            {
+                Type* ptedType = valPtr->getType()->getPointerElementType();
+                if(ptedType->isFloatTy())
+                    varType="float* ";
+                else if(ptedType->isIntegerTy())
+                    varType="int* ";
             }
             break;
         //VectorTyID,      ///< 15: SIMD 'packed' format, or other vector type
