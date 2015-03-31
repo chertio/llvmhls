@@ -896,6 +896,7 @@ std::string generateControlFlow(TerminatorInst& curIns,bool remoteDst, int seqNu
         // the value of the instruction generating the value -- or constant
         // -- or whatever
         // anyhow, generateOperand
+
         //FIXME
         //std::string varName = generateVariableName(&curIns,seqNum);
         std::string switchName = generateOperandStr(si.getCondition());

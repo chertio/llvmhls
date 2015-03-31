@@ -24,6 +24,7 @@
 #include "generateCInstruction.h"
 #include "llvm/Analysis/Dominators.h"
 #include "llvm/Analysis/PostDominators.h"
+#include "llvm/Analysis/LoopInfo.h"
 #include <vector>
 #include <string>
 #include <queue>
@@ -147,9 +148,12 @@ using namespace llvm;
         // if this is return, it should be pretty easy.
         else if(isa<ReturnInst>(*curIns))
         {
-            // remote can never have remote src
+            // return can never have remote src
             // the ins generating the return value
-            // has remote src
+            // has remote src -- note only srcIns can have remote src, and the data
+            // obtained from the channel get used by other
+            // instruction in the local partition
+            // returnInst doesnt have anything to be used by other instruction
             // it is possible it has functional argument as argument
             rtStr = rtStr+ generateReturn(cast<ReturnInst>(*curIns), functionArgs);
         }
@@ -381,6 +385,7 @@ using namespace llvm;
         AU.addRequired<InstructionGraph>();
         AU.addRequiredTransitive<DominatorTree>();
         AU.addRequired<PostDominatorTree>();
+        AU.addRequired<LoopInfo>();
         AU.setPreservesAll();
       }
       std::vector<DAGPartition*>* getPartitionFromIns(Instruction* ins)
@@ -389,7 +394,7 @@ using namespace llvm;
           std::vector<DAGPartition*>* part = dagPartitionMap[const_cast<DAGNode4Partition*>(node)];
           return part;
       }
-      void generateCFromBBList(DAGPartition* pa);
+      void generateCFromBBList(DAGPartition* pa, LoopInfo* li, DominatorTree* dt);
       void addChannelAndDepPartition(bool &thereIsPartitionReceiving, Instruction* insPt,
                                                    std::string& channelStr, DAGPartition* destPart, int channelType, int seqNum);
 
@@ -883,11 +888,12 @@ void PartitionGen::generateControlFlowPerPartition()
     }
     errs()<<" no cycle discovered\n";
     // starting the actual generation of function
+    DominatorTree* DT  = getAnalysisIfAvailable<DominatorTree>();
+    PostDominatorTree* PDT = getAnalysisIfAvailable<PostDominatorTree>();
+
     for(unsigned int partInd = 0; partInd < partitions.size(); partInd++)
     {
         DAGPartition* curPart = partitions.at(partInd);
-        DominatorTree* DT  = getAnalysisIfAvailable<DominatorTree>();
-        PostDominatorTree* PDT = getAnalysisIfAvailable<PostDominatorTree>();
         curPart->generateBBList(DT, PDT);
 
         errs()<<"done part\n";
@@ -907,7 +913,8 @@ void PartitionGen::generateControlFlowPerPartition()
     for(unsigned int partInd = 0; partInd < partitions.size(); partInd++)
     {
         DAGPartition* curPart = partitions.at(partInd);
-        generateCFromBBList(curPart);
+        LoopInfo* LI = getAnalysisIfAvailable<LoopInfo>();
+        generateCFromBBList(curPart,LI,DT);
     }
 
 
@@ -967,12 +974,20 @@ void PartitionGen::addChannelAndDepPartition(bool &thereIsPartitionReceiving, In
     thereIsPartitionReceiving=true;
 }
 
-void PartitionGen::generateCFromBBList(DAGPartition* pa)
+void PartitionGen::generateCFromBBList(DAGPartition* pa, LoopInfo* li, DominatorTree* dt)
 {
     //BBMap2Ins& srcBBs, BBMap2Ins& insBBs, std::vector<BasicBlock*>& BBList
     BBMap2Ins* srcBBs = srcBBsInPartition[pa];
     BBMap2Ins* insBBs = insBBsInPartition[pa];
     std::vector<BasicBlock*>* BBList = allBBsInPartition[pa];
+    // now find the dominator for this list of BB
+    BasicBlock* domBB = BBList->at(0);
+    for(unsigned int bbInd = 1; bbInd < BBList->size(); bbInd++)
+    {
+        domBB = dt->findNearestCommonDominator(domBB,BBList->at(bbInd));
+    }
+    // the dominator must be inside the list
+    assert(std::find(BBList->begin(),BBList->end(),domBB)!=BBList->end());
     // we can generate the definition string, and create a mapping of instruction to def string
     //InsMap2Str ins2Def; // wont be necessary
 
@@ -1209,11 +1224,15 @@ void PartitionGen::generateCFromBBList(DAGPartition* pa)
         this->Out<<curDec<<"\n";
     }
 
-    // FIXMEhow do we know if we should be put in a while loop?
-    // if the dominator basic block is in a loop..
-    // how do we determine that? we can just do a dfs for itself
-    //
-
+    bool encloseWhileLoop = false;
+    if(li->getLoopDepth(domBB)!=0)
+    {
+        encloseWhileLoop = true;
+    }
+    if(encloseWhileLoop)
+    {
+        this->Out<<"while(1){\n";
+    }
     for(unsigned int s=0; s < curPartitionBBStr.size(); s++)
     {
         std::vector<std::string>* curBBStr = curPartitionBBStr.at(s);
@@ -1244,8 +1263,10 @@ void PartitionGen::generateCFromBBList(DAGPartition* pa)
 
     // now we output the endgroup
     this->Out<<endgroup;
-    //FIXME if we have while(1)
-
+    if(encloseWhileLoop)
+    {
+        this->Out<<"\n}\n";
+    }
     this->Out<<"\n}\n";
 
 

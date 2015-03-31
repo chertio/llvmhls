@@ -78,7 +78,10 @@ NoOutput("disable-output",
 
 static cl::opt<bool>
 NoControlFlowDup("disable-cf-dup",
-         cl::desc("Do not duplicate control flows between different stages"), cl::Hidden);
+                 cl::desc("Do not duplicate control flows between different stages"),cl::init(true), cl::Hidden);
+static cl::opt<bool>
+GenerateCPUMode("cpu-mode",
+                  cl::desc("generate the decoupled functions which would be run by the cpu"),cl::init(true), cl::Hidden );
 
 /*static cl::opt<bool>
 UnitAtATime("funit-at-a-time",
@@ -129,6 +132,7 @@ int main(int argc, char **argv) {
   initializeInstructionGraphPass(Registry);
   INITIALIZE_PASS_DEPENDENCY(DominatorTree)
   INITIALIZE_PASS_DEPENDENCY(PostDominatorTree)
+  INITIALIZE_PASS_DEPENDENCY(LoopInfo)
 
   cl::ParseCommandLineOptions(argc, argv,
     "llvm .bc -> .bc modular optimizer and analysis printer\n");
