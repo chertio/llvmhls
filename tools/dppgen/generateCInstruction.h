@@ -462,11 +462,11 @@ std::string generateEndBlock(std::vector<BasicBlock*>* BBList )
     }
     // now generate the endblock
     std::string rtStr=ENDBLOCK;
-    rtStr += ":\n";
+    rtStr += ":\n;\n";
     for(unsigned int k = 0; k<outsideBBs.size(); k++)
     {
         rtStr += outsideBBs.at(k)->getName();
-        rtStr += ":\n";
+        rtStr += ":\n;\n";
 
     }
     return rtStr;
