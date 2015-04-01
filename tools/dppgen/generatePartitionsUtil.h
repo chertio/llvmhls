@@ -9,6 +9,8 @@
 #include "InstructionGraph.h"
 #include "llvm/IR/Constants.h"
 using namespace llvm;
+// FIXME: just a place holder, this function is used to
+// calculate the latency through SCCs
 int instructionLatencyLookup(Instruction* ins)
 {
     // normal instructions like "and, or , add, shift, are assigned a value of 3, multiply assigned a value of 10"

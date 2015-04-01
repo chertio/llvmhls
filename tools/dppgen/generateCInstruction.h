@@ -390,8 +390,12 @@ std::string generateGettingRemoteData(Instruction& curIns, int seqNum, std::vect
     int channelType =  1;
     std::string channelStr = generateChannelString(channelType,seqNum,curIns.getParent()->getName());
     std::string varName = generateVariableName(&curIns,seqNum);
+    std::string varNameU= varName+"_raw";
+    //FIXME: add the declaration
     fifoArgs.push_back(createArg(channelStr,generateFifoType(&curIns),curIns.getType()->getScalarSizeInBits(),0 ) );
-    rtStr = rtStr+"pop("+channelStr+","+varName+");\n";
+    rtStr = rtStr+"pop("+channelStr+","+varNameU+");\n";
+    // cast it to the var
+    rtStr = rtStr+varName+"=("+ +")"+varNameU+";\n";
     return rtStr;
 }
 std::string generateLoadInstruction(LoadInst& li, std::string varName,std::vector<argPair*>& functionArgs)

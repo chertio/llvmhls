@@ -50,14 +50,7 @@
 #include "generatePartitions.h"
 using namespace llvm;
 
-// The OptimizationList is automatically populated with registered Passes by the
-// PassNameParser.
-//
-/*static cl::list<const PassInfo*, bool, PassNameParser>
-PassList(cl::desc("Optimizations available:"));
-*/
-// Other command line options...
-//
+// command line options...
 static cl::opt<std::string>
 InputFilename(cl::Positional, cl::desc("<input bitcode file>"),
     cl::init("-"), cl::value_desc("filename"));
@@ -82,29 +75,6 @@ NoControlFlowDup("disable-cf-dup",
 static cl::opt<bool>
 GenerateCPUMode("cpu-mode",
                   cl::desc("generate the decoupled functions which would be run by the cpu"),cl::init(true), cl::Hidden );
-
-/*static cl::opt<bool>
-UnitAtATime("funit-at-a-time",
-            cl::desc("Enable IPO. This is same as llvm-gcc's -funit-at-a-time"),
-            cl::init(true));
-
-static cl::opt<bool>
-DisableLoopUnrolling("disable-loop-unrolling",
-                     cl::desc("Disable loop unrolling in all relevant passes"),
-                     cl::init(false));
-static cl::opt<bool>
-DisableLoopVectorization("disable-loop-vectorization",
-                     cl::desc("Disable the loop vectorization pass"),
-                     cl::init(false));
-
-static cl::opt<bool>
-DisableSLPVectorization("disable-slp-vectorization",
-                        cl::desc("Disable the slp vectorization pass"),
-                        cl::init(false));
-*/
-// ---------- Define Printers for module and function passes ------------
-
-
 static inline void addPass(PassManagerBase &PM, Pass *P) {
   // Add the pass to the pass manager...
   PM.add(P);
@@ -116,7 +86,7 @@ static inline void addPass(PassManagerBase &PM, Pass *P) {
 
 
 //===----------------------------------------------------------------------===//
-// main for opt
+// main for dppgen
 //
 int main(int argc, char **argv) {
   sys::PrintStackTraceOnErrorSignal();
@@ -131,7 +101,7 @@ int main(int argc, char **argv) {
   PassRegistry &Registry = *PassRegistry::getPassRegistry();
   initializeInstructionGraphPass(Registry);
   INITIALIZE_PASS_DEPENDENCY(DominatorTree)
-  INITIALIZE_PASS_DEPENDENCY(PostDominatorTree)
+  //INITIALIZE_PASS_DEPENDENCY(PostDominatorTree)
   INITIALIZE_PASS_DEPENDENCY(LoopInfo)
 
   cl::ParseCommandLineOptions(argc, argv,

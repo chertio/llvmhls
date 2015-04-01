@@ -35,7 +35,19 @@ using namespace llvm;
     struct DAGNode4Partition;
     // group of dag node
     struct DAGPartition;
+
     struct PartitionGen;
+    // this is an instruction with
+    // attribute -- if it is getting
+    // from remote partition, and if
+    // it goes out to other partitions
+    struct InsnInPartition
+    {
+        Instruction* insn;
+        bool remoteSrc;
+        bool remoteDst;
+    };
+
 
     typedef std::map<const Instruction *, DAGNode4Partition *> Insn2DagNodeMap;
     // dag node can be in multiple partitions
@@ -376,15 +388,16 @@ using namespace llvm;
       void generateControlFlowPerPartition();
       void print(raw_ostream &O, const Module* = 0) const { }
 
-      void DFSCluster(DAGNode4Partition* curNode, DAGPartition* curPartition);
-      void BFSCluster(DAGNode4Partition* curNode);
+      /*void DFSCluster(DAGNode4Partition* curNode, DAGPartition* curPartition);
+      void BFSCluster(DAGNode4Partition* curNode);*/
+      void checkAcyclicDependency();
       void BarrierCluster(std::vector<DAGNode4Partition*> *dag);
       bool DFSFindPartitionCycle(DAGPartition* nextHop);
 
       virtual void getAnalysisUsage(AnalysisUsage &AU) const {
         AU.addRequired<InstructionGraph>();
         AU.addRequiredTransitive<DominatorTree>();
-        AU.addRequired<PostDominatorTree>();
+        //AU.addRequired<PostDominatorTree>();
         AU.addRequired<LoopInfo>();
         AU.setPreservesAll();
       }
@@ -408,7 +421,6 @@ using namespace llvm;
 
         bool containMemory;
         bool containLongLatCyc;
-
         bool cycleDetectCovered;
         //DagNodeMapTy* insToDagNode;
         //DagPartitionMapTy* dagNodeToPartition;
@@ -432,16 +444,15 @@ using namespace llvm;
         }
         void addDagNode(DAGNode4Partition* dagNode,DagNode2PartitionMap &nodeToPartitionMap )
         {
-            dagNode->print();
             partitionContent.push_back(dagNode);
             dagNode->covered=true;
             containMemory |= dagNode->hasMemory;
             containLongLatCyc |= (dagNode->sccLat >= LONGLATTHRESHOLD);
             // each dagNode maps to at least one partition
-            // we can make vector here
-
+            // but maybe duplicated , this is used to search
+            // for the partition from which the operand originate
+            // and thus build channels
             std::vector<DAGPartition*>* listOfDp;
-            //= nodeToPartitionMap[dagNode];
             if(nodeToPartitionMap.find(dagNode) == nodeToPartitionMap.end())
             {
                 listOfDp = new std::vector<DAGPartition*>();
@@ -450,13 +461,19 @@ using namespace llvm;
             else
                 listOfDp = nodeToPartitionMap[dagNode];
             listOfDp->push_back(this);
-            //nodeToPartitionMap[dagNode] = listOfDp;
         }
 
 
 
-        void generateBBList(DominatorTree* DT, PostDominatorTree* PDT)
+        void generateBBList(DominatorTree* DT/*, PostDominatorTree* PDT*/)
         {
+            // at this point instructions are associated with the partition
+            // each of these instructions' owner bb is of course relevant to
+            // to the partition
+            // each of these instructions are getting operand from somewhere:
+            // either instruction or function arg, if the source is an instruction I_s
+            // then I_s' owner basic block would be relevant for this partition as well
+            // each map keeps track of the BBs and the contained relevant instructions
             BBMap2Ins* sourceBBs = new BBMap2Ins;
             BBMap2Ins* insBBs = new BBMap2Ins;
 
@@ -494,8 +511,8 @@ using namespace llvm;
             // then we shall see where each bb diverge?
             BasicBlock* dominator=0;
             BasicBlock* prevBB=0;
-            BasicBlock* postDominator=0;
-            BasicBlock* prevBBPost = 0;
+            //BasicBlock* postDominator=0;
+            //BasicBlock* prevBBPost = 0;
 
             for(BBMapIter bmi = sourceBBs->begin(), bme = sourceBBs->end(); bmi!=bme; ++bmi)
             {
@@ -511,7 +528,7 @@ using namespace llvm;
                 }
                 else
                     prevBB = curBB;
-
+                /*
                 if(prevBBPost!=0)
                 {
                     postDominator = PDT->findNearestCommonDominator(prevBBPost,curBB);
@@ -520,6 +537,7 @@ using namespace llvm;
                 }
                 else
                     prevBBPost = curBB;
+                */
             }
 
 
@@ -537,7 +555,7 @@ using namespace llvm;
                 }
                 else
                     prevBB = curBB;
-
+                /*
                 if(prevBBPost!=0)
                 {
                     postDominator = PDT->findNearestCommonDominator(prevBBPost,curBB);
@@ -546,6 +564,7 @@ using namespace llvm;
                 }
                 else
                     prevBBPost = curBB;
+                */
             }
             // let's filter out those irrelevant
             // how do we do this,
@@ -633,7 +652,7 @@ for(BBMap2Ins::iterator insIt = sourceBBs->begin(), insEnd = sourceBBs->end(); i
 }
 errs()<<"=========================================================================\n";
 */
-            errs()<<"dominator is "<<dominator->getName()<<" post dom is "<<postDominator->getName()<<"\n";
+            //errs()<<"dominator is "<<dominator->getName()<<" post dom is "<<postDominator->getName()<<"\n";
 
             // go to release memory here
 
@@ -709,7 +728,7 @@ void PartitionGen::BarrierCluster(std::vector<DAGNode4Partition*> *dag)
     }
 }
 
-void PartitionGen::BFSCluster(DAGNode4Partition* curNode)
+/*void PartitionGen::BFSCluster(DAGNode4Partition* curNode)
 {
     //if(needANewPartition(curPartition,curNode))
     //    return;
@@ -773,18 +792,14 @@ void PartitionGen::DFSCluster(DAGNode4Partition* curNode, DAGPartition* curParti
             DFSCluster(nextNode, curPartition);
     }
 }
+*/
 
-
-#define NEWPARTEVERYSEED
-//#define USEBFSCLUSTER
-//#define USEBFSCLUSTER
-#define USEBARRIERCLUSTER
+//#define USEBARRIERCLUSTER
 void PartitionGen::generatePartition(std::vector<DAGNode4Partition*> *dag)
 {
-
-#ifdef USEBARRIERCLUSTER
+//#ifdef USEBARRIERCLUSTER
     BarrierCluster(dag);
-#else
+/*#else
 
     for(unsigned int dagInd = 0; dagInd < dag->size(); dagInd++)
     {
@@ -821,14 +836,14 @@ void PartitionGen::generatePartition(std::vector<DAGNode4Partition*> *dag)
         BFSCluster(curNode);
 
 #endif
+
     }
 #endif
-
-
-    /*errs()<<"#of partitions :"<<partitions.size()<<"\n";
+*/
+ /*errs()<<"#of partitions :"<<partitions.size()<<"\n";
     for(unsigned int ai = 0; ai<partitions.size(); ai++)
     {
-        errs()<<"partitions :"<<ai <<partitions.at(ai)->partitionContent.size()<<"\n";
+        errs()<<"partitions "<<ai <<" contains:"partitions.at(ai)->partitionContent.size()<<" nodes\n";
     }
     for(unsigned int ai = 0; ai<partitions.size(); ai++)
     {
@@ -848,18 +863,8 @@ void PartitionGen::generatePartition(std::vector<DAGNode4Partition*> *dag)
         }
     }*/
 }
-
-
-
-void PartitionGen::generateControlFlowPerPartition()
+void PartitionGen::checkAcyclicDependency()
 {
-    // go through every partition, for each partition
-    // go through all the instructions
-    // for each instruction, find where their operands are from
-    // then these are all the basic blocks we need ? dont we need more
-    // control dependence communication -- lets not have it and check
-    // for cyclic dependence
-
     // lets check if there is any cycle between the partitions
 
     for(unsigned int pi = 0; pi < partitions.size(); pi++)
@@ -869,7 +874,7 @@ void PartitionGen::generateControlFlowPerPartition()
 
         if(DFSFindPartitionCycle(curPart))
         {
-            errs()<<" cycle discovered quit quit\n";
+            errs()<<" cycle discovered quit\n";
             // now see which partitions are in the cycle
             for(unsigned int pie = 0; pie < partitions.size(); pie++)
             {
@@ -887,14 +892,27 @@ void PartitionGen::generateControlFlowPerPartition()
 
     }
     errs()<<" no cycle discovered\n";
+
+}
+
+
+void PartitionGen::generateControlFlowPerPartition()
+{
+    // go through every partition, for each partition
+    // go through all the instructions
+    // for each instruction, find where their operands are from
+    // then these are all the basic blocks we need
+    // just a safety check here
+    checkAcyclicDependency();
+
     // starting the actual generation of function
     DominatorTree* DT  = getAnalysisIfAvailable<DominatorTree>();
-    PostDominatorTree* PDT = getAnalysisIfAvailable<PostDominatorTree>();
+    //PostDominatorTree* PDT = getAnalysisIfAvailable<PostDominatorTree>();
 
     for(unsigned int partInd = 0; partInd < partitions.size(); partInd++)
     {
         DAGPartition* curPart = partitions.at(partInd);
-        curPart->generateBBList(DT, PDT);
+        curPart->generateBBList(DT/*, PDT*/);
 
         errs()<<"done part\n";
         errs()<<"[\n";
@@ -940,6 +958,9 @@ bool PartitionGen::DFSFindPartitionCycle(DAGPartition* dp)
             DAGNode4Partition* nextNode=depNodes.at(di);
 
             std::vector<DAGPartition*>* nextHopPartitions = dagPartitionMap[nextNode];
+            // the first partition this node is assigned to is the one used
+            // in forming acyclic partition, later ones are duplicated nodes
+            // which do not affect acyclicness of the pipeline
             DAGPartition* nextHop = nextHopPartitions->front();
             if(nextHop==dp)
                 continue;
@@ -1310,30 +1331,21 @@ bool PartitionGen::runOnFunction(Function &F) {
             bbi->setName(legal);
         }
     }
-
-    /*for(Function::iterator bbi = F.begin(), bbe = F.end(); bbi!=bbe; ++bbi)
-    {
-        errs()<<bbi->getName()<<"\n";
-    }*/
-
-
     InstructionGraphNode* rootNode = getAnalysis<InstructionGraph>().getRoot();
-
-
-    //unsigned sccNum = 0;
     std::vector<DAGNode4Partition*> collectedDagNode;
-
-    errs() << "SCCs for the program in PostOrder:"<<F.getName();
+    // iterate through the sccs in our graph, each scc is a vector of
+    // instructions -- some time a single instruction
     for (scc_iterator<InstructionGraphNode*> SCCI = scc_begin(rootNode),
            E = scc_end(rootNode); SCCI != E; ++SCCI) {
 
       std::vector<InstructionGraphNode*> &curSCC = *SCCI;
       // we can ignore the last scc coz its the pseudo node root
-      if(curSCC.at(0)->getInstruction()!=0 )
+      if(curSCC.at(0)->getInstruction()!=0)
       {
           DAGNode4Partition* curDagNode = new DAGNode4Partition;
           curDagNode->init();
           curDagNode->dagNodeContent = new std::vector<InstructionGraphNode*>();
+          // copy everything over
           *(curDagNode->dagNodeContent) = curSCC;
           curDagNode->singleIns = (curSCC.size()==1);
 
@@ -1354,20 +1366,7 @@ bool PartitionGen::runOnFunction(Function &F) {
           }
           collectedDagNode.push_back(curDagNode);
       }
-
-
-
-      /*errs() << "\nSCC #" << ++sccNum << " : ";
-      for (std::vector<InstructionGraphNode*>::const_iterator I = nextSCC.begin(),
-             E = nextSCC.end(); I != E; ++I)
-      {
-        if((*I)->getInstruction())
-            errs() << *((*I)->getInstruction())<< "\n ";
-        if (nextSCC.size() == 1 && SCCI.hasLoop())
-            errs() << " (Has self-loop).";
-      }*/
     }
-    //errs()<<"here\n\n\n\n\n\n";
     std::reverse(collectedDagNode.begin(),collectedDagNode.end());
     // now the nodes are topologically shorted
     // let's check
@@ -1394,8 +1393,9 @@ bool PartitionGen::runOnFunction(Function &F) {
             }
 
         }
-        errs()<<"all scc nodes topologically sorted, continue\n";
+
     }
+    errs()<<"all scc nodes topologically sorted, continue\n";
     // all instructions have been added to the dagNodeMap, collectedDagNode
     // we can start building dependencies in the DAGNodePartitions
     // we can start making the partitions
@@ -1429,7 +1429,7 @@ bool PartitionGen::runOnFunction(Function &F) {
 
 
 
-  return true;
+    return true;
 }
 
 
