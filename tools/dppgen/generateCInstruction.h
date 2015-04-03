@@ -17,14 +17,6 @@
 
 typedef std::map<BasicBlock*, std::vector<std::string>*> BBMap2outStr;
 
-struct argPair
-{
-    std::string argType;
-    std::string argName;
-    int size;
-    // 0 means read, 1 means write, 2 means read/write
-    char dir;
-};
 
 
 std::string generateArgStr(argPair* ap)

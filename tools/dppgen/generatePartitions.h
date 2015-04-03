@@ -37,23 +37,7 @@ using namespace llvm;
     struct DAGPartition;
 
     struct PartitionGen;
-    // this is an instruction with
-    // attribute -- if it is getting
-    // from remote partition, and if
-    // it goes out to other partitions
-    // if ownerDagNode maps to partition1
-    // and owner partition maps to partition2
-    // and partition1 != partition2, then this instruction
-    // is duplicated
-    struct InsnInPartition
-    {
-        Instruction* insn;
-        bool remoteSrc;
-        bool remoteDst;
-        DAGNode* ownerDagNode;
-        DAGPartition* ownerPartition;
 
-    };
 
 
     typedef std::map<const Instruction *, DAGNode *> Insn2DagNodeMap;
@@ -82,7 +66,7 @@ using namespace llvm;
     static void addBBInsToMap(BBMap2Ins& map, Instruction* curIns)
     {
         BasicBlock* bbKey = curIns->getParent();
-        BBMap2Ins::iterator I = map.find(bbKey);
+        BBMapIter I = map.find(bbKey);
         if(I== map.end())
         {
             std::vector<Instruction*>* curBBIns = new std::vector<Instruction*>();
@@ -100,12 +84,6 @@ using namespace llvm;
         }
     }
 
-    /*static std::string generateTerminatorStr(Instruction* ins)
-    {
-        std::string a = "f";
-        // find value
-        return a;
-    }*/
 
     static std::string generateSingleStatement(Instruction* curIns, bool remoteSrc, bool remoteDst,
                                                int seqNum,std::vector<std::string>& partitionDecStr,
@@ -247,7 +225,7 @@ using namespace llvm;
     }
 
 
-    static bool searchToBasicBlock(std::vector<BasicBlock*>& storage, BasicBlock* current, BasicBlock* target, BasicBlock* domInter =0 )
+    static bool searchToBasicBlock(std::vector<BasicBlock*>& storage, BasicBlock* current, BasicBlock* target, BasicBlock* domInter )
     {
         //errs()<<" search to bb starting "<<current->getName()<<" towards "<<target->getName()<<"\n";
         storage.push_back(current);
@@ -269,7 +247,7 @@ using namespace llvm;
             // if this path goes through dominator then its disregarded
             if(curSuc == domInter)
                 continue;
-            bool found = searchToBasicBlock(storage, curSuc, target);
+            bool found = searchToBasicBlock(storage, curSuc, target,domInter);
             if(found)
             {
                 //storage.push_back(curSuc);
@@ -294,8 +272,94 @@ using namespace llvm;
         //errs()<<" outo merge";
     }
 
+    static BasicBlock* findDominator(BasicBlock* originalDominator,BBMap2Ins* mapOfBBs,DominatorTree* DT )
+    {
+        BasicBlock* dominator = originalDominator;
+        for(BBMapIter bmi = mapOfBBs->begin(), bme = mapOfBBs->end(); bmi!=bme; ++bmi)
+        {
+            BasicBlock* curBB=bmi->first;
+            if(dominator!=0)
+                dominator = DT->findNearestCommonDominator(dominator, curBB);
+            else
+                dominator = curBB;
+        }
+        return dominator;
+    }
 
-    static void addPathBBsToBBMap(BBMap2Ins& dstBBs, BasicBlock* dominator, std::vector<BasicBlock*>& AllBBs )
+    static BasicBlock* findPostDominator(BasicBlock* originalPostDominator,BBMap2Ins* mapOfBBs,PostDominatorTree* PDT )
+    {
+        BasicBlock* postDominator = originalPostDominator;
+        for(BBMapIter bmi = mapOfBBs->begin(), bme = mapOfBBs->end(); bmi!=bme; ++bmi)
+        {
+            BasicBlock* curBB=bmi->first;
+            if(postDominator!=0)
+            {
+                postDominator = PDT->findNearestCommonDominator(postDominator, curBB);
+
+            }
+            else
+                postDominator = curBB;
+        }
+        return postDominator;
+    }
+
+    static void addPathToSelf(BasicBlock* curBB,std::vector<BasicBlock*>& AllBBs, BasicBlock* dominator)
+    {
+        int numSuc = curBB->getTerminator()->getNumSuccessors();
+        std::vector<BasicBlock*> curPathStorage;
+        for(int sucInd = 0; sucInd<numSuc; sucInd++)
+        {
+            BasicBlock* startBB=curBB->getTerminator()->getSuccessor(sucInd);
+           // errs()<<"serach towards " << dest->getName()<<"\n";
+            if(searchToBasicBlock(curPathStorage,startBB,curBB,dominator))
+            {
+                // got to put everything on the the AllBBs
+                mergeInto(curPathStorage,AllBBs);
+            }
+            curPathStorage.clear();
+        }
+    }
+    /*static bool searchToAnyMember(std::vector<BasicBlock*>& anyMember, BasicBlock* current, std::vector<BasicBlock*> &storage)
+    {
+        storage.push_back(current);
+        if(std::find(anyMember.begin(),anyMember.end(),current)!=anyMember.end())
+        {
+            // we do not want the actual member to be in the storage
+            // just need the path to it, so later the outside members would be
+            // after the END: block, and exiting to end marks the end of execution
+            storage.pop_back();
+            return true;
+        }
+        bool keepCurrent = false;
+        for(unsigned int ind = 0; ind < current->getTerminator()->getNumSuccessors(); ind++)
+        {
+            BasicBlock* curSuc = current->getTerminator()->getSuccessor(ind);
+            if(std::find(storage.begin(),storage.end(),curSuc) != storage.end())
+            {
+                //curSuc already in the array, try the next one
+                continue;
+            }
+            bool found = searchToAnyMember(anyMember, curSuc, storage);
+            if(found)
+            {
+                keepCurrent = true;
+            }
+        }
+        if(!keepCurrent)
+            storage.pop_back();
+        return keepCurrent;
+    }
+
+    static void addPathBBs2AnyMember(std::vector<BasicBlock*>& anyMember, BasicBlock* startMember, std::vector<BasicBlock*>& AllBBs)
+    {
+        std::vector<BasicBlock*> curPathStorage;
+        if(searchToAnyMember(anyMember,startMember,curPathStorage))
+        {
+            mergeInto(curPathStorage,AllBBs);
+        }
+    }*/
+
+    static void addPathBBsToBBMap(BBMap2Ins& dstBBs, BasicBlock* startBB, std::vector<BasicBlock*>& AllBBs,BasicBlock* domInter)
     {
         std::vector<BasicBlock*> curPathStorage;
 
@@ -305,7 +369,7 @@ using namespace llvm;
 
             BasicBlock* dest=bmi->first;
            // errs()<<"serach towards " << dest->getName()<<"\n";
-            if(searchToBasicBlock(curPathStorage,dominator,dest))
+            if(searchToBasicBlock(curPathStorage,startBB,dest, domInter))
             {
                 // got to put everything on the the AllBBs
                 mergeInto(curPathStorage,AllBBs);
@@ -315,7 +379,7 @@ using namespace llvm;
 
         }
     }
-    static void searchToGroupAndAdd(BasicBlock* curBB, BasicBlock* dominator, BBMap2Ins& destBBs,
+    /*static void searchToGroupAndAdd(BasicBlock* curBB, BasicBlock* dominator, BBMap2Ins& destBBs,
                                     std::vector<BasicBlock*>& curPathStorage,std::vector<BasicBlock*>& AllBBs)
     {
         for(BBMapIter bmi2 = destBBs.begin(), bme2 = destBBs.end(); bmi2!=bme2; ++bmi2)
@@ -329,7 +393,7 @@ using namespace llvm;
             curPathStorage.clear();
 
         }
-    }
+    }*/
 
     struct DAGNode{
         std::vector<InstructionGraphNode*>* dagNodeContent;
@@ -360,6 +424,7 @@ using namespace llvm;
       static char ID;  // Pass identification, replacement for typeid
       raw_ostream &Out;
       raw_ostream &fifoDes;
+      bool NoCfDup;
       Function* curFunc;
       partitionToBB2InsInfo srcBBsInPartition;
       partitionToBB2InsInfo insBBsInPartition;
@@ -383,7 +448,7 @@ using namespace llvm;
       //
 
       //PartitionGen() : FunctionPass(ID){}
-      PartitionGen(raw_ostream &out, raw_ostream &out2) : FunctionPass(ID),Out(out),fifoDes(out2) {}
+      PartitionGen(raw_ostream &out, raw_ostream &out2, bool noCfDup) : FunctionPass(ID),Out(out),fifoDes(out2),NoCfDup(noCfDup) {}
       bool runOnFunction(Function& func);
       /*void initializeOut(raw_ostream &out)
       {
@@ -404,7 +469,7 @@ using namespace llvm;
       virtual void getAnalysisUsage(AnalysisUsage &AU) const {
         AU.addRequired<InstructionGraph>();
         AU.addRequiredTransitive<DominatorTree>();
-        //AU.addRequired<PostDominatorTree>();
+        AU.addRequired<PostDominatorTree>();
         AU.addRequired<LoopInfo>();
         AU.setPreservesAll();
       }
@@ -470,7 +535,7 @@ using namespace llvm;
             listOfDp->push_back(this);
         }
 
-        void generateBBList(DominatorTree* DT/*, PostDominatorTree* PDT*/)
+        void generateBBList()
         {
             // at this point instructions are associated with the partition
             // each of these instructions' owner bb is of course relevant to
@@ -504,81 +569,23 @@ using namespace llvm;
                     }
                 }
             }
-
-
-
-            // now make the instructions
-
-
-
             // dominator for src and ins BBs
             // this will be the first basicblock we need to convert
             // then we shall see where each bb diverge?
             BasicBlock* dominator=0;
-            BasicBlock* prevBB=0;
-            //BasicBlock* postDominator=0;
-            //BasicBlock* prevBBPost = 0;
+            DominatorTree* DT= top->getAnalysisIfAvailable<DominatorTree>();
+            dominator = findDominator(dominator,sourceBBs,DT);
+            dominator = findDominator(dominator,insBBs,DT);
 
-            for(BBMapIter bmi = sourceBBs->begin(), bme = sourceBBs->end(); bmi!=bme; ++bmi)
-            {
-                BasicBlock* curBB=bmi->first;
-                //errs()<<curBB->getName()<<"\n";
-                // now print out the source
+            BasicBlock* postDominator =0;
+            PostDominatorTree* PDT = top->getAnalysisIfAvailable<PostDominatorTree>();
+            postDominator = findPostDominator(postDominator,sourceBBs,PDT);
+            postDominator = findPostDominator(postDominator,insBBs,PDT);
 
-                if(prevBB!=0)
-                {
-                    dominator = DT->findNearestCommonDominator(prevBB, curBB);
-                    //errs()<<"\n"<<dominator->getName()<<"is the com anc of "<<prevBB->getName()<<" and "<<curBB->getName()<<"\n";
-                    prevBB = dominator;
-                }
-                else
-                    prevBB = curBB;
-                /*
-                if(prevBBPost!=0)
-                {
-                    postDominator = PDT->findNearestCommonDominator(prevBBPost,curBB);
-                    //errs()<<"\n"<<postDominator->getName()<<"is the post com dom of "<<prevBBPost->getName()<<" and "<<curBB->getName()<<"\n";
-                    prevBBPost = postDominator;
-                }
-                else
-                    prevBBPost = curBB;
-                */
-            }
-
-
-            for(BBMapIter bmi = insBBs->begin(), bme = insBBs->end(); bmi!=bme; ++bmi)
-            {
-                BasicBlock* curBB=bmi->first;
-                //errs()<<curBB->getName()<<"\n";
-                // now print out the source
-
-                if(prevBB!=0)
-                {
-                    dominator = DT->findNearestCommonDominator(prevBB, curBB);
-                    //errs()<<"\n"<<dominator->getName()<<"is the com anc of "<<prevBB->getName()<<" and "<<curBB->getName()<<"\n";
-                    prevBB = dominator;
-                }
-                else
-                    prevBB = curBB;
-                /*
-                if(prevBBPost!=0)
-                {
-                    postDominator = PDT->findNearestCommonDominator(prevBBPost,curBB);
-                   // errs()<<"\n"<<postDominator->getName()<<"is the post com dom of "<<prevBBPost->getName()<<" and "<<curBB->getName()<<"\n";
-                    prevBBPost = postDominator;
-                }
-                else
-                    prevBBPost = curBB;
-                */
-            }
-            // let's filter out those irrelevant
-            // how do we do this,
             // start from each srcBBs, search backward until dominator,
             // everything in between is to be needed, -- if they are not srcBB nor insBBs
             // their terminator output would be needed
 
-            // then go from each srcBBs and insBBs forward, until post dominator,
-            // everything in between is needed, is it?
             // in the case of two BBs, if one BB is never reaching another BB
             // without going through dominator, then when this BB exits, we can
             // just wait in the dominator, so the procedure should be use
@@ -591,28 +598,109 @@ using namespace llvm;
             // some of these BBs wont be in the map, in which case, we just need the terminator
             AllBBs->push_back(dominator);
 
-            addPathBBsToBBMap(*sourceBBs,dominator,*AllBBs);
-            addPathBBsToBBMap(*insBBs,dominator,*AllBBs);
+            // add the path from the dominator to all the sourceBBs
+            addPathBBsToBBMap(*sourceBBs,dominator,*AllBBs,dominator);
+            addPathBBsToBBMap(*insBBs,dominator,*AllBBs,dominator);
             // now  we do the n^2 check to see if anybody goes to anybody else?
             for(BBMapIter bmi = sourceBBs->begin(), bme = sourceBBs->end(); bmi!=bme; ++bmi)
             {
                 BasicBlock* curBB=bmi->first;
-                std::vector<BasicBlock*> curPathStorage;
-
-                searchToGroupAndAdd(curBB,dominator,*sourceBBs,curPathStorage,*AllBBs);
+                //std::vector<BasicBlock*> curPathStorage;
+                addPathBBsToBBMap(*sourceBBs,curBB,*AllBBs,dominator);
+                addPathBBsToBBMap(*insBBs,curBB,*AllBBs,dominator);
+                //searchToGroupAndAdd(curBB,dominator,*sourceBBs,curPathStorage,*AllBBs);
                 // same thing for insBB
-                searchToGroupAndAdd(curBB,dominator,*insBBs,curPathStorage,*AllBBs);
+                //searchToGroupAndAdd(curBB,dominator,*insBBs,curPathStorage,*AllBBs);
 
             }
             for(BBMapIter bmi = insBBs->begin(), bme = insBBs->end(); bmi!=bme; ++bmi)
             {
                 BasicBlock* curBB=bmi->first;
-                std::vector<BasicBlock*> curPathStorage;
-
-                searchToGroupAndAdd(curBB,dominator,*sourceBBs,curPathStorage,*AllBBs);
+                //std::vector<BasicBlock*> curPathStorage;
+                addPathBBsToBBMap(*sourceBBs,curBB,*AllBBs,dominator);
+                addPathBBsToBBMap(*insBBs,curBB,*AllBBs,dominator);
+                //searchToGroupAndAdd(curBB,dominator,*sourceBBs,curPathStorage,*AllBBs);
                 // same thing for insBB
-                searchToGroupAndAdd(curBB,dominator,*insBBs,curPathStorage,*AllBBs);
+                //searchToGroupAndAdd(curBB,dominator,*insBBs,curPathStorage,*AllBBs);
 
+            }
+
+            // a special pass to search for every insBB and srcBB themselves
+            // FIXME: because our search finishes when we see the destination
+            // there is a case where we will generate wrong graph:
+            // a BB (BB1) fans out to some other BBs then those BBs loop back to BB1
+            // BB1 to those BBs and back will not be part of our control graph
+            // but they should
+            for(BBMapIter bmi = insBBs->begin(), bme = insBBs->end(); bmi!=bme; ++bmi)
+            {
+                BasicBlock* curBB=bmi->first;
+                // search all its successor
+                addPathToSelf(curBB,*AllBBs,dominator);
+            }
+            for(BBMapIter bmi = sourceBBs->begin(), bme = sourceBBs->end(); bmi!=bme; ++bmi)
+            {
+                BasicBlock* curBB=bmi->first;
+                addPathToSelf(curBB,*AllBBs,dominator);
+            }
+
+
+
+            LoopInfo* li =top->getAnalysisIfAvailable<LoopInfo>();
+            if(!top->NoCfDup)
+            {
+                // we are going to duplicate control flows, this is to make sure we dont need while loops
+                // and have the end of execution trackable
+                // note at this point, any loop structure between the insBBs and srcBBs are already included
+
+                /* to make sure everything exit the loops properly, we want our sub graphs to
+                 * eventually branch to blocks outside of any loop, what we can do is to see what
+                 * are the basic blocks outside of all the loops --> and trace from basic blocks in our
+                 * list to these blocks, again a dfs --> keep a path if it hits something among this group
+                 */
+                if(li->getLoopDepth(dominator)!=0)
+                {
+                    /*Function* topFunc = top->curFunc;
+                    //FIXME: all the vectors prolly should be changed to
+                    //maps
+                    std::vector<BasicBlock*> bbsOutsideLoop;
+                    for(Function::iterator bmi = topFunc->begin(),bme=topFunc->end(); bmi!=bme; ++bmi)
+                    {
+                        BasicBlock* curBB = &(*bmi);
+                        if(li->getLoopDepth(curBB)==0)
+                        {
+                            bbsOutsideLoop.push_back(curBB);
+                        }
+                    }
+                    // now we want to keep all path leading to any of these blocks
+                    std::vector<BasicBlock*> cpAllBBs = *AllBBs;
+                    for(unsigned int existingBBInd = 0; existingBBInd < cpAllBBs.size(); existingBBInd++)
+                    {
+                        BasicBlock* startBB = cpAllBBs.at(existingBBInd);
+                        addPathBBs2AnyMember(bbsOutsideLoop,startBB,*AllBBs);
+                    }*/
+
+
+                    // actual implementation, all the strongly connected basic blocks involving
+                    // anybody in the AllBBs need to be included
+
+
+                    //int sccNum=0;
+                    std::vector<BasicBlock*> cpAllBBs = *AllBBs;
+                    for(unsigned int existingBBInd = 0; existingBBInd < cpAllBBs.size(); existingBBInd++)
+                    {
+                        BasicBlock* curExistingBB = cpAllBBs.at(existingBBInd);
+                        for (scc_iterator<Function*> SCCI = scc_begin(top->curFunc),
+                               E = scc_end(top->curFunc); SCCI != E; ++SCCI)
+                        {
+                          std::vector<BasicBlock*> &nextSCC = *SCCI;
+                          if(std::find(nextSCC.begin(),nextSCC.end(),curExistingBB)!=nextSCC.end())
+                          {
+                              // this scc should be included
+                              mergeInto(nextSCC,*AllBBs);
+                          }
+                        }
+                    }
+                }
             }
 
             // now all the basicblocks are added into the allBBs
@@ -620,44 +708,6 @@ using namespace llvm;
             (top->insBBsInPartition)[this]=insBBs;
             (top->allBBsInPartition)[this]=AllBBs;
 
-// also what is the instructions after the partitioning
-// let's check what's in sourceBBs,
-// what's in insBBs,
-            /*
-errs()<<" print out partition content \n";
-this->print();
-
-errs()<<"=========================================================================\n";
-errs()<<" print out the insBBs\n";
-for(BBMap2Ins::iterator insIt = insBBs->begin(), insEnd = insBBs->end(); insIt!=insEnd; insIt++)
-{
-    BasicBlock* curBB = insIt->first;
-    errs()<<curBB->getName()<<":\n";
-    std::vector<Instruction*>* curBBinsBB = insIt->second;
-    for(unsigned insInd = 0; insInd < curBBinsBB->size(); insInd++)
-    {
-        Instruction* nowIns = curBBinsBB->at(insInd);
-        errs()<<"\t"<<*nowIns<<"\n";
-    }
-
-}
-
-errs()<<" print out the srcBBs\n";
-for(BBMap2Ins::iterator insIt = sourceBBs->begin(), insEnd = sourceBBs->end(); insIt!=insEnd; insIt++)
-{
-    BasicBlock* curBB = insIt->first;
-    errs()<<curBB->getName()<<":\n";
-    std::vector<Instruction*>* curBBinsBB = insIt->second;
-    for(unsigned insInd = 0; insInd < curBBinsBB->size(); insInd++)
-    {
-        Instruction* nowIns = curBBinsBB->at(insInd);
-        errs()<<"\t"<<*nowIns<<"\n";
-    }
-
-}
-errs()<<"=========================================================================\n";
-*/
-            //errs()<<"dominator is "<<dominator->getName()<<" post dom is "<<postDominator->getName()<<"\n";
 
             // go to release memory here
 
@@ -733,140 +783,10 @@ void PartitionGen::BarrierCluster(std::vector<DAGNode*> *dag)
     }
 }
 
-/*void PartitionGen::BFSCluster(DAGNode4Partition* curNode)
-{
-    //if(needANewPartition(curPartition,curNode))
-    //    return;
-    //else
 
-    // create a new partition and add the seed node
-    DAGPartition* curPartition = new DAGPartition;
-    curPartition->init(this);
-    partitions.push_back(curPartition);
-
-    std::queue<DAGNode4Partition*> storage;
-
-    curPartition->addDagNode(curNode,  dagPartitionMap);
-    storage.push(curNode);
-    //curPartition->addDagNode(curNode,  dagPartitionMap);
-    while(storage.size()!=0)
-    {
-        DAGNode4Partition* nodeCheck = storage.front();
-        storage.pop();
-        std::vector<DAGNode4Partition*> depNodes;
-        findDependentNodes(nodeCheck, dagNodeMap,depNodes);
-        std::sort(depNodes.begin(),depNodes.end(), compareDagNode);
-        for(unsigned int j = 0; j<depNodes.size(); j++)
-        {
-
-            DAGNode4Partition* nextNode = depNodes.at(j);
-            if(nextNode->covered==false)
-            {
-                if(needANewPartition(curPartition,nextNode))
-                {
-                    // we need to create a new partition
-                    curPartition = new DAGPartition;
-                    curPartition->init(this);
-                    partitions.push_back(curPartition);
-                }
-                curPartition->addDagNode(nextNode,  dagPartitionMap);
-                storage.push(nextNode);
-            }
-        }
-    }
-
-}
-
-void PartitionGen::DFSCluster(DAGNode4Partition* curNode, DAGPartition* curPartition)
-{
-
-    if(needANewPartition(curPartition,curNode))
-        return;
-    else
-        curPartition->addDagNode(curNode,  dagPartitionMap);
-
-    // now we shall figure out the next hop
-    std::vector<DAGNode4Partition*> depNodes;
-    findDependentNodes(curNode, dagNodeMap,depNodes);
-    std::sort(depNodes.begin(),depNodes.end(), compareDagNode);
-    // should sort the vector according to the seqNum of the nodes
-    for(unsigned int j = 0; j<depNodes.size(); j++)
-    {
-        DAGNode4Partition* nextNode = depNodes.at(j);
-        if(nextNode->covered==false)
-            DFSCluster(nextNode, curPartition);
-    }
-}
-*/
-
-//#define USEBARRIERCLUSTER
 void PartitionGen::generatePartition(std::vector<DAGNode*> *dag)
 {
-//#ifdef USEBARRIERCLUSTER
     BarrierCluster(dag);
-/*#else
-
-    for(unsigned int dagInd = 0; dagInd < dag->size(); dagInd++)
-    {
-        DAGNode4Partition* curNode = dag->at(dagInd);
-        if(curNode->covered)
-            continue;
-#ifdef USEDFSCLUSTER
-        DAGPartition* curPartition = 0;
-
-#ifdef NEWPARTEVERYSEED
-        curPartition = new DAGPartition;
-        curPartition->init();
-        partitions.push_back(curPartition);
-
-#else
-        if(!curPartition)
-        {
-            curPartition = new DAGPartition;
-            curPartition->init();
-            partitions.push_back(curPartition);
-        }
-        // if curnode has memory or it is long latency cycle
-        else if(needANewPartition(curPartition,curNode))
-        {
-            // time to start a new partition
-            curPartition = new DAGPartition;
-            curPartition->init();
-            partitions.push_back(curPartition);
-        }
-#endif
-        // DFS has problem
-        DFSCluster(curNode, curPartition);
-#else
-        BFSCluster(curNode);
-
-#endif
-
-    }
-#endif
-*/
- /*errs()<<"#of partitions :"<<partitions.size()<<"\n";
-    for(unsigned int ai = 0; ai<partitions.size(); ai++)
-    {
-        errs()<<"partitions "<<ai <<" contains:"partitions.at(ai)->partitionContent.size()<<" nodes\n";
-    }
-    for(unsigned int ai = 0; ai<partitions.size(); ai++)
-    {
-        DAGPartition* curPar = partitions.at(ai);
-        std::vector<DAGNode4Partition*>* nodeVector = &(curPar->partitionContent);
-        errs()<<"partition"<< ai<<"\n";
-        for(unsigned int nodeI = 0; nodeI <nodeVector->size(); nodeI++)
-        {
-
-            DAGNode4Partition* curNode = nodeVector->at(nodeI);
-            for(unsigned int insI = 0; insI < curNode->dagNodeContent->size(); insI++)
-            {
-                Instruction* curIns = curNode->dagNodeContent->at(insI)->getInstruction();
-                errs()<<"\t"<<*curIns<<"\n";
-            }
-            errs()<<"\n";
-        }
-    }*/
 }
 void PartitionGen::checkAcyclicDependency()
 {
@@ -911,13 +831,13 @@ void PartitionGen::generateControlFlowPerPartition()
     checkAcyclicDependency();
 
     // starting the actual generation of function
-    DominatorTree* DT  = getAnalysisIfAvailable<DominatorTree>();
+    //DominatorTree* DT  = getAnalysisIfAvailable<DominatorTree>();
     //PostDominatorTree* PDT = getAnalysisIfAvailable<PostDominatorTree>();
 
     for(unsigned int partInd = 0; partInd < partitions.size(); partInd++)
     {
         DAGPartition* curPart = partitions.at(partInd);
-        curPart->generateBBList(DT/*, PDT*/);
+        curPart->generateBBList();
 
         errs()<<"done part\n";
         errs()<<"[\n";
@@ -937,6 +857,7 @@ void PartitionGen::generateControlFlowPerPartition()
     {
         DAGPartition* curPart = partitions.at(partInd);
         LoopInfo* LI = getAnalysisIfAvailable<LoopInfo>();
+        DominatorTree* DT = getAnalysisIfAvailable<DominatorTree>();
         generateCFromBBList(curPart,LI,DT);
     }
 
@@ -1251,7 +1172,8 @@ void PartitionGen::generateCFromBBList(DAGPartition* pa, LoopInfo* li, Dominator
     }
 
     bool encloseWhileLoop = false;
-    if(li->getLoopDepth(domBB)!=0)
+    // we sure dont need to enclose if we have cf dup
+    if(NoCfDup &&  li->getLoopDepth(domBB)!=0)
     {
         encloseWhileLoop = true;
     }
@@ -1315,6 +1237,10 @@ void PartitionGen::generateCFromBBList(DAGPartition* pa, LoopInfo* li, Dominator
 // when we do the partitioning, we
 bool PartitionGen::runOnFunction(Function &F) {
 
+
+
+
+
     curFunc = &F;
 
     int bbCount =0;
@@ -1336,6 +1262,11 @@ bool PartitionGen::runOnFunction(Function &F) {
             bbi->setName(legal);
         }
     }
+
+
+
+
+
     InstructionGraphNode* rootNode = getAnalysis<InstructionGraph>().getRoot();
     std::vector<DAGNode*> collectedDagNode;
     // iterate through the sccs in our graph, each scc is a vector of
@@ -1408,7 +1339,6 @@ bool PartitionGen::runOnFunction(Function &F) {
     // now all partitions are made
     // for each of these partitions, we will generate a control flow
     // before generating c function
-    errs()<<"before check\n";
     generateControlFlowPerPartition();
 
 

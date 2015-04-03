@@ -6,6 +6,7 @@ add_llvm_tool(dppgen
   InstructionGraph.cpp
   generatePartitionsUtil.h
   generateCInstruction.h
+  generateCFunctions.h
   generatePartitions.h
   )
 set_target_properties(dppgen PROPERTIES ENABLE_EXPORTS 1)

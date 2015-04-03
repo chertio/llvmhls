@@ -65,16 +65,17 @@ OutputFIFOFilename("fdes", cl::desc("FIFO connection description"),
 
 
 static cl::opt<bool>
+NoControlFlowDup("disable-cf-dup",
+                 cl::desc("Do not duplicate control flows between different stages"));
+static cl::opt<bool>
+GenerateCPUMode("cpu-mode",
+                  cl::desc("generate the decoupled functions which would be run by the cpu"));
+
+static cl::opt<bool>
 NoOutput("disable-output",
          cl::desc("Do not write result bitcode file"), cl::Hidden);
 
 
-static cl::opt<bool>
-NoControlFlowDup("disable-cf-dup",
-                 cl::desc("Do not duplicate control flows between different stages"),cl::init(true), cl::Hidden);
-static cl::opt<bool>
-GenerateCPUMode("cpu-mode",
-                  cl::desc("generate the decoupled functions which would be run by the cpu"),cl::init(true), cl::Hidden );
 static inline void addPass(PassManagerBase &PM, Pass *P) {
   // Add the pass to the pass manager...
   PM.add(P);
@@ -101,7 +102,7 @@ int main(int argc, char **argv) {
   PassRegistry &Registry = *PassRegistry::getPassRegistry();
   initializeInstructionGraphPass(Registry);
   INITIALIZE_PASS_DEPENDENCY(DominatorTree)
-  //INITIALIZE_PASS_DEPENDENCY(PostDominatorTree)
+  INITIALIZE_PASS_DEPENDENCY(PostDominatorTree)
   INITIALIZE_PASS_DEPENDENCY(LoopInfo)
 
   cl::ParseCommandLineOptions(argc, argv,
@@ -165,7 +166,7 @@ int main(int argc, char **argv) {
 
 
   PassManager Passes;
-  PartitionGen* pg = new PartitionGen(Out->os(),fdesOut->os());
+  PartitionGen* pg = new PartitionGen(Out->os(),fdesOut->os(),NoControlFlowDup);
 
   Passes.add(pg );
   // Create a new optimization pass for each one specified on the command line
