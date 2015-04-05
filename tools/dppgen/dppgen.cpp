@@ -48,6 +48,7 @@
 #include <algorithm>
 #include <memory>
 #include "generatePartitions.h"
+#include "generateCFunctions.h"
 using namespace llvm;
 
 // command line options...
@@ -166,7 +167,7 @@ int main(int argc, char **argv) {
 
 
   PassManager Passes;
-  PartitionGen* pg = new PartitionGen(Out->os(),fdesOut->os(),NoControlFlowDup);
+  PartitionGen* pg = new PartitionGen(Out->os(),fdesOut->os(),NoControlFlowDup,GenerateCPUMode);
 
   Passes.add(pg );
   // Create a new optimization pass for each one specified on the command line

@@ -18,6 +18,14 @@
 typedef std::map<BasicBlock*, std::vector<std::string>*> BBMap2outStr;
 
 
+struct argPair
+{
+    std::string argType;
+    std::string argName;
+    // 0 means read, 1 means write, 2 means read/write
+    int size;
+    char dir;
+};
 
 std::string generateArgStr(argPair* ap)
 {
@@ -635,7 +643,7 @@ std::string generatePhiNode(PHINode& curIns,bool remoteDst,int seqNum,
             std::vector<std::string>*& predPhiStrings = (*preAssign)[curPred];
             predPhiStrings = new std::vector<std::string>();
         }
-        // now we generate the string, its essentially,
+        // now we generate the string,
         std::string valueStr = generateOperandStr(curPredVal);
         std::string preAssignStr = varName+"="+valueStr+";\n";
         ((*preAssign)[curPred])->push_back(preAssignStr);

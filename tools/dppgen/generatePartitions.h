@@ -22,6 +22,7 @@
 #include "InstructionGraph.h"
 #include "generatePartitionsUtil.h"
 #include "generateCInstruction.h"
+
 #include "llvm/Analysis/Dominators.h"
 #include "llvm/Analysis/PostDominators.h"
 #include "llvm/Analysis/LoopInfo.h"
@@ -31,12 +32,15 @@
 #define LONGLATTHRESHOLD 5
 using namespace llvm;
 
+
     // each dag node is a cycle in the dependency graph
     struct DAGNode;
     // group of dag node
     struct DAGPartition;
 
     struct PartitionGen;
+
+    static std::string generateCode(PartitionGen* pg, bool CPU_bar_HLS);
 
 
 
@@ -85,7 +89,7 @@ using namespace llvm;
     }
 
 
-    static std::string generateSingleStatement(Instruction* curIns, bool remoteSrc, bool remoteDst,
+    /*static std::string generateSingleStatement(Instruction* curIns, bool remoteSrc, bool remoteDst,
                                                int seqNum,std::vector<std::string>& partitionDecStr,
                                                std::vector<argPair*>& functionArgs, std::vector<argPair*>& fifoArgs, BBMap2outStr* phiPreAssign =0
                                                 )
@@ -224,7 +228,7 @@ using namespace llvm;
         return rtStr;
     }
 
-
+*/
     static bool searchToBasicBlock(std::vector<BasicBlock*>& storage, BasicBlock* current, BasicBlock* target, BasicBlock* domInter )
     {
         //errs()<<" search to bb starting "<<current->getName()<<" towards "<<target->getName()<<"\n";
@@ -425,6 +429,7 @@ using namespace llvm;
       raw_ostream &Out;
       raw_ostream &fifoDes;
       bool NoCfDup;
+      bool CPU_bar_HLS;
       Function* curFunc;
       partitionToBB2InsInfo srcBBsInPartition;
       partitionToBB2InsInfo insBBsInPartition;
@@ -448,7 +453,7 @@ using namespace llvm;
       //
 
       //PartitionGen() : FunctionPass(ID){}
-      PartitionGen(raw_ostream &out, raw_ostream &out2, bool noCfDup) : FunctionPass(ID),Out(out),fifoDes(out2),NoCfDup(noCfDup) {}
+      PartitionGen(raw_ostream &out, raw_ostream &out2, bool noCfDup, bool cpuNotHLS) : FunctionPass(ID),Out(out),fifoDes(out2),NoCfDup(noCfDup),CPU_bar_HLS(cpuNotHLS){}
       bool runOnFunction(Function& func);
       /*void initializeOut(raw_ostream &out)
       {
@@ -479,7 +484,7 @@ using namespace llvm;
           std::vector<DAGPartition*>* part = dagPartitionMap[const_cast<DAGNode*>(node)];
           return part;
       }
-      void generateCFromBBList(DAGPartition* pa, LoopInfo* li, DominatorTree* dt);
+      //void generateCFromBBList(DAGPartition* pa, LoopInfo* li, DominatorTree* dt);
       void addChannelAndDepPartition(bool &thereIsPartitionReceiving, Instruction* insPt,
                                                    std::string& channelStr, DAGPartition* destPart, int channelType, int seqNum);
 
@@ -858,8 +863,10 @@ void PartitionGen::generateControlFlowPerPartition()
         DAGPartition* curPart = partitions.at(partInd);
         LoopInfo* LI = getAnalysisIfAvailable<LoopInfo>();
         DominatorTree* DT = getAnalysisIfAvailable<DominatorTree>();
-        generateCFromBBList(curPart,LI,DT);
+        //generateCFromBBList(curPart,LI,DT);
+        //FunctionGenerator
     }
+    generateCode(this,this->CPU_bar_HLS);
 
 
 }
@@ -920,7 +927,7 @@ void PartitionGen::addChannelAndDepPartition(bool &thereIsPartitionReceiving, In
     channelToDestPartitions->push_back(destPart);
     thereIsPartitionReceiving=true;
 }
-
+/*
 void PartitionGen::generateCFromBBList(DAGPartition* pa, LoopInfo* li, DominatorTree* dt)
 {
     //BBMap2Ins& srcBBs, BBMap2Ins& insBBs, std::vector<BasicBlock*>& BBList
@@ -1124,7 +1131,6 @@ void PartitionGen::generateCFromBBList(DAGPartition* pa, LoopInfo* li, Dominator
 //generate function name
     this->Out<<curFunc->getName()<<int2Str(partGenId);
     this->Out<<"(";
-    /*****this is the part where we make the argument*****/
     for(unsigned k=0; k<functionArgs.size();k++)
     {
         argPair* curP = functionArgs.at(k);
@@ -1160,7 +1166,8 @@ void PartitionGen::generateCFromBBList(DAGPartition* pa, LoopInfo* li, Dominator
         this->Out<<argDec;
     }
 
-    /*****end****/
+
+
     this->Out<<")\n{\n";
 
 
@@ -1232,13 +1239,10 @@ void PartitionGen::generateCFromBBList(DAGPartition* pa, LoopInfo* li, Dominator
 
 
 }
-
+*/
 // we have a data structure to map instruction to InstructionGraphNodes
 // when we do the partitioning, we
 bool PartitionGen::runOnFunction(Function &F) {
-
-
-
 
 
     curFunc = &F;
