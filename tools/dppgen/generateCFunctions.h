@@ -5,21 +5,21 @@
 #include "generateCInstruction.h"
 static int numTabs =0;
 // for the following lines,add/reduce tabs
-static void alterTabs(bool addBarSub)
+static void addBarSubTabs(bool addBarSub)
 {
     if(addBarSub)
         numTabs++;
     else
         numTabs--;
 }
-static std::string addTabbedLine(std::string original, std::string next)
+static void addTabbedLine(std::string& original, std::string next)
 {
-    std::string rtStr=original+"\n";
+    original+="\n";
     for(unsigned tabCount = 0; tabCount<numTabs; tabCount++)
     {
-        rtStr += "\t";
+        original += "\t";
     }
-    return rtStr+next;
+    original+=next;
 }
 
 struct FunctionGenerator;
@@ -91,7 +91,7 @@ static std::string generateSingleStatement(Instruction* curIns, bool remoteSrc, 
     {
         // as a terminator, we should check if this dude has
         // any successor
-        unsigned numSuc = cast<TerminatorInst>(*curIns).getNumSuccessors();
+        unsigned int numSuc = cast<TerminatorInst>(*curIns).getNumSuccessors();
         assert(numSuc < 255);
         if(remoteSrc)
         {
@@ -230,7 +230,7 @@ struct FunctionGenerator
         partGenId = partInd;
     }
     // we also decide if while should be inserted
-    void checkBBListValidity()
+    void checkBBListValidityRearrangeDom()
     {
         // now find the dominator for this list of BB
         BasicBlock* domBB = BBList->at(0);
@@ -240,7 +240,14 @@ struct FunctionGenerator
             domBB = dt->findNearestCommonDominator(domBB,BBList->at(bbInd));
         }
         // the dominator must be inside the list
-        assert(std::find(BBList->begin(),BBList->end(),domBB)!=BBList->end());
+        std::vector<BasicBlock*>::iterator domIter = std::find(BBList->begin(),BBList->end(),domBB);
+        // also if the encloseWhileLoop is false --> we are duplicating control flow
+        // then the actual dominator must be the first when generating the final code
+        // we should search for it and change the place
+
+        assert(domIter!=BBList->end());
+        BBList->erase(domIter);
+        BBList->insert(BBList->begin(),domBB);
         // if we dont say no duplicate --> meaning we duplicate, then the purpose is to
         // have no while(1) --> which means any non-included BBs we branch to, must be
         // outside of anyloop, such that there is no path of coming back once we exit
@@ -268,6 +275,8 @@ struct FunctionGenerator
             if(li->getLoopDepth(domBB)!=0)
                 encloseWhileLoop=true;
         }
+
+
     }
     // the only reason this bb exist is because it is part of the
     // control flow, no instruction(src or actual) got assigned to
@@ -379,9 +388,7 @@ struct FunctionGenerator
                         // now we look at each use, these instruction belows to some DAGNode which belongs to some
                         // DAGPartition
                         assert(isa<Instruction>(*curUser));
-
-                        std::vector<DAGPartition*>* curUseOwners=pg->getPartitionFromIns(cast<Instruction>(*curUser));
-                        DAGPartition* curUsePart = curUseOwners->at(0);
+                        DAGPartition* curUsePart = pg->getPartitionFromIns(cast<Instruction>(*curUser));
 
                         if(curUsePart == myPartition)
                             continue;
@@ -395,36 +402,12 @@ struct FunctionGenerator
         }
 
     }
-
-
-    void generateCode()
+    std::string genFunctionDeclaration()
     {
-        checkBBListValidity();
-        for(unsigned int curBBInd = 0; curBBInd < BBList->size(); curBBInd++)
-        {
-            BasicBlock* curBB = BBList->at(curBBInd);
-            std::vector<std::string>* curBBStrArray = new std::vector<std::string>();
-            BBActualStr.push_back(curBBStrArray);
-            std::string bbname =  curBB->getName();
-            bbname.append(":\n");
-            curBBStrArray->push_back(bbname);
-
-            if(srcBBs->find(curBB)==srcBBs->end() && insBBs->find(curBB)==insBBs->end())
-            {
-                generateFlowOnlyBlock(curBB,curBBStrArray);
-                continue;
-            }
-
-
-            generateContentBlock(curBB, curBBStrArray);
-
-
-        }
-        std::string endgroup = generateEndBlock(BBList);
-        // FIXME: rewrite
-        //generate function name
-        pg->Out<<pg->curFunc->getName()<<int2Str(partGenId);
-        pg->Out<<"(";
+        std::string funDecl = pg->curFunc->getName();
+        funDecl+=int2Str(partGenId);
+        addTabbedLine(funDecl,"(");
+        addBarSubTabs(true);
         for(unsigned k=0; k<functionArgs.size();k++)
         {
             argPair* curP = functionArgs.at(k);
@@ -443,36 +426,46 @@ struct FunctionGenerator
             if(!added)
             {
                 std::string argDec = generateArgStr(curP);
-                if(k!=0)
-                    pg->Out<<",\n";
-                pg->Out<<argDec;
+                if(!(k==functionArgs.size()-1 && fifoArgs.size()==0))
+                    argDec+=",";
+                addTabbedLine(funDecl,argDec);
             }
+            
         }
-
+        
         for(unsigned k=0; k<fifoArgs.size(); k++)
         {
             argPair* curP = fifoArgs.at(k);
             std::string argDec = generateArgStr(curP);
-            if(k!=0)
-                pg->Out<<",\n";
-            else if(functionArgs.size()!=0)
-                pg->Out<<",\n";
-            pg->Out<<argDec;
+            if(k!=fifoArgs.size()-1)
+                argDec+=",";
+            addTabbedLine(funDecl,argDec);
+
         }
+        addBarSubTabs(false);
+        addTabbedLine(funDecl,")");
 
-        pg->Out<<")\n{\n";
-
-
-
-        for(unsigned decInd = 0; decInd<partitionDecStr.size(); decInd++)
+        return funDecl;
+    }
+    std::string genVarDecl()
+    {
+        std::string curDec="";
+        for(unsigned int decInd = 0; decInd<partitionDecStr.size(); decInd++)
         {
-            std::string curDec = partitionDecStr.at(decInd);
-            pg->Out<<curDec<<"\n";
-        }
+            addTabbedLine(curDec, partitionDecStr.at(decInd));
 
+        }
+        return curDec;
+    }
+
+    std::string genBBsContent(std::string endgroup)
+    {
+        std::string contentStr="";
         if(encloseWhileLoop)
         {
-            pg->Out<<"while(1){\n";
+
+            addTabbedLine(contentStr,"while(1){");
+            addBarSubTabs(true);
         }
         for(unsigned int s=0; s < BBActualStr.size(); s++)
         {
@@ -484,30 +477,87 @@ struct FunctionGenerator
             {
                 if(k==curBBStr->size()-1)
                 {
-                    //FIXME: only when the last ins is terminator
-                    // when we do this phi assignment
-                    //need to do the phi thing
                     if(phiPreAssign.find(curBB)!=phiPreAssign.end())
                     {
                         std::vector<std::string>* allPhiStr = phiPreAssign[curBB];
                         for(unsigned phiInd = 0; phiInd < allPhiStr->size(); phiInd++)
                         {
-                            pg->Out<<allPhiStr->at(phiInd)<<"\n";
+                            addTabbedLine(contentStr,  allPhiStr->at(phiInd));
                         }
 
                     }
                 }
-                pg->Out<<curBBStr->at(k);
+                addTabbedLine(contentStr, curBBStr->at(k));
             }
         }
 
-        // now we output the endgroup
-        pg->Out<<endgroup;
+        addTabbedLine(contentStr, endgroup);
+
+
         if(encloseWhileLoop)
         {
-            pg->Out<<"\n}\n";
+            addBarSubTabs(false);
+            addTabbedLine(contentStr,"}");
+
         }
-        pg->Out<<"\n}\n";
+        return contentStr;
+
+    }
+
+    std::string genFunctionBody(std::string endgroup)
+    {
+        std::string funcBody = "";
+        addTabbedLine(funcBody, "{");
+        addBarSubTabs(true);
+        addTabbedLine(funcBody,genVarDecl());
+
+        // now do the actual computation
+        addTabbedLine(funcBody,genBBsContent(endgroup));
+
+
+        addBarSubTabs(false);
+        addTabbedLine(funcBody, "}");
+
+
+
+
+        return funcBody;
+    }
+
+    void generateCode()
+    {
+        checkBBListValidityRearrangeDom();
+        for(unsigned int curBBInd = 0; curBBInd < BBList->size(); curBBInd++)
+        {
+            BasicBlock* curBB = BBList->at(curBBInd);
+            std::vector<std::string>* curBBStrArray = new std::vector<std::string>();
+            BBActualStr.push_back(curBBStrArray);
+            std::string bbname =  curBB->getName();
+            bbname.append(":\n");
+            curBBStrArray->push_back(bbname);
+
+            if(srcBBs->find(curBB)==srcBBs->end() && insBBs->find(curBB)==insBBs->end())
+            {
+                generateFlowOnlyBlock(curBB,curBBStrArray);
+                continue;
+            }
+
+
+            generateContentBlock(curBB, curBBStrArray);
+            // all the per bb stuff is done
+
+        }
+        std::string endgroup = generateEndBlock(BBList);
+        // FIXME: rewrite
+        //generate function name
+        std::string funcDecl = this->genFunctionDeclaration();
+        std::string funcBody = this->genFunctionBody(endgroup);
+
+
+        pg->Out<<funcDecl;
+        pg->Out<<funcBody;
+
+
 
 
 //        partGenId++;

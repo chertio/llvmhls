@@ -275,7 +275,6 @@ std::string generateOperandStr(Value* operand)
     std::string rtStr;
     if(isa<Instruction>(*operand))
     {
-        errs()<<" if k\n";
         Instruction& curIns = cast<Instruction>(*operand);
         // got to generate the varname
         int seqNum = getInstructionSeqNum(&curIns);
