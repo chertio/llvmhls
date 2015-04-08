@@ -40,7 +40,7 @@ using namespace llvm;
 
     struct PartitionGen;
 
-    static std::string generateCode(PartitionGen* pg, bool CPU_bar_HLS);
+    static void generateCode(PartitionGen* pg, bool CPU_bar_HLS);
 
 
 

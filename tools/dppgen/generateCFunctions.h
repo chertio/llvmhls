@@ -22,182 +22,6 @@ static void addTabbedLine(std::string& original, std::string next)
     original+=next;
 }
 
-struct FunctionGenerator;
-
-
-struct InstructionGenerator
-{
-    Instruction* insn;
-    int seqNum;
-    bool remoteSrc;
-    bool remoteDst;
-    FunctionGenerator* owner;
-    void init(Instruction* curIns,int n, bool rs, bool rd)
-    {
-        insn = curIns;
-        seqNum = n;
-        remoteSrc = rs;
-        remoteDst = rd;
-    }
-    /*void generateStatement(std::vector<std::string>& partitionDecStr,
-                           std::vector<argPair*>& functionArgs,
-                           std::vector<argPair*>& fifoArgs,
-                           BBMap2outStr* phiPreAssign =0)
-    {
-        std::string varDecStr = generateVariableStr(curIns,seqNum);
-        // if it is terminator and remotely generated,we need the decalaration
-        if(!(curIns->isTerminator() && !remoteSrc))
-        {
-            partitionDecStr.push_back(varDecStr);
-        }
-    }*/
-
-};
-
-
-
-
-static std::string generateSingleStatement(Instruction* curIns, bool remoteSrc, bool remoteDst,
-                                           int seqNum,std::vector<std::string>& partitionDecStr,
-                                           std::vector<argPair*>& functionArgs, std::vector<argPair*>& fifoArgs, BBMap2outStr* phiPreAssign =0
-                                            )
-{
-    // first we ll see if the output value is defined already
-
-    // if this is a terminator the the def will be the brTag
-    // the Q has name "'brTag'Q", the actual tag has name 'brTag'
-    // brTag name is formed by concat the srcBB of branch and the dstBBs
-    // it is gonna be a read, then a switch -- with multiple dest
-
-    // sometimes a varDec is not needed, if this is a terminator, and
-    // this is actual...note we are pushing the seq number of successors
-    // and they are not named
-
-    std::string varDecStr = generateVariableStr(curIns,seqNum);
-    if(curIns->isTerminator() && !remoteSrc   )
-    {
-        // do nothing when this is the terminator and then it is generated locally
-    }
-    else
-    {
-        partitionDecStr.push_back(varDecStr);
-    }
-    //std::string varName = generateVariableName(curIns,seqNum);
-
-    std::string rtStr;
-    //special case when it is a remote control flow change
-    //read locally
-    if(curIns->isTerminator()&&!isa<ReturnInst>(*curIns))
-    {
-        // as a terminator, we should check if this dude has
-        // any successor
-        unsigned int numSuc = cast<TerminatorInst>(*curIns).getNumSuccessors();
-        assert(numSuc < 255);
-        if(remoteSrc)
-        {
-            // apparently we will need a remote src -- we need an argument
-
-            rtStr = generateGettingRemoteBranchTag(cast<TerminatorInst>(*curIns),seqNum, fifoArgs);
-            //errs()<<rtStr;
-
-        }
-        else
-        {
-            // we generate the local non return terminator
-            // and possibly write the tag into the channel
-            rtStr = generateControlFlow(cast<TerminatorInst>(*curIns),remoteDst,seqNum, fifoArgs, functionArgs);
-
-            //errs()<<rtStr;
-
-
-        }
-        // we dont need the the value
-        //return generateTerminatorStr(curIns);
-    }
-    // if this is return, it should be pretty easy.
-    else if(isa<ReturnInst>(*curIns))
-    {
-        // return can never have remote src
-        // the ins generating the return value
-        // has remote src -- note only srcIns can have remote src, and the data
-        // obtained from the channel get used by other
-        // instruction in the local partition
-        // returnInst doesnt have anything to be used by other instruction
-        // it is possible it has functional argument as argument
-        rtStr = rtStr+ generateReturn(cast<ReturnInst>(*curIns), functionArgs);
-    }
-    else if(curIns->isBinaryOp())
-    {
-        if(remoteSrc)
-            rtStr =generateGettingRemoteData(*curIns,seqNum,fifoArgs);
-        else
-        {
-            // this may have stuff from the function arg, also may write to fifo args
-            rtStr =generateBinaryOperations(cast<BinaryOperator>(*curIns), remoteDst, seqNum, fifoArgs, functionArgs);
-        }
-    }
-    else if(curIns->getOpcode()<Instruction::MemoryOpsEnd &&curIns->getOpcode() >= Instruction::MemoryOpsBegin  )
-    {
-        if(remoteSrc)
-            rtStr = generateGettingRemoteData(*curIns,seqNum,fifoArgs);
-        else
-            rtStr = generateMemoryOperations(*curIns,remoteDst, seqNum,fifoArgs, functionArgs);
-    }
-    else if(curIns->getOpcode()<Instruction::CastOpsEnd && curIns->getOpcode()>= Instruction::CastOpsBegin)
-    {
-        if(remoteSrc)
-            rtStr = generateGettingRemoteData(*curIns,seqNum,fifoArgs);
-        else
-            rtStr = generateCastOperations(*curIns, remoteDst, seqNum,fifoArgs,functionArgs);
-    }
-    // other operators --- we only deal with Phi and Select
-    // how do we do phi?
-    // we need to find all the predecessors of the current basic block
-    else if(curIns->getOpcode()==Instruction::PHI)
-    {
-        if(remoteSrc)
-            rtStr = generateGettingRemoteData(*curIns,seqNum,fifoArgs);
-        else
-        {
-
-            rtStr = generatePhiNode(cast<PHINode>(*curIns), remoteDst, seqNum, phiPreAssign,fifoArgs,functionArgs);
-        }
-
-    }
-    else if(curIns->getOpcode()==Instruction::Select)
-    {
-        if(remoteSrc)
-            rtStr = generateGettingRemoteData(*curIns,seqNum,fifoArgs);
-        else
-        {
-            rtStr = generateSelectOperations(cast<SelectInst>(*curIns), remoteDst, seqNum,fifoArgs,functionArgs);
-        }
-    }
-    else if(curIns->getOpcode()==Instruction::ICmp || curIns->getOpcode()==Instruction::FCmp)
-    {
-
-        // got to generate the cmpare statement
-        if(remoteSrc)
-            rtStr = generateGettingRemoteData(*curIns,seqNum,fifoArgs);
-        else
-        {
-            rtStr = generateCmpOperations(cast<CmpInst>(*curIns), remoteDst, seqNum,fifoArgs,functionArgs);
-        }
-    }
-    else
-    {
-        errs()<<" problem unhandled instruction in generate single statement";
-        exit(1);
-    }
-
-    // if this is
-    //errs()<<(*curIns)<<"\n";
-    // if it is remote src
-    return rtStr;
-}
-
-
-
 
 struct FunctionGenerator
 {
@@ -219,367 +43,550 @@ struct FunctionGenerator
     int partGenId;
     bool CPU_bar_HLS;
     bool encloseWhileLoop;
-    void init(PartitionGen* p, DAGPartition* pa, bool cbh, int partInd)
+    void init(PartitionGen* p, DAGPartition* pa, bool cbh, int partInd);
+    void checkBBListValidityRearrangeDom();
+    std::string genFunctionDeclaration();
+    void generateFlowOnlyBlock(BasicBlock* curBB, std::vector<std::string>* curBBStrArray);
+    void generateContentBlock(BasicBlock* curBB,std::vector<std::string>* curBBStrArray);
+    std::string genVarDecl();
+    std::string genBBsContent(std::string endgroup);
+    std::string genFunctionBody(std::string endgroup);
+    void generateCode();
+};
+
+struct InstructionGenerator
+{
+    Instruction* insn;
+    int seqNum;
+    bool remoteSrc;
+    bool remoteDst;
+    FunctionGenerator* owner;
+    void init(Instruction* curIns,int n, bool rs, bool rd, FunctionGenerator* fg)
     {
-        pg = p;
-        srcBBs = pg->srcBBsInPartition[pa];
-        insBBs = pg->insBBsInPartition[pa];
-        BBList = pg->allBBsInPartition[pa];
-        CPU_bar_HLS = cbh;
-        myPartition = pa;
-        partGenId = partInd;
+        insn = curIns;
+        seqNum = n;
+        remoteSrc = rs;
+        remoteDst = rd;
+        owner = fg;
     }
-    // we also decide if while should be inserted
-    void checkBBListValidityRearrangeDom()
+
+
+
+    // memory dependency? to enforce this, we need a way to make sure the completion of outstanding
+    // memory transactions before initiation of another group of memory transaction---not here
+    // should be at the top level ip integrator, note, the initiation of the memory transaction
+    // would have already been ordered properly
+    std::string generateStatement()
     {
-        // now find the dominator for this list of BB
-        BasicBlock* domBB = BBList->at(0);
-        DominatorTree* dt = pg->getAnalysisIfAvailable<DominatorTree>();
-        for(unsigned int bbInd = 1; bbInd < BBList->size(); bbInd++)
+        std::string varDecStr = generateVariableStr(insn,seqNum);
+        //unless it is terminator&locally generated, we need to declare
+        // a variable
+        if(!(insn->isTerminator() && !remoteSrc))
         {
-            domBB = dt->findNearestCommonDominator(domBB,BBList->at(bbInd));
+            owner->partitionDecStr.push_back(varDecStr);
         }
-        // the dominator must be inside the list
-        std::vector<BasicBlock*>::iterator domIter = std::find(BBList->begin(),BBList->end(),domBB);
-        // also if the encloseWhileLoop is false --> we are duplicating control flow
-        // then the actual dominator must be the first when generating the final code
-        // we should search for it and change the place
-
-        assert(domIter!=BBList->end());
-        BBList->erase(domIter);
-        BBList->insert(BBList->begin(),domBB);
-        // if we dont say no duplicate --> meaning we duplicate, then the purpose is to
-        // have no while(1) --> which means any non-included BBs we branch to, must be
-        // outside of anyloop, such that there is no path of coming back once we exit
-        LoopInfo* li = pg->getAnalysisIfAvailable<LoopInfo>();
-
-        encloseWhileLoop=false;
-        if(!(pg->NoCfDup))
+        // now got to generate the real thing
+        std::string rtStr;
+        //special case when it is a remote control flow change
+        //read locally
+        if(insn->isTerminator()&&!isa<ReturnInst>(*insn))
         {
-            for(unsigned int bbInd = 1; bbInd < BBList->size(); bbInd++)
+            // as a terminator, we should check if this dude has
+            // any successor
+            unsigned int numSuc = cast<TerminatorInst>(*insn).getNumSuccessors();
+            assert(numSuc < 255);
+            if(remoteSrc)
             {
-                BasicBlock* curBB = BBList->at(bbInd);
-                TerminatorInst* curTerm = curBB->getTerminator();
-                for(int sucInd = 0; sucInd < curTerm->getNumSuccessors(); sucInd++)
-                {
-                    BasicBlock* curSuc = curTerm->getSuccessor(sucInd);
-                    if(std::find(BBList->begin(),BBList->end(),curSuc) == BBList->end())
-                    {
-                        assert(li->getLoopDepth(curSuc)==0);
-                    }
-                }
+                // apparently we will need a remote src -- we need an argument
+
+                rtStr = generateGettingRemoteBranchTag(cast<TerminatorInst>(*insn),seqNum, owner->fifoArgs);
+                //errs()<<rtStr;
+
+            }
+            else
+            {
+                // we generate the local non return terminator
+                // and possibly write the tag into the channel
+                rtStr = generateControlFlow(cast<TerminatorInst>(*insn),remoteDst,seqNum, owner->fifoArgs, owner->functionArgs);
+
+                //errs()<<rtStr;
+
+
+            }
+            // we dont need the the value
+            //return generateTerminatorStr(curIns);
+        }
+        // if this is return, it should be pretty easy.
+        else if(isa<ReturnInst>(*insn))
+        {
+            // return can never have remote src
+            // the ins generating the return value
+            // has remote src -- note only srcIns can have remote src, and the data
+            // obtained from the channel get used by other
+            // instruction in the local partition
+            // returnInst doesnt have anything to be used by other instruction
+            // it is possible it has functional argument as argument
+            rtStr = rtStr+ generateReturn(cast<ReturnInst>(*insn), owner->functionArgs);
+        }
+        else if(insn->isBinaryOp())
+        {
+            if(remoteSrc)
+                rtStr =generateGettingRemoteData(*insn,seqNum,owner->fifoArgs);
+            else
+            {
+                // this may have stuff from the function arg, also may write to fifo args
+                rtStr =generateBinaryOperations(cast<BinaryOperator>(*insn), remoteDst, seqNum, owner->fifoArgs, owner->functionArgs);
+            }
+        }
+        else if(insn->getOpcode()<Instruction::MemoryOpsEnd &&insn->getOpcode() >= Instruction::MemoryOpsBegin  )
+        {
+            if(remoteSrc)
+                rtStr = generateGettingRemoteData(*insn,seqNum,owner->fifoArgs);
+            else
+                rtStr = generateMemoryOperations(*insn,remoteDst, seqNum,owner->fifoArgs, owner->functionArgs);
+        }
+        else if(insn->getOpcode()<Instruction::CastOpsEnd && insn->getOpcode()>= Instruction::CastOpsBegin)
+        {
+            if(remoteSrc)
+                rtStr = generateGettingRemoteData(*insn,seqNum,owner->fifoArgs);
+            else
+                rtStr = generateCastOperations(*insn, remoteDst, seqNum,owner->fifoArgs,owner->functionArgs);
+        }
+        // other operators --- we only deal with Phi and Select
+        // how do we do phi?
+        // we need to find all the predecessors of the current basic block
+        else if(insn->getOpcode()==Instruction::PHI)
+        {
+            if(remoteSrc)
+                rtStr = generateGettingRemoteData(*insn,seqNum,owner->fifoArgs);
+            else
+            {
+
+                rtStr = generatePhiNode(cast<PHINode>(*insn), remoteDst, seqNum, owner->phiPreAssign,owner->fifoArgs,owner->functionArgs);
+            }
+
+        }
+        else if(insn->getOpcode()==Instruction::Select)
+        {
+            if(remoteSrc)
+                rtStr = generateGettingRemoteData(*insn,seqNum,owner->fifoArgs);
+            else
+            {
+                rtStr = generateSelectOperations(cast<SelectInst>(*insn), remoteDst, seqNum,owner->fifoArgs,owner->functionArgs);
+            }
+        }
+        else if(insn->getOpcode()==Instruction::ICmp || insn->getOpcode()==Instruction::FCmp)
+        {
+
+            // got to generate the cmpare statement
+            if(remoteSrc)
+                rtStr = generateGettingRemoteData(*insn,seqNum,owner->fifoArgs);
+            else
+            {
+                rtStr = generateCmpOperations(cast<CmpInst>(*insn), remoteDst, seqNum,owner->fifoArgs,owner->functionArgs);
             }
         }
         else
         {
-            if(li->getLoopDepth(domBB)!=0)
-                encloseWhileLoop=true;
+            errs()<<" problem unhandled instruction in generate single statement";
+            exit(1);
         }
 
+        // if this is
+        //errs()<<(*curIns)<<"\n";
+        // if it is remote src
+        return rtStr;
 
     }
-    // the only reason this bb exist is because it is part of the
-    // control flow, no instruction(src or actual) got assigned to
-    // this block
-    void generateFlowOnlyBlock(BasicBlock* curBB, std::vector<std::string>* curBBStrArray)
+
+    /*void generateStatement(std::vector<std::string>& partitionDecStr,
+                           std::vector<argPair*>& functionArgs,
+                           std::vector<argPair*>& fifoArgs,
+                           BBMap2outStr* phiPreAssign =0)
     {
-        Instruction* curTerm = curBB->getTerminator();
-        // shouldnt be return coz the return block isnt in a path
-        assert(!isa<ReturnInst>(*curTerm));
-        int seqNum = curTerm->getParent()->getInstList().size()-1;
-        std::string termStr = generateSingleStatement(curTerm,true,false,seqNum,partitionDecStr,functionArgs, fifoArgs);
-        curBBStrArray->push_back(termStr);
-
-    }
-    void generateContentBlock(BasicBlock* curBB,std::vector<std::string>* curBBStrArray)
-    {
-        std::vector<Instruction*>* srcIns = 0;
-        std::vector<Instruction*>* actualIns = 0;
-
-        if(srcBBs->find(curBB)!=srcBBs->end())
-            srcIns = (*srcBBs)[curBB];
-
-        if(insBBs->find(curBB)!=insBBs->end())
-            actualIns = (*insBBs)[curBB];
-        int instructionSeq = -1;
-        for(BasicBlock::iterator insPt = curBB->begin(), insEnd = curBB->end(); insPt != insEnd; insPt++)
+        std::string varDecStr = generateVariableStr(curIns,seqNum);
+        // if it is terminator and remotely generated,we need the decalaration
+        if(!(curIns->isTerminator() && !remoteSrc))
         {
-            instructionSeq ++;
-            // it is possible that this instruction is not in srcBB nor insBB
-            // then this is not converted to c, but if this is the terminator
-            // we need t read the branch tag unless its return
-            if(srcIns!=0 && (std::find(srcIns->begin(),srcIns->end(), insPt)==srcIns->end()) &&
-               actualIns!=0 && (std::find(actualIns->begin(),actualIns->end(),insPt)==actualIns->end())
-             )
+            partitionDecStr.push_back(varDecStr);
+        }
+    }*/
+
+};
+
+void FunctionGenerator::init(PartitionGen* p, DAGPartition* pa, bool cbh, int partInd)
+{
+    pg = p;
+    srcBBs = pg->srcBBsInPartition[pa];
+    insBBs = pg->insBBsInPartition[pa];
+    BBList = pg->allBBsInPartition[pa];
+    CPU_bar_HLS = cbh;
+    myPartition = pa;
+    partGenId = partInd;
+}
+// we also decide if while should be inserted
+void FunctionGenerator::checkBBListValidityRearrangeDom()
+{
+    // now find the dominator for this list of BB
+    BasicBlock* domBB = BBList->at(0);
+    DominatorTree* dt = pg->getAnalysisIfAvailable<DominatorTree>();
+    for(unsigned int bbInd = 1; bbInd < BBList->size(); bbInd++)
+    {
+        domBB = dt->findNearestCommonDominator(domBB,BBList->at(bbInd));
+    }
+    // the dominator must be inside the list
+    std::vector<BasicBlock*>::iterator domIter = std::find(BBList->begin(),BBList->end(),domBB);
+    // also if the encloseWhileLoop is false --> we are duplicating control flow
+    // then the actual dominator must be the first when generating the final code
+    // we should search for it and change the place
+
+    assert(domIter!=BBList->end());
+    BBList->erase(domIter);
+    BBList->insert(BBList->begin(),domBB);
+    // if we dont say no duplicate --> meaning we duplicate, then the purpose is to
+    // have no while(1) --> which means any non-included BBs we branch to, must be
+    // outside of anyloop, such that there is no path of coming back once we exit
+    LoopInfo* li = pg->getAnalysisIfAvailable<LoopInfo>();
+
+    encloseWhileLoop=false;
+    if(!(pg->NoCfDup))
+    {
+        for(unsigned int bbInd = 1; bbInd < BBList->size(); bbInd++)
+        {
+            BasicBlock* curBB = BBList->at(bbInd);
+            TerminatorInst* curTerm = curBB->getTerminator();
+            for(unsigned sucInd = 0; sucInd < curTerm->getNumSuccessors(); sucInd++)
+            {
+                BasicBlock* curSuc = curTerm->getSuccessor(sucInd);
+                if(std::find(BBList->begin(),BBList->end(),curSuc) == BBList->end())
+                {
+                    assert(li->getLoopDepth(curSuc)==0);
+                }
+            }
+        }
+    }
+    else
+    {
+        if(li->getLoopDepth(domBB)!=0)
+            encloseWhileLoop=true;
+    }
+
+
+}
+// the only reason this bb exist is because it is part of the
+// control flow, no instruction(src or actual) got assigned to
+// this block
+void FunctionGenerator::generateFlowOnlyBlock(BasicBlock* curBB, std::vector<std::string>* curBBStrArray)
+{
+    Instruction* curTerm = curBB->getTerminator();
+    // shouldnt be return coz the return block isnt in a path
+    assert(!isa<ReturnInst>(*curTerm));
+    int seqNum = curTerm->getParent()->getInstList().size()-1;
+    struct InstructionGenerator ig;
+    ig.init(curTerm,seqNum,true,false,this);
+    std::string termStr = ig.generateStatement();
+    //std::string termStr = generateSingleStatement(curTerm,true,false,seqNum,partitionDecStr,functionArgs, fifoArgs);
+    curBBStrArray->push_back(termStr);
+
+}
+void FunctionGenerator::generateContentBlock(BasicBlock* curBB,std::vector<std::string>* curBBStrArray)
+{
+    std::vector<Instruction*>* srcIns = 0;
+    std::vector<Instruction*>* actualIns = 0;
+
+    if(srcBBs->find(curBB)!=srcBBs->end())
+        srcIns = (*srcBBs)[curBB];
+
+    if(insBBs->find(curBB)!=insBBs->end())
+        actualIns = (*insBBs)[curBB];
+    int instructionSeq = -1;
+    for(BasicBlock::iterator insPt = curBB->begin(), insEnd = curBB->end(); insPt != insEnd; insPt++)
+    {
+        instructionSeq ++;
+        // it is possible that this instruction is not in srcBB nor insBB
+        // then this is not converted to c, but if this is the terminator
+        // we need t read the branch tag unless its return
+        if(srcIns!=0 && (std::find(srcIns->begin(),srcIns->end(), insPt)==srcIns->end()) &&
+           actualIns!=0 && (std::find(actualIns->begin(),actualIns->end(),insPt)==actualIns->end())
+         )
+        {
+            if(insPt->isTerminator() && !isa<ReturnInst>(*insPt) )
+            {
+                struct InstructionGenerator ig;
+                ig.init(insPt,instructionSeq,true,false,this);
+                std::string srcInsStr = ig.generateStatement();
+                //std::string srcInsStr = generateSingleStatement(insPt,true,false,instructionSeq,partitionDecStr, functionArgs,fifoArgs);
+                curBBStrArray->push_back(srcInsStr);
+            }
+        }
+
+        // another case is one of srcIns & actualIns is zero, but the non zero one
+        // does not contain this instruction....we still need to add the control flow
+        // for this basic block
+        std::vector<Instruction*>* relevantIns=0;
+        if(srcIns!=0 && actualIns==0)
+            relevantIns = srcIns;
+        if(srcIns==0 && actualIns!=0)
+            relevantIns = actualIns;
+        if(relevantIns!=0)
+        {
+            if(std::find(relevantIns->begin(),relevantIns->end(), insPt)==relevantIns->end())
             {
                 if(insPt->isTerminator() && !isa<ReturnInst>(*insPt) )
                 {
-                    std::string srcInsStr = generateSingleStatement(insPt,true,false,instructionSeq,partitionDecStr, functionArgs,fifoArgs);
-                    curBBStrArray->push_back(srcInsStr);
+                    struct InstructionGenerator ig;
+                    ig.init(insPt,instructionSeq,true,false,this);
+                    curBBStrArray->push_back(ig.generateStatement());
                 }
-            }
-
-            // another case is one of srcIns & actualIns is zero, but the non zero one
-            // does not contain this instruction....we still need to add the control flow
-            // for this basic block
-            std::vector<Instruction*>* relevantIns=0;
-            if(srcIns!=0 && actualIns==0)
-                relevantIns = srcIns;
-            if(srcIns==0 && actualIns!=0)
-                relevantIns = actualIns;
-            if(relevantIns!=0)
-            {
-                if(std::find(relevantIns->begin(),relevantIns->end(), insPt)==relevantIns->end())
-                {
-                    if(insPt->isTerminator() && !isa<ReturnInst>(*insPt) )
-                        curBBStrArray->push_back(generateSingleStatement(insPt,true,false,instructionSeq,partitionDecStr,functionArgs,fifoArgs));
-                }
-            }
-
-            // this instruction is in the srcBB, meaning its output is used by this partition
-            // meaning the we should insert a blocking read from FIFO -- unless its in the actual
-            // ins also
-            if(srcIns!=0 && !(std::find(srcIns->begin(),srcIns->end(), insPt)==srcIns->end()))
-            {
-                if(actualIns==0 || (actualIns!=0 && (std::find(actualIns->begin(),actualIns->end(),insPt)==actualIns->end())))
-                {
-                    std::string srcInsStr = generateSingleStatement(insPt,true,false,instructionSeq,partitionDecStr,functionArgs,fifoArgs);
-                    curBBStrArray->push_back(srcInsStr);
-                }
-            }
-
-            // this instruction is the actual
-            if(actualIns!=0 && !(std::find(actualIns->begin(),actualIns->end(),insPt)==actualIns->end()))
-            {
-
-                // this instruction is the actual, let's see if this ins is used by
-                // instruction in other partition --
-                // check all its user to see if it is being used by others
-                // if it is then we should also add an entry in the channel list
-                // also if this is an terminator, it may not have any use, but we may
-                // still send brTag
-
-                bool thereIsPartitionReceiving = false;
-                std::string channelStr;
-                // special case for terminator
-                if(insPt->isTerminator()&& !isa<ReturnInst>(*insPt))
-                {
-                    // are there other partitions having the same basicblock
-                    // we will need to pass the branch tag over as long as it is
-                    // the case
-                    for(unsigned sid = 0; sid < pg->partitions.size(); sid++)
-                    {
-                        DAGPartition* destPart = pg->partitions.at(sid);
-                        if(myPartition == destPart)
-                            continue;
-                        std::vector<BasicBlock*>* destPartBBs = pg->allBBsInPartition[destPart];
-
-                        if(std::find(destPartBBs->begin(),destPartBBs->end(),curBB)!=destPartBBs->end())
-                        {
-                            // add the branchtage channel
-                            pg->addChannelAndDepPartition(thereIsPartitionReceiving,insPt,channelStr,destPart,0,instructionSeq);
-                        }
-                    }
-                }
-                else
-                {
-                    for(Value::use_iterator curUser = insPt->use_begin(), endUser = insPt->use_end(); curUser != endUser; ++curUser )
-                    {
-                        // now we look at each use, these instruction belows to some DAGNode which belongs to some
-                        // DAGPartition
-                        assert(isa<Instruction>(*curUser));
-                        DAGPartition* curUsePart = pg->getPartitionFromIns(cast<Instruction>(*curUser));
-
-                        if(curUsePart == myPartition)
-                            continue;
-                        pg->addChannelAndDepPartition(thereIsPartitionReceiving,insPt,channelStr,curUsePart,1,instructionSeq);
-
-                    }
-                }
-                std::string actualInsStr = generateSingleStatement(insPt,false,thereIsPartitionReceiving,instructionSeq,partitionDecStr,functionArgs,fifoArgs,&phiPreAssign);
-                curBBStrArray->push_back(actualInsStr);
             }
         }
 
+        // this instruction is in the srcBB, meaning its output is used by this partition
+        // meaning the we should insert a blocking read from FIFO -- unless its in the actual
+        // ins also
+        if(srcIns!=0 && !(std::find(srcIns->begin(),srcIns->end(), insPt)==srcIns->end()))
+        {
+            if(actualIns==0 || (actualIns!=0 && (std::find(actualIns->begin(),actualIns->end(),insPt)==actualIns->end())))
+            {
+                struct InstructionGenerator ig;
+                ig.init(insPt,instructionSeq,true,false,this);
+                curBBStrArray->push_back(ig.generateStatement());
+            }
+        }
+
+        // this instruction is the actual
+        if(actualIns!=0 && !(std::find(actualIns->begin(),actualIns->end(),insPt)==actualIns->end()))
+        {
+
+            // this instruction is the actual, let's see if this ins is used by
+            // instruction in other partition --
+            // check all its user to see if it is being used by others
+            // if it is then we should also add an entry in the channel list
+            // also if this is an terminator, it may not have any use, but we may
+            // still send brTag
+
+            bool thereIsPartitionReceiving = false;
+            std::string channelStr;
+            // special case for terminator
+            if(insPt->isTerminator()&& !isa<ReturnInst>(*insPt))
+            {
+                // are there other partitions having the same basicblock
+                // we will need to pass the branch tag over as long as it is
+                // the case
+                for(unsigned sid = 0; sid < pg->partitions.size(); sid++)
+                {
+                    DAGPartition* destPart = pg->partitions.at(sid);
+                    if(myPartition == destPart)
+                        continue;
+                    std::vector<BasicBlock*>* destPartBBs = pg->allBBsInPartition[destPart];
+
+                    if(std::find(destPartBBs->begin(),destPartBBs->end(),curBB)!=destPartBBs->end())
+                    {
+                        // add the branchtage channel
+                        pg->addChannelAndDepPartition(thereIsPartitionReceiving,insPt,channelStr,destPart,0,instructionSeq);
+                    }
+                }
+            }
+            else
+            {
+                for(Value::use_iterator curUser = insPt->use_begin(), endUser = insPt->use_end(); curUser != endUser; ++curUser )
+                {
+                    // now we look at each use, these instruction belows to some DAGNode which belongs to some
+                    // DAGPartition
+                    assert(isa<Instruction>(*curUser));
+                    DAGPartition* curUsePart = pg->getPartitionFromIns(cast<Instruction>(*curUser));
+
+                    if(curUsePart == myPartition)
+                        continue;
+                    pg->addChannelAndDepPartition(thereIsPartitionReceiving,insPt,channelStr,curUsePart,1,instructionSeq);
+
+                }
+            }
+            InstructionGenerator ig;
+            ig.init(insPt,instructionSeq,false,thereIsPartitionReceiving,this);
+            curBBStrArray->push_back(ig.generateStatement());
+        }
     }
-    std::string genFunctionDeclaration()
+
+}
+std::string FunctionGenerator::genFunctionDeclaration()
+{
+    std::string funDecl = pg->curFunc->getName();
+    funDecl+=int2Str(partGenId);
+    addTabbedLine(funDecl,"(");
+    addBarSubTabs(true);
+    for(unsigned k=0; k<functionArgs.size();k++)
     {
-        std::string funDecl = pg->curFunc->getName();
-        funDecl+=int2Str(partGenId);
-        addTabbedLine(funDecl,"(");
-        addBarSubTabs(true);
-        for(unsigned k=0; k<functionArgs.size();k++)
+        argPair* curP = functionArgs.at(k);
+        // make sure there is no repeat
+        bool added = false;
+        for(unsigned ki=0; ki<k; ki++)
         {
-            argPair* curP = functionArgs.at(k);
-            // make sure there is no repeat
-            bool added = false;
-            for(unsigned ki=0; ki<k; ki++)
+            // check if we already seen it
+            argPair* checkP = functionArgs.at(ki);
+            if(checkP->argName.compare( curP->argName)==0)
             {
-                // check if we already seen it
-                argPair* checkP = functionArgs.at(ki);
-                if(checkP->argName.compare( curP->argName)==0)
-                {
-                    added = true;
-                    break;
-                }
+                added = true;
+                break;
             }
-            if(!added)
-            {
-                std::string argDec = generateArgStr(curP);
-                if(!(k==functionArgs.size()-1 && fifoArgs.size()==0))
-                    argDec+=",";
-                addTabbedLine(funDecl,argDec);
-            }
-            
         }
-        
-        for(unsigned k=0; k<fifoArgs.size(); k++)
+        if(!added)
         {
-            argPair* curP = fifoArgs.at(k);
             std::string argDec = generateArgStr(curP);
-            if(k!=fifoArgs.size()-1)
+            if(!(k==functionArgs.size()-1 && fifoArgs.size()==0))
                 argDec+=",";
             addTabbedLine(funDecl,argDec);
-
         }
-        addBarSubTabs(false);
-        addTabbedLine(funDecl,")");
-
-        return funDecl;
-    }
-    std::string genVarDecl()
-    {
-        std::string curDec="";
-        for(unsigned int decInd = 0; decInd<partitionDecStr.size(); decInd++)
-        {
-            addTabbedLine(curDec, partitionDecStr.at(decInd));
-
-        }
-        return curDec;
-    }
-
-    std::string genBBsContent(std::string endgroup)
-    {
-        std::string contentStr="";
-        if(encloseWhileLoop)
-        {
-
-            addTabbedLine(contentStr,"while(1){");
-            addBarSubTabs(true);
-        }
-        for(unsigned int s=0; s < BBActualStr.size(); s++)
-        {
-            std::vector<std::string>* curBBStr = BBActualStr.at(s);
-            BasicBlock* curBB = BBList->at(s);
-            // now traverse it
-
-            for(unsigned int k =0; k<curBBStr->size(); k++)
-            {
-                if(k==curBBStr->size()-1)
-                {
-                    if(phiPreAssign.find(curBB)!=phiPreAssign.end())
-                    {
-                        std::vector<std::string>* allPhiStr = phiPreAssign[curBB];
-                        for(unsigned phiInd = 0; phiInd < allPhiStr->size(); phiInd++)
-                        {
-                            addTabbedLine(contentStr,  allPhiStr->at(phiInd));
-                        }
-
-                    }
-                }
-                addTabbedLine(contentStr, curBBStr->at(k));
-            }
-        }
-
-        addTabbedLine(contentStr, endgroup);
-
-
-        if(encloseWhileLoop)
-        {
-            addBarSubTabs(false);
-            addTabbedLine(contentStr,"}");
-
-        }
-        return contentStr;
 
     }
 
-    std::string genFunctionBody(std::string endgroup)
+    for(unsigned k=0; k<fifoArgs.size(); k++)
     {
-        std::string funcBody = "";
-        addTabbedLine(funcBody, "{");
+        argPair* curP = fifoArgs.at(k);
+        std::string argDec = generateArgStr(curP);
+        if(k!=fifoArgs.size()-1)
+            argDec+=",";
+        addTabbedLine(funDecl,argDec);
+
+    }
+    addBarSubTabs(false);
+    addTabbedLine(funDecl,")");
+
+    return funDecl;
+}
+std::string FunctionGenerator::genVarDecl()
+{
+    std::string curDec="";
+    for(unsigned int decInd = 0; decInd<partitionDecStr.size(); decInd++)
+    {
+        addTabbedLine(curDec, partitionDecStr.at(decInd));
+
+    }
+    return curDec;
+}
+
+std::string FunctionGenerator::genBBsContent(std::string endgroup)
+{
+    std::string contentStr="";
+    if(encloseWhileLoop)
+    {
+
+        addTabbedLine(contentStr,"while(1){");
         addBarSubTabs(true);
-        addTabbedLine(funcBody,genVarDecl());
+    }
+    for(unsigned int s=0; s < BBActualStr.size(); s++)
+    {
+        std::vector<std::string>* curBBStr = BBActualStr.at(s);
+        BasicBlock* curBB = BBList->at(s);
+        // now traverse it
 
-        // now do the actual computation
-        addTabbedLine(funcBody,genBBsContent(endgroup));
+        for(unsigned int k =0; k<curBBStr->size(); k++)
+        {
+            if(k==curBBStr->size()-1)
+            {
+                if(phiPreAssign.find(curBB)!=phiPreAssign.end())
+                {
+                    std::vector<std::string>* allPhiStr = phiPreAssign[curBB];
+                    for(unsigned phiInd = 0; phiInd < allPhiStr->size(); phiInd++)
+                    {
+                        addTabbedLine(contentStr,  allPhiStr->at(phiInd));
+                    }
 
-
-        addBarSubTabs(false);
-        addTabbedLine(funcBody, "}");
-
-
-
-
-        return funcBody;
+                }
+            }
+            addTabbedLine(contentStr, curBBStr->at(k));
+        }
     }
 
-    void generateCode()
+    addTabbedLine(contentStr, endgroup);
+
+
+    if(encloseWhileLoop)
     {
-        checkBBListValidityRearrangeDom();
-        for(unsigned int curBBInd = 0; curBBInd < BBList->size(); curBBInd++)
+        addBarSubTabs(false);
+        addTabbedLine(contentStr,"}");
+
+    }
+    return contentStr;
+
+}
+
+std::string FunctionGenerator::genFunctionBody(std::string endgroup)
+{
+    std::string funcBody = "";
+    addTabbedLine(funcBody, "{");
+    addBarSubTabs(true);
+    addTabbedLine(funcBody,genVarDecl());
+
+    // now do the actual computation
+    addTabbedLine(funcBody,genBBsContent(endgroup));
+
+
+    addBarSubTabs(false);
+    addTabbedLine(funcBody, "}");
+
+
+
+
+    return funcBody;
+}
+
+void FunctionGenerator::generateCode()
+{
+    checkBBListValidityRearrangeDom();
+    for(unsigned int curBBInd = 0; curBBInd < BBList->size(); curBBInd++)
+    {
+        BasicBlock* curBB = BBList->at(curBBInd);
+        std::vector<std::string>* curBBStrArray = new std::vector<std::string>();
+        BBActualStr.push_back(curBBStrArray);
+        std::string bbname =  curBB->getName();
+        bbname+=":";
+        //bbname.append(":\n");
+        curBBStrArray->push_back(bbname);
+
+        if(srcBBs->find(curBB)==srcBBs->end() && insBBs->find(curBB)==insBBs->end())
         {
-            BasicBlock* curBB = BBList->at(curBBInd);
-            std::vector<std::string>* curBBStrArray = new std::vector<std::string>();
-            BBActualStr.push_back(curBBStrArray);
-            std::string bbname =  curBB->getName();
-            bbname.append(":\n");
-            curBBStrArray->push_back(bbname);
-
-            if(srcBBs->find(curBB)==srcBBs->end() && insBBs->find(curBB)==insBBs->end())
-            {
-                generateFlowOnlyBlock(curBB,curBBStrArray);
-                continue;
-            }
-
-
-            generateContentBlock(curBB, curBBStrArray);
-            // all the per bb stuff is done
-
+            generateFlowOnlyBlock(curBB,curBBStrArray);
+            continue;
         }
-        std::string endgroup = generateEndBlock(BBList);
-        // FIXME: rewrite
-        //generate function name
-        std::string funcDecl = this->genFunctionDeclaration();
-        std::string funcBody = this->genFunctionBody(endgroup);
 
 
-        pg->Out<<funcDecl;
-        pg->Out<<funcBody;
+        generateContentBlock(curBB, curBBStrArray);
+        // all the per bb stuff is done
+
+    }
+    std::string endgroup = generateEndBlock(BBList);
+    // FIXME: rewrite
+    //generate function name
+    std::string funcDecl = this->genFunctionDeclaration();
+    std::string funcBody = this->genFunctionBody(endgroup);
+
+
+    pg->Out<<funcDecl;
+    pg->Out<<funcBody;
 
 
 
 
 //        partGenId++;
-        pg->Out<<"//=========================================================================\n";
-        // clear the functionArgs and fifoArgs vector
-        for(unsigned k =0; k< functionArgs.size(); k++)
-        {
-            delete functionArgs.at(k);
-        }
-        for(unsigned k =0; k<fifoArgs.size();k++)
-        {
-            delete fifoArgs.at(k);
-        }
-
-
-
+    pg->Out<<"//=========================================================================\n";
+    // clear the functionArgs and fifoArgs vector
+    for(unsigned k =0; k< functionArgs.size(); k++)
+    {
+        delete functionArgs.at(k);
     }
-};
+    for(unsigned k =0; k<fifoArgs.size();k++)
+    {
+        delete fifoArgs.at(k);
+    }
 
 
 
-static std::string generateCode(PartitionGen* pg, bool CPU_bar_HLS)
+}
+
+
+
+static void generateCode(PartitionGen* pg, bool CPU_bar_HLS)
 {
     for(unsigned int partInd = 0; partInd < pg->partitions.size(); partInd++)
     {

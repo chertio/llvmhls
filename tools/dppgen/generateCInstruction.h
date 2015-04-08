@@ -158,42 +158,23 @@ std::string generateFifoType(Value* valPtr)
             exit(1);
     }
 }
-//FIXME: this whole function should be rewritten
-std::string generateVariableType(Value* valPtr)
+
+std::string getLLVMTypeStr(Type* valPtrType)
 {
-
-
     std::string varType;
-
-    if(isa<Instruction>(*valPtr))
-    {
-        Instruction* ins =0;
-        ins = &(cast<Instruction>(*valPtr));
-        // a special case for generating the branches
-        // they might be used to communicate control
-        // dependencies thus need a type
-        if(ins->isTerminator()&&!isa<ReturnInst>(*ins))
-        {
-            varType = "char ";
-            return varType;
-
-        }
-    }
-
-
-    switch(valPtr->getType()->getTypeID())
+    switch(valPtrType->getTypeID())
     {
         case Type::VoidTyID:
             varType="";
             break;
         case Type::HalfTyID:
-            varType="short ";
+            varType="short";
             break;
         case Type::FloatTyID:
-            varType="float ";
+            varType="float";
             break;
         case Type::DoubleTyID:
-            varType ="double ";
+            varType ="double";
             break;
         //X86_FP80TyID,    ///<  4: 80-bit floating point type (X87)
         //FP128TyID,       ///<  5: 128-bit floating point type (112-bit mantissa)
@@ -205,26 +186,19 @@ std::string generateVariableType(Value* valPtr)
     // Derived types... see DerivedTypes.h file.
     // Make sure FirstDerivedTyID stays up to date!
         case Type::IntegerTyID:     ///< 10: Arbitrary bit width integers
-            varType ="int ";
+            // only support 32 bit or less now
+            assert(valPtrType->getScalarSizeInBits()<=32);
+            varType ="int";
             break;
         //FunctionTyID,    ///< 11: Functions
         //StructTyID,      ///< 12: Structures
+        //FIXME: wanna support array type
         //ArrayTyID,       ///< 13: Arrays
         case Type::PointerTyID:
-        // well this is likely a getElementPtr thing
-        // we need to find out what type it is pointing to
-            if(isa<Instruction>(*valPtr))
             {
-                Instruction* ins = &(cast<Instruction>(*valPtr));
-                varType = generateGetElementPtrInstVarDec(*ins);
-            }
-            else
-            {
-                Type* ptedType = valPtr->getType()->getPointerElementType();
-                if(ptedType->isFloatTy())
-                    varType="float* ";
-                else if(ptedType->isIntegerTy())
-                    varType="int* ";
+                Type* ptedType = valPtrType->getPointerElementType();
+                std::string ptedTypeStr = getLLVMTypeStr(ptedType);
+                varType = ptedTypeStr+"*";
             }
             break;
         //VectorTyID,      ///< 15: SIMD 'packed' format, or other vector type
@@ -232,6 +206,45 @@ std::string generateVariableType(Value* valPtr)
             errs()<<"unhandled type, exit\n";
             exit(1);
     }
+
+    return varType;
+}
+
+
+// the thing about the type generation is that
+// if a pointer value is transported, then they should be
+// transported as unsigned, as the local reference would
+// be adding it to a memory access pointer
+// FIXME: later the actual memory operation would need
+// to add a port for memory access at the function declaration
+// too
+std::string generateVariableType(Value* valPtr)
+{
+    std::string varType;
+    if(isa<Instruction>(*valPtr))
+    {
+        Instruction* ins =0;
+        ins = &(cast<Instruction>(*valPtr));
+        // a special case for generating the branches
+        // they might be used to communicate control
+        // dependencies thus need a type
+        if(ins->isTerminator()&&!isa<ReturnInst>(*ins))
+        {
+            // got to check the number of successors
+            // log2 it to get number of bits
+            TerminatorInst* termIns =&(cast<TerminatorInst>(*ins));
+            int numSuc = termIns->getNumSuccessors();
+            int tagWidth = std::ceil(std::log(numSuc));
+            tagWidth = tagWidth<1? 1: tagWidth;
+            varType = "ap_int<";
+            varType += int2Str(tagWidth);
+            varType += ">";
+            return varType+" ";
+
+        }
+    }
+    return getLLVMTypeStr(valPtr->getType())+" ";
+
 
 }
 std::string generatePushOp(std::string varName, std::string channelName)
@@ -241,17 +254,17 @@ std::string generatePushOp(std::string varName, std::string channelName)
     return rtStr;
 }
 
-std::string generateVariableStr(Instruction* ins, int seqNum)
+std::string generateVariableDeclStr(Instruction* ins, int seqNum)
 {
 
     std::string rtVarName = generateVariableName(ins,seqNum);
 
+    std::string rtStr="";
     std::string varType=generateVariableType(ins);
-    if(varType.length()==0)
-        rtVarName="";
-    std::string rtStr;
-    rtStr = varType+" ";
-    rtStr = rtStr +rtVarName+";";
+    if(varType.length()>1)
+    {
+        rtStr = varType +rtVarName+";";
+    }
     return rtStr;
 }
 
@@ -621,7 +634,7 @@ std::string generateSelectOperations(SelectInst& curIns,bool remoteDst,int seqNu
 
 
 std::string generatePhiNode(PHINode& curIns,bool remoteDst,int seqNum,
-                                  BBMap2outStr* preAssign,std::vector<argPair*>& functionArgs, std::vector<argPair*>& fifoArgs)
+                                  BBMap2outStr& preAssign,std::vector<argPair*>& functionArgs, std::vector<argPair*>& fifoArgs)
 {
     std::string rtStr="";
     int channelType =  1;
@@ -637,15 +650,15 @@ std::string generatePhiNode(PHINode& curIns,bool remoteDst,int seqNum,
             functionArgs.push_back(createArg(curPredVal->getName(),generateVariableType(curPredVal),curPredVal->getType()->getScalarSizeInBits(),0));
         }
         // now we check if the BB has a vector of strings, if not we add one
-        if(preAssign->find(curPred)==preAssign->end())
+        if(preAssign.find(curPred)==preAssign.end())
         {
-            std::vector<std::string>*& predPhiStrings = (*preAssign)[curPred];
+            std::vector<std::string>*& predPhiStrings = preAssign[curPred];
             predPhiStrings = new std::vector<std::string>();
         }
         // now we generate the string,
         std::string valueStr = generateOperandStr(curPredVal);
         std::string preAssignStr = varName+"="+valueStr+";\n";
-        ((*preAssign)[curPred])->push_back(preAssignStr);
+        (preAssign[curPred])->push_back(preAssignStr);
     }
     if(remoteDst)
     {
@@ -666,7 +679,7 @@ std::string generateMemoryOperations(Instruction& curIns, bool remoteDst, int se
     {
     case Instruction::Alloca:
         // just generate a declaration
-        rtStr = generateVariableStr(&curIns,seqNum);
+        rtStr = generateVariableDeclStr(&curIns,seqNum);
         break;
     case Instruction::Load:
         //LoadInst& li = cast<LoadInst>(curIns);
