@@ -17,6 +17,17 @@
 
 typedef std::map<BasicBlock*, std::vector<std::string>*> BBMap2outStr;
 
+static void addBarSubTabs(bool addBarSub);
+static void addTabbedLine(std::string& original, std::string next);
+
+
+static int getNumOfBitsForTag(int numSuc)
+{
+
+    int tagWidth = std::ceil(std::log(numSuc));
+    tagWidth = tagWidth<1? 1: tagWidth;
+    return tagWidth;
+}
 
 struct argPair
 {
@@ -234,8 +245,7 @@ std::string generateVariableType(Value* valPtr)
             // log2 it to get number of bits
             TerminatorInst* termIns =&(cast<TerminatorInst>(*ins));
             int numSuc = termIns->getNumSuccessors();
-            int tagWidth = std::ceil(std::log(numSuc));
-            tagWidth = tagWidth<1? 1: tagWidth;
+            int tagWidth = getNumOfBitsForTag(numSuc);
             varType = "ap_int<";
             varType += int2Str(tagWidth);
             varType += ">";
@@ -249,8 +259,7 @@ std::string generateVariableType(Value* valPtr)
 }
 std::string generatePushOp(std::string varName, std::string channelName)
 {
-    std::string rtStr;
-    rtStr=rtStr+"push ("+channelName+","+varName+");\n";
+    std::string rtStr="push ("+channelName+","+varName+");\n";
     return rtStr;
 }
 
@@ -315,9 +324,10 @@ std::string generateGenericSwitchStatement(std::string varName,bool explicitCase
 {
     assert((!explicitCase)||(caseVal->size()==tgtLabel->size()));
     std::string rtStr="";
-    rtStr+= rtStr+"switch("+varName+")\n";
-    rtStr+="{\n";
-
+    //rtStr+= rtStr+"switch("+varName+")\n";
+    addTabbedLine(rtStr,"switch("+varName+")");
+    addTabbedLine(rtStr,"{");
+    addBarSubTabs(true);
     unsigned int successorSeqNum = 0;
     for(unsigned int sucCount=0; sucCount<tgtLabel->size(); sucCount++ )
     {
@@ -325,27 +335,28 @@ std::string generateGenericSwitchStatement(std::string varName,bool explicitCase
         if(successorSeqNum ==defaultSeq)
             successorSeqNum++;
         std::string curCaseNum = explicitCase? caseVal->at(sucCount):int2Str(sucCount);
-        rtStr+="\tcase "+curCaseNum+":\n";
+        addTabbedLine(rtStr,"case "+curCaseNum+":");
+
+        addBarSubTabs(true);
         if(remoteDst)
         {
             // we need to push something to the channel
             // this should be which target it is
-            rtStr+="\t";
-            rtStr+=generatePushOp(int2Str(successorSeqNum),channelName);
-
-
+            addTabbedLine(rtStr,generatePushOp(int2Str(successorSeqNum),channelName));
         }
-        rtStr+="\tgoto "+tgtLabel->at(sucCount)+";\n";
+        addTabbedLine(rtStr,"goto "+tgtLabel->at(sucCount)+";");
         successorSeqNum++;
-
+        addBarSubTabs(false);
     }
-    rtStr+="default:\n";
+    addTabbedLine(rtStr,"default:");
     if(remoteDst)
     {
-        rtStr+="\t";
-        rtStr+=generatePushOp(int2Str(defaultSeq),channelName);
+        //rtStr+="\t";
+        addTabbedLine(rtStr,generatePushOp(int2Str(defaultSeq),channelName));
     }
-    rtStr+="\tgoto "+defaultDest+ ";}\n";
+    addTabbedLine(rtStr,"goto "+defaultDest+ ";");
+    addBarSubTabs(false);
+    addTabbedLine(rtStr,"}");
     return rtStr;
 }
 
@@ -369,21 +380,24 @@ std::string generateGettingRemoteBranchTag(TerminatorInst& curIns, int seqNum, s
 
     // the name of the argument is gonna be the name of the channel
     // type of the channel is gonna be char?
-    p.push_back(createArg(channelStr,"char* ",8,0));
+    p.push_back(createArg(channelStr,generateVariableType(&curIns)+"*",8,0));
 
     unsigned numSuc = curIns.getNumSuccessors();
     assert(numSuc < 255 && numSuc>0);
 
     // we need to get remote target tag
-    rtStr = rtStr+"pop("+channelStr+","+varName+");\n";
+    addTabbedLine(rtStr,"pop("+channelStr+","+varName+");");
+    //rtStr = rtStr+"pop("+channelStr+","+varName+");\n";
     // if this is a unconditional branch we just do it
     if(numSuc==1)
     {
         BasicBlock* curSuc = curIns.getSuccessor(0);
         std::string sucName =  curSuc->getName();
+        addTabbedLine(rtStr,"goto "+sucName+";");
+        /*
         rtStr= rtStr+"goto ";
         rtStr= rtStr+ sucName;
-        rtStr = rtStr +";\n";
+        rtStr = rtStr +";\n";*/
         return rtStr;
     }
     std::vector<std::string> allTgt;
@@ -403,11 +417,11 @@ std::string generateGettingRemoteData(Instruction& curIns, int seqNum, std::vect
     std::string channelStr = generateChannelString(channelType,seqNum,curIns.getParent()->getName());
     std::string varName = generateVariableName(&curIns,seqNum);
     std::string varNameU= varName+"_raw";
-    //FIXME: add the declaration
+    //FIXME: add the declaration of the raw data
     fifoArgs.push_back(createArg(channelStr,generateFifoType(&curIns),curIns.getType()->getScalarSizeInBits(),0 ) );
-    rtStr = rtStr+"pop("+channelStr+","+varNameU+");\n";
+    addTabbedLine(rtStr,"pop("+channelStr+","+varNameU+");");
     // cast it to the var
-    rtStr = rtStr+varName+"=("+ +")"+varNameU+";\n";
+    addTabbedLine(rtStr,varName+"=("+ +")"+varNameU+";");
     return rtStr;
 }
 std::string generateLoadInstruction(LoadInst& li, std::string varName,std::vector<argPair*>& functionArgs)
@@ -842,20 +856,18 @@ std::string generateControlFlow(TerminatorInst& curIns,bool remoteDst, int seqNu
         {
             if(remoteDst)
             {
-                rtStr=rtStr+generatePushOp("1",channelName);
+                //rtStr=rtStr+generatePushOp("1",channelName);
                 // this is a fifo args
-
+                addTabbedLine(rtStr, generatePushOp("1",channelName));
             }
-            rtStr=rtStr+"goto ";
-
-            rtStr=rtStr+firstSucName +";\n";
+            addTabbedLine( rtStr,"goto "+firstSucName +";");
         }
         else
         {
             Value* condVal = bi.getCondition();
             assert(isa<Instruction>(*condVal) || isa<Argument>(*condVal) );
-
             std::string switchVar="";
+
             if(isa<Argument>(*condVal))
             {
                 Argument* valArg = &(cast<Argument>(*condVal));
@@ -867,18 +879,27 @@ std::string generateControlFlow(TerminatorInst& curIns,bool remoteDst, int seqNu
                 Instruction* valGenIns = &(cast<Instruction>(*condVal));
                 switchVar += generateVariableName(valGenIns);
             }
-            rtStr="if("+switchVar+"){\n";
+            addTabbedLine(rtStr,"if("+switchVar+")");
+            addTabbedLine(rtStr,"{");
+            addBarSubTabs(true);
             if(remoteDst)
-                rtStr=rtStr+generatePushOp("0",channelName);
-            rtStr=rtStr+"goto "+firstSucName+";}\n";
+            {
+               addTabbedLine(rtStr, generatePushOp("0",channelName));
+            }
 
-            rtStr=rtStr+"else{\n";
+            addTabbedLine( rtStr,"goto "+firstSucName+";");
+            addBarSubTabs(false);
+            addTabbedLine(rtStr,"}");
+            addTabbedLine(rtStr,"else");
+            addTabbedLine(rtStr,"{");
+            addBarSubTabs(true);
             if(remoteDst)
-                rtStr=rtStr+generatePushOp("1",channelName);
+                addTabbedLine(rtStr,generatePushOp("1",channelName));
 
             std::string secondSucName = bi.getSuccessor(1)->getName();
-            rtStr=rtStr+"goto "+secondSucName+";}\n";
-
+            addTabbedLine(rtStr,"goto "+secondSucName+";");
+            addBarSubTabs(false);
+            addTabbedLine(rtStr,"}");
         }
 
     }
@@ -925,7 +946,7 @@ std::string generateControlFlow(TerminatorInst& curIns,bool remoteDst, int seqNu
             functionArgs.push_back(createArg(valArg->getName(),generateVariableType(valArg), valArg->getType()->getScalarSizeInBits(),0 ));
         }
 
-        rtStr += generateGenericSwitchStatement(switchName,true,&caseVal,&allTgt,defaultDest,true,channelName,defaultSeq);
+        addTabbedLine(rtStr, generateGenericSwitchStatement(switchName,true,&caseVal,&allTgt,defaultDest,true,channelName,defaultSeq));
 
     }
     if(remoteDst)
@@ -939,10 +960,10 @@ std::string generateControlFlow(TerminatorInst& curIns,bool remoteDst, int seqNu
 std::string generateReturn(ReturnInst& curIns, std::vector<argPair*>& functionArgs)
 {
 
-    std::string rtStr="return ";
+    std::string returnStatement="return ";
     if(curIns.getReturnValue()==0)
     {
-        rtStr = rtStr+"void;\n";
+        returnStatement = returnStatement+"void;\n";
     }
     else
     {
@@ -962,9 +983,11 @@ std::string generateReturn(ReturnInst& curIns, std::vector<argPair*>& functionAr
             if(isa<Argument>(*retVal))
                 functionArgs.push_back(createArg(retVal->getName(),generateVariableType(retVal),retVal->getType()->getScalarSizeInBits(),0 ));
         }
-        rtStr=rtStr+retVar+";\n";
+        returnStatement=returnStatement+retVar+";";
 
     }
+    std::string rtStr;
+    addTabbedLine(rtStr, returnStatement);
     return rtStr;
 }
 

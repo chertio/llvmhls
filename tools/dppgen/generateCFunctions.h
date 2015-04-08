@@ -12,14 +12,23 @@ static void addBarSubTabs(bool addBarSub)
     else
         numTabs--;
 }
+// for everyline in string next, we add appropriate number of tabs
 static void addTabbedLine(std::string& original, std::string next)
 {
-    original+="\n";
-    for(unsigned tabCount = 0; tabCount<numTabs; tabCount++)
+    //original+="\n";
+    // get every line
+    std::stringstream multiLine(next);
+    std::string curLine;
+    while(std::getline(multiLine,curLine))
     {
-        original += "\t";
+        original+="\n";
+        for(unsigned tabCount = 0; tabCount<numTabs; tabCount++)
+        {
+            original += "\t";
+        }
+        original+=curLine;
+
     }
-    original+=next;
 }
 
 
@@ -78,7 +87,7 @@ struct InstructionGenerator
     // would have already been ordered properly
     std::string generateStatement()
     {
-        std::string varDecStr = generateVariableStr(insn,seqNum);
+        std::string varDecStr = generateVariableDeclStr(insn,seqNum);
         //unless it is terminator&locally generated, we need to declare
         // a variable
         if(!(insn->isTerminator() && !remoteSrc))
@@ -109,12 +118,10 @@ struct InstructionGenerator
                 // and possibly write the tag into the channel
                 rtStr = generateControlFlow(cast<TerminatorInst>(*insn),remoteDst,seqNum, owner->fifoArgs, owner->functionArgs);
 
-                //errs()<<rtStr;
+
 
 
             }
-            // we dont need the the value
-            //return generateTerminatorStr(curIns);
         }
         // if this is return, it should be pretty easy.
         else if(isa<ReturnInst>(*insn))
@@ -126,7 +133,7 @@ struct InstructionGenerator
             // instruction in the local partition
             // returnInst doesnt have anything to be used by other instruction
             // it is possible it has functional argument as argument
-            rtStr = rtStr+ generateReturn(cast<ReturnInst>(*insn), owner->functionArgs);
+            rtStr =  generateReturn(cast<ReturnInst>(*insn), owner->functionArgs);
         }
         else if(insn->isBinaryOp())
         {
@@ -300,6 +307,7 @@ void FunctionGenerator::generateContentBlock(BasicBlock* curBB,std::vector<std::
     if(insBBs->find(curBB)!=insBBs->end())
         actualIns = (*insBBs)[curBB];
     int instructionSeq = -1;
+    addBarSubTabs(true);
     for(BasicBlock::iterator insPt = curBB->begin(), insEnd = curBB->end(); insPt != insEnd; insPt++)
     {
         instructionSeq ++;
@@ -407,7 +415,7 @@ void FunctionGenerator::generateContentBlock(BasicBlock* curBB,std::vector<std::
             curBBStrArray->push_back(ig.generateStatement());
         }
     }
-
+    addBarSubTabs(false);
 }
 std::string FunctionGenerator::genFunctionDeclaration()
 {
