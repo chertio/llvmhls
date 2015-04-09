@@ -43,6 +43,58 @@ std::string generateArgStr(argPair* ap)
     return ap->argType + ap->argName;
 }
 
+std::string getLLVMTypeStr(Type* valPtrType)
+{
+    std::string varType;
+    switch(valPtrType->getTypeID())
+    {
+        case Type::VoidTyID:
+            varType="";
+            break;
+        case Type::HalfTyID:
+            varType="short";
+            break;
+        case Type::FloatTyID:
+            varType="float";
+            break;
+        case Type::DoubleTyID:
+            varType ="double";
+            break;
+        //X86_FP80TyID,    ///<  4: 80-bit floating point type (X87)
+        //FP128TyID,       ///<  5: 128-bit floating point type (112-bit mantissa)
+        //PPC_FP128TyID,   ///<  6: 128-bit floating point type (two 64-bits, PowerPC)
+        //LabelTyID,       ///<  7: Labels
+        //MetadataTyID,    ///<  8: Metadata
+        //X86_MMXTyID,     ///<  9: MMX vectors (64 bits, X86 specific)
+
+    // Derived types... see DerivedTypes.h file.
+    // Make sure FirstDerivedTyID stays up to date!
+        case Type::IntegerTyID:     ///< 10: Arbitrary bit width integers
+            // only support 32 bit or less now
+            assert(valPtrType->getScalarSizeInBits()<=32);
+            varType ="int";
+            break;
+        //FunctionTyID,    ///< 11: Functions
+        //StructTyID,      ///< 12: Structures
+        //FIXME: wanna support array type
+        //ArrayTyID,       ///< 13: Arrays
+        case Type::PointerTyID:
+            {
+                Type* ptedType = valPtrType->getPointerElementType();
+                std::string ptedTypeStr = getLLVMTypeStr(ptedType);
+                varType = ptedTypeStr+"*";
+            }
+            break;
+        //VectorTyID,      ///< 15: SIMD 'packed' format, or other vector type
+        default:
+            errs()<<"unhandled type, exit\n";
+            exit(1);
+    }
+
+    return varType;
+}
+
+
 
 std::string generateVariableName(Instruction* ins, int seqNum)
 {
@@ -108,119 +160,32 @@ std::string generateGetElementPtrInstVarDec(Instruction& ins)
 std::string generateFifoType(Value* valPtr)
 {
     std::string varType;
-
     if(isa<Instruction>(*valPtr))
     {
         Instruction* ins =0;
         ins = &(cast<Instruction>(*valPtr));
-        // a special case for generating the branches
-        // they might be used to communicate control
-        // dependencies thus need a type
-        if(ins->isTerminator()&&!isa<ReturnInst>(*ins))
+        if(isa<GetElementPtrInst>(*ins))
         {
-            varType = "char* ";
-            return varType;
+            varType = "u32* ";
+        }
+        else
+        {
 
+            std::string rawType =getLLVMTypeStr(valPtr->getType());
+            varType = rawType+"* ";
         }
     }
-
-
-    switch(valPtr->getType()->getTypeID())
+    else
     {
-        case Type::VoidTyID:
-            varType="";
-            break;
-        case Type::HalfTyID:
-            varType="short* ";
-            break;
-        case Type::FloatTyID:
-            varType="float* ";
-            break;
-        case Type::DoubleTyID:
-            varType ="double* ";
-            break;
-        //X86_FP80TyID,    ///<  4: 80-bit floating point type (X87)
-        //FP128TyID,       ///<  5: 128-bit floating point type (112-bit mantissa)
-        //PPC_FP128TyID,   ///<  6: 128-bit floating point type (two 64-bits, PowerPC)
-        //LabelTyID,       ///<  7: Labels
-        //MetadataTyID,    ///<  8: Metadata
-        //X86_MMXTyID,     ///<  9: MMX vectors (64 bits, X86 specific)
+        errs()<<"not instruction for fifo args\n";
+        exit(1);
 
-    // Derived types... see DerivedTypes.h file.
-    // Make sure FirstDerivedTyID stays up to date!
-        case Type::IntegerTyID:     ///< 10: Arbitrary bit width integers
-            varType ="int* ";
-            break;
-        //FunctionTyID,    ///< 11: Functions
-        //StructTyID,      ///< 12: Structures
-        //ArrayTyID,       ///< 13: Arrays
-        case Type::PointerTyID:
-        // well this is likely a getElementPtr thing
-        // we need to find out what type it is pointing to
-            if(isa<Instruction>(*valPtr))
-            {
-                Instruction* ins = &(cast<Instruction>(*valPtr));
-                varType = generateGetElementPtrInstVarDec(*ins);
-            }
-            break;
-        //VectorTyID,      ///< 15: SIMD 'packed' format, or other vector type
-        default:
-            errs()<<"unhandled type, exit\n";
-            exit(1);
-    }
-}
-
-std::string getLLVMTypeStr(Type* valPtrType)
-{
-    std::string varType;
-    switch(valPtrType->getTypeID())
-    {
-        case Type::VoidTyID:
-            varType="";
-            break;
-        case Type::HalfTyID:
-            varType="short";
-            break;
-        case Type::FloatTyID:
-            varType="float";
-            break;
-        case Type::DoubleTyID:
-            varType ="double";
-            break;
-        //X86_FP80TyID,    ///<  4: 80-bit floating point type (X87)
-        //FP128TyID,       ///<  5: 128-bit floating point type (112-bit mantissa)
-        //PPC_FP128TyID,   ///<  6: 128-bit floating point type (two 64-bits, PowerPC)
-        //LabelTyID,       ///<  7: Labels
-        //MetadataTyID,    ///<  8: Metadata
-        //X86_MMXTyID,     ///<  9: MMX vectors (64 bits, X86 specific)
-
-    // Derived types... see DerivedTypes.h file.
-    // Make sure FirstDerivedTyID stays up to date!
-        case Type::IntegerTyID:     ///< 10: Arbitrary bit width integers
-            // only support 32 bit or less now
-            assert(valPtrType->getScalarSizeInBits()<=32);
-            varType ="int";
-            break;
-        //FunctionTyID,    ///< 11: Functions
-        //StructTyID,      ///< 12: Structures
-        //FIXME: wanna support array type
-        //ArrayTyID,       ///< 13: Arrays
-        case Type::PointerTyID:
-            {
-                Type* ptedType = valPtrType->getPointerElementType();
-                std::string ptedTypeStr = getLLVMTypeStr(ptedType);
-                varType = ptedTypeStr+"*";
-            }
-            break;
-        //VectorTyID,      ///< 15: SIMD 'packed' format, or other vector type
-        default:
-            errs()<<"unhandled type, exit\n";
-            exit(1);
     }
 
     return varType;
-}
 
+
+}
 
 // the thing about the type generation is that
 // if a pointer value is transported, then they should be
@@ -273,6 +238,11 @@ std::string generateVariableDeclStr(Instruction* ins, int seqNum)
     if(varType.length()>1)
     {
         rtStr = varType +rtVarName+";";
+    }
+    if(isa<GetElementPtrInst>(*ins))
+    {
+        rtStr +="\n";
+        rtStr +="u32 "+rtVarName+"Raw;";
     }
     return rtStr;
 }
@@ -416,12 +386,23 @@ std::string generateGettingRemoteData(Instruction& curIns, int seqNum, std::vect
     int channelType =  1;
     std::string channelStr = generateChannelString(channelType,seqNum,curIns.getParent()->getName());
     std::string varName = generateVariableName(&curIns,seqNum);
-    std::string varNameU= varName+"_raw";
+    // when it is a getElementPtr instruction
+    // we will pop a raw value off the queue
+    // and cast it --> this is
+    if(isa<GetElementPtrInst>(curIns))
+    {
+        std::string varNameU= varName+"Raw";
+        addTabbedLine(rtStr,"pop("+channelStr+","+varNameU+");");
+    }
+    else
+    {
+        addTabbedLine(rtStr,"pop("+channelStr+","+varName+");");
+    }
     //FIXME: add the declaration of the raw data
     fifoArgs.push_back(createArg(channelStr,generateFifoType(&curIns),curIns.getType()->getScalarSizeInBits(),0 ) );
-    addTabbedLine(rtStr,"pop("+channelStr+","+varNameU+");");
+
     // cast it to the var
-    addTabbedLine(rtStr,varName+"=("+ +")"+varNameU+";");
+    //addTabbedLine(rtStr,varName+"=("+ +")"+varNameU+";");
     return rtStr;
 }
 std::string generateLoadInstruction(LoadInst& li, std::string varName,std::vector<argPair*>& functionArgs)
@@ -775,6 +756,8 @@ std:: string generateBinaryOperations(BinaryOperator& curIns, bool remoteDst,int
     Value* firstOperand = curIns.getOperand(0);
     Value* secondOperand = curIns.getOperand(1);
     // now check if these operands are from the function argument
+    //FIXME: get the function arguement through settings port in accelerator
+    //Or we can just change the part where functionDecl is generated
     if(isa<Argument>(*firstOperand))
     {
         functionArgs.push_back(createArg(firstOperand->getName(), generateVariableType(firstOperand),firstOperand->getType()->getScalarSizeInBits(),0 ) );
