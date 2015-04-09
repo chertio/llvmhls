@@ -289,9 +289,11 @@ void FunctionGenerator::generateFlowOnlyBlock(BasicBlock* curBB, std::vector<std
     // shouldnt be return coz the return block isnt in a path
     assert(!isa<ReturnInst>(*curTerm));
     int seqNum = curTerm->getParent()->getInstList().size()-1;
+    addBarSubTabs(true);
     struct InstructionGenerator ig;
     ig.init(curTerm,seqNum,true,false,this);
     std::string termStr = ig.generateStatement();
+    addBarSubTabs(false);
     //std::string termStr = generateSingleStatement(curTerm,true,false,seqNum,partitionDecStr,functionArgs, fifoArgs);
     curBBStrArray->push_back(termStr);
 
