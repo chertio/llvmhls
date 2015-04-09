@@ -123,6 +123,7 @@ std::string generateVariableName(Instruction* ins)
     int seqNum = getInstructionSeqNum(ins);
     return generateVariableName(ins, seqNum);
 }
+/*
 std::string generateGetElementPtrInstVarDec(Instruction& ins)
 {
     std::string varType;
@@ -156,7 +157,7 @@ std::string generateGetElementPtrInstVarDec(Instruction& ins)
 
     }
     return varType;
-}
+}*/
 std::string generateFifoType(Value* valPtr)
 {
     std::string varType;
@@ -393,6 +394,8 @@ std::string generateGettingRemoteData(Instruction& curIns, int seqNum, std::vect
     {
         std::string varNameU= varName+"Raw";
         addTabbedLine(rtStr,"pop("+channelStr+","+varNameU+");");
+        // do a cast to the var
+        addTabbedLine(rtStr, varName+"=("+getLLVMTypeStr(curIns.getType())+")"+varNameU+";");
     }
     else
     {
@@ -413,7 +416,7 @@ std::string generateLoadInstruction(LoadInst& li, std::string varName,std::vecto
     if(isa<Argument>(*ptrVal))
         functionArgs.push_back(createArg(ptrVal->getName(),generateVariableType(ptrVal),ptrVal->getType()->getScalarSizeInBits(),0));
     std::string ptrStr = generateOperandStr(ptrVal);
-    return varName+"= *("+ptrStr+");\n";
+    return varName+"= *("+ptrStr+");";
 }
 std::string generateStoreInstruction(StoreInst& si,std::vector<argPair*>& functionArgs )
 {
@@ -429,7 +432,7 @@ std::string generateStoreInstruction(StoreInst& si,std::vector<argPair*>& functi
 
     std::string valStr = generateOperandStr(val);
 
-    std::string rtStr ="*("+ptrStr+") = "+valStr+";\n";
+    std::string rtStr ="*("+ptrStr+") = "+valStr+";";
     return rtStr;
 }
 std::string generateGetElementPtrInstruction(GetElementPtrInst& gepi, std::string varName,std::vector<argPair*>& functionArgs )
@@ -446,7 +449,7 @@ std::string generateGetElementPtrInstruction(GetElementPtrInst& gepi, std::strin
 
     std::string offSetStr = generateOperandStr(offsetVal);
     // check the index array and do additions
-    std::string rtStr = varName+"= "+ptrStr+"+"+offSetStr+";\n";
+    std::string rtStr = varName+"= "+ptrStr+"+"+offSetStr+";";
     return rtStr;
 }
 std::string generateEndBlock(std::vector<BasicBlock*>* BBList )
@@ -567,12 +570,12 @@ std::string generateCmpOperations(CmpInst& curIns, bool remoteDst, int seqNum,st
     std::string rtStr="";
     if(def)
     {
-        rtStr+= varName+"="+ constBool+";\n";
+        addTabbedLine( rtStr, varName+"="+ constBool+";");
     }
     else
     {
-        rtStr+= varName+" = "+firstVal+cmpOperator;
-        rtStr = rtStr+" "+secondVal+";\n";
+        addTabbedLine( rtStr, varName+" = "+firstVal+cmpOperator+" "+secondVal+";");
+
     }
     //std::string condStr  = generateOperandStr( curIns.getCondition());
     //std::string trueStr = generateOperandStr( curIns.getTrueValue());
@@ -580,7 +583,7 @@ std::string generateCmpOperations(CmpInst& curIns, bool remoteDst, int seqNum,st
     //rtStr+= varName+" = "+condStr+"?"+trueStr+":"+falseStr+";\n";
     if(remoteDst)
     {
-        rtStr=rtStr+generatePushOp(varName,channelStr);
+        addTabbedLine(rtStr,generatePushOp(varName,channelStr));
         fifoArgs.push_back(createArg(channelStr,generateFifoType(&curIns),curIns.getType()->getScalarSizeInBits(),1));
     }
     return rtStr;
@@ -616,11 +619,11 @@ std::string generateSelectOperations(SelectInst& curIns,bool remoteDst,int seqNu
     }
 
 
-    rtStr+= varName+" = "+condStr+"?"+trueStr+":"+falseStr+";\n";
+    addTabbedLine(rtStr, varName+" = "+condStr+"?"+trueStr+":"+falseStr+";");
     if(remoteDst)
     {
         fifoArgs.push_back(createArg(channelStr,generateFifoType(&curIns),curIns.getType()->getScalarSizeInBits(),1));
-        rtStr=rtStr+generatePushOp(varName,channelStr);
+        addTabbedLine(rtStr,generatePushOp(varName,channelStr));
     }
     return rtStr;
 
@@ -652,13 +655,14 @@ std::string generatePhiNode(PHINode& curIns,bool remoteDst,int seqNum,
         }
         // now we generate the string,
         std::string valueStr = generateOperandStr(curPredVal);
-        std::string preAssignStr = varName+"="+valueStr+";\n";
+        std::string preAssignStr="";
+        addTabbedLine(preAssignStr, varName+"="+valueStr+";");
         (preAssign[curPred])->push_back(preAssignStr);
     }
     if(remoteDst)
     {
         fifoArgs.push_back(createArg(channelStr,generateFifoType(&curIns),curIns.getType()->getScalarSizeInBits(),1));
-        rtStr=rtStr+generatePushOp(varName,channelStr);
+        addTabbedLine(rtStr,generatePushOp(varName,channelStr));
     }
     return rtStr;
 
@@ -670,21 +674,22 @@ std::string generateMemoryOperations(Instruction& curIns, bool remoteDst, int se
     int channelType =  1;
     std::string channelStr = generateChannelString(channelType,seqNum,curIns.getParent()->getName());
     std::string varName = generateVariableName(&curIns,seqNum);
+
     switch(curIns.getOpcode())
     {
     case Instruction::Alloca:
-        // just generate a declaration
+        // FIXME: untested just generate a declaration
         rtStr = generateVariableDeclStr(&curIns,seqNum);
         break;
     case Instruction::Load:
         //LoadInst& li = cast<LoadInst>(curIns);
-        rtStr+=generateLoadInstruction(cast<LoadInst>(curIns),varName,functionArgs);
+        addTabbedLine(rtStr,generateLoadInstruction(cast<LoadInst>(curIns),varName,functionArgs));
         break;
     case Instruction::Store:
-        rtStr+=generateStoreInstruction(cast<StoreInst>(curIns),functionArgs);
+        addTabbedLine(rtStr, generateStoreInstruction(cast<StoreInst>(curIns),functionArgs));
         break;
     case Instruction::GetElementPtr:
-        rtStr+=generateGetElementPtrInstruction( cast<GetElementPtrInst>(curIns), varName,functionArgs);
+        addTabbedLine(rtStr,generateGetElementPtrInstruction( cast<GetElementPtrInst>(curIns), varName,functionArgs));
         break;
     default:
         errs()<<"unhandled instruction\n";
@@ -693,8 +698,14 @@ std::string generateMemoryOperations(Instruction& curIns, bool remoteDst, int se
     if(remoteDst)
     {
         fifoArgs.push_back(createArg(channelStr,generateFifoType(&curIns),curIns.getType()->getScalarSizeInBits(),1));
-
-        rtStr=rtStr+generatePushOp(varName,channelStr);
+        // may need the raw and cast if it is getElemptr
+        std::string varNamePush = varName;
+        if(curIns.getOpcode()==Instruction::GetElementPtr)
+        {
+            varNamePush += "Raw";
+            addTabbedLine( rtStr, varNamePush+"=(u32)"+varName+";");
+        }
+        addTabbedLine(rtStr,generatePushOp(varNamePush,channelStr));
     }
 
     return rtStr;
@@ -724,7 +735,7 @@ std::string generateCastOperations(Instruction& curIns, bool remoteDst, int seqN
     case Instruction::SExt:
     case Instruction::BitCast:
         // just generate a declaration
-        rtStr += generateSimpleAssign(curIns,varName);
+        addTabbedLine(rtStr, generateSimpleAssign(curIns,varName));
         oriv = curIns.getOperand(0);
         if(isa<Argument>(*(oriv)))
             functionArgs.push_back(createArg(oriv->getName(),generateVariableType(oriv),oriv->getType()->getScalarSizeInBits(),0));
@@ -736,7 +747,8 @@ std::string generateCastOperations(Instruction& curIns, bool remoteDst, int seqN
     if(remoteDst)
     {
         fifoArgs.push_back(createArg(channelStr,generateFifoType(&curIns),curIns.getType()->getScalarSizeInBits(),1));
-        rtStr=rtStr+generatePushOp(varName,channelStr);
+        //rtStr=rtStr+generatePushOp(varName,channelStr);
+        addTabbedLine(rtStr,generatePushOp(varName,channelStr));
     }
 
     return rtStr;
@@ -769,7 +781,7 @@ std:: string generateBinaryOperations(BinaryOperator& curIns, bool remoteDst,int
 
     std::string firstOperandStr = generateOperandStr(firstOperand);
     std::string secondOperandStr = generateOperandStr(secondOperand);
-    rtStr+=varName+"=";
+    addTabbedLine(rtStr,varName+"=");
     // generate the actual computation
     switch(curIns.getOpcode())
     {
@@ -816,10 +828,10 @@ std:: string generateBinaryOperations(BinaryOperator& curIns, bool remoteDst,int
         exit(1);
 
     }
-    rtStr = rtStr + secondOperandStr+ ";\n";
+    rtStr = rtStr + secondOperandStr+";";
     if(remoteDst)
     {
-        rtStr=rtStr+generatePushOp(varName,channelStr);
+        addTabbedLine(rtStr,generatePushOp(varName,channelStr));
         fifoArgs.push_back(createArg(channelStr, generateFifoType(&curIns),curIns.getType()->getScalarSizeInBits(),1 ) );
     }
     return rtStr;
