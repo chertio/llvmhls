@@ -564,13 +564,14 @@ void PartitionGen::BarrierCluster(std::vector<DAGNode*> *dag)
     {
 
         DAGNode* curDagNode = dag->at(dagInd);
+        curPartition->addDagNode(curDagNode,dagPartitionMap);
         if(needANewPartition(curPartition,curDagNode))
         {
             curPartition = new DAGPartition;
             curPartition->init(this);
             partitions.push_back(curPartition);
         }
-        curPartition->addDagNode(curDagNode,dagPartitionMap);
+
     }
 }
 
