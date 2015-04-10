@@ -43,6 +43,9 @@ void InstructionGraph::addToInstructionGraph(Instruction *I) {
   // if this instruction is branch, we need to propagate control dependencies
   // basically the successor's ending branch/return will be depending on
   // this current branch
+  // more aggressive predicating --- if BasicBlock A is a post dominator
+  // of BasicBlock B, then thr control dependence should be from ancestors
+  // of B which is not post dominated by A
   if(isa<TerminatorInst>(*I))
   {
       // the terminator inst of its successors are dependent on it
