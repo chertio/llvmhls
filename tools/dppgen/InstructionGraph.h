@@ -16,6 +16,9 @@ class Function;
 class Module;
 class InstructionGraphNode;
 
+typedef std::map<BasicBlock*, std::vector<BasicBlock*>*> BB2BBVectorMapTy;
+
+
 //===----------------------------------------------------------------------===//
 // CallGraph class definition
 //
@@ -45,8 +48,8 @@ class InstructionGraph : public FunctionPass {
   //void spliceFunction(const Function *From, const Function *To);
   */
 
-  void addToInstructionGraph(Instruction *I);
-
+  void addToInstructionGraph(Instruction *I, std::vector<BasicBlock*>* earliestPred);
+  BB2BBVectorMapTy BasicBlockMap2PredAcceptors;
 public:
   static char ID; // Class identification, replacement for typeinfo
   //===---------------------------------------------------------------------

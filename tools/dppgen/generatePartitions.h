@@ -565,7 +565,8 @@ void PartitionGen::BarrierCluster(std::vector<DAGNode*> *dag)
 
         DAGNode* curDagNode = dag->at(dagInd);
         curPartition->addDagNode(curDagNode,dagPartitionMap);
-        if(needANewPartition(curPartition,curDagNode))
+        // if this is not the last node and we need a new partition
+        if(dagInd!=dag->size()-1 && needANewPartition(curPartition,curDagNode))
         {
             curPartition = new DAGPartition;
             curPartition->init(this);
@@ -588,7 +589,9 @@ void PartitionGen::checkAcyclicDependency()
     {
         errs()<<pi<<" partition geting\n";
         DAGPartition* curPart = partitions.at(pi);
-
+        // dump partition content
+        curPart->print();
+        errs()<<"================\n";
         if(DFSFindPartitionCycle(curPart))
         {
             errs()<<" cycle discovered quit\n";
@@ -626,12 +629,16 @@ void PartitionGen::generateControlFlowPerPartition()
     //DominatorTree* DT  = getAnalysisIfAvailable<DominatorTree>();
     //PostDominatorTree* PDT = getAnalysisIfAvailable<PostDominatorTree>();
 
+
+
+
     for(unsigned int partInd = 0; partInd < partitions.size(); partInd++)
     {
         DAGPartition* curPart = partitions.at(partInd);
+
         curPart->generateBBList();
 
-        errs()<<"done part\n";
+        errs()<<"done part "<<partInd <<"\n";
         errs()<<"[\n";
         std::vector<BasicBlock*>* AllBBs
                 = allBBsInPartition[curPart];
@@ -735,6 +742,8 @@ bool PartitionGen::runOnFunction(Function &F) {
     std::vector<DAGNode*> collectedDagNode;
     // iterate through the sccs in our graph, each scc is a vector of
     // instructions -- some time a single instruction
+
+
     for (scc_iterator<InstructionGraphNode*> SCCI = scc_begin(rootNode),
            E = scc_end(rootNode); SCCI != E; ++SCCI) {
 
@@ -745,6 +754,7 @@ bool PartitionGen::runOnFunction(Function &F) {
           DAGNode* curDagNode = new DAGNode;
           curDagNode->init();
           curDagNode->dagNodeContent = new std::vector<InstructionGraphNode*>();
+
           // copy everything over
           *(curDagNode->dagNodeContent) = curSCC;
           curDagNode->singleIns = (curSCC.size()==1);
@@ -775,9 +785,12 @@ bool PartitionGen::runOnFunction(Function &F) {
         DAGNode* curNode = collectedDagNode.at(dnInd);
         curNode->seqNum = dnInd;
     }
+
+    int totalNumOfIns=0 ;
     for(unsigned int dnInd =0; dnInd < collectedDagNode.size(); dnInd++)
     {
         DAGNode* curNode = collectedDagNode.at(dnInd);
+        totalNumOfIns+= curNode->dagNodeContent->size();
         std::vector<DAGNode*> myDep;
         findDependentNodes(curNode,this->dagNodeMap,myDep);
         // check every dep to make sure their seqNum is greater
@@ -795,6 +808,9 @@ bool PartitionGen::runOnFunction(Function &F) {
         }
 
     }
+
+
+    errs()<<"total number of instructions in scc nodes "<<totalNumOfIns<<"\n";
     errs()<<"all scc nodes topologically sorted, continue\n";
     // all instructions have been added to the dagNodeMap, collectedDagNode
     // we can start building dependencies in the DAGNodePartitions

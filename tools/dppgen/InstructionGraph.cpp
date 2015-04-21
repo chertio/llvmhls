@@ -5,14 +5,60 @@
 #include "llvm/Support/raw_ostream.h"
 #include "InstructionGraph.h"
 #include "llvm/Support/Casting.h"
+#include "llvm/Analysis/Dominators.h"
+#include "llvm/Analysis/PostDominators.h"
+#include "llvm/Analysis/LoopInfo.h"
 using namespace llvm;
+static void addAncestorsNotPDominatedBy(BasicBlock* tgtBB, std::vector<BasicBlock*>* curPredecessors,
+                                        PostDominatorTree* PDT, BB2BBVectorMapTy& BasicBlock2Predecessors,
+                                        std::vector<BasicBlock*>* allGoodPredicates, std::vector<BasicBlock*>& seenBBs)
+{
+    //errs()<<"get tgtBB's earliest" <<tgtBB->getName()<<"\n";
+    for(unsigned int predInd=0; predInd < curPredecessors->size(); predInd++ )
+    {
+        BasicBlock* BB = curPredecessors->at(predInd);
+
+        if(std::find(allGoodPredicates->begin(),allGoodPredicates->end(),BB)!=allGoodPredicates->end() ||
+           std::find(seenBBs.begin(),seenBBs.end(),BB)!=seenBBs.end())
+            continue;
+        seenBBs.push_back(BB);
+        // note: a basic block does not properly dominates itself
+        if(!PDT->properlyDominates(tgtBB,BB)  || (BasicBlock2Predecessors.find(BB)==BasicBlock2Predecessors.end()))
+        {
+            // add BB to the allGoodPredicates, and end this search path
+            allGoodPredicates->push_back(BB);
+        }
+        // we still have ancestors
+        else
+        {
+            std::vector<BasicBlock*>* nextStepPred = BasicBlock2Predecessors[BB];
+            addAncestorsNotPDominatedBy(tgtBB,nextStepPred,PDT,BasicBlock2Predecessors,allGoodPredicates,seenBBs);
+        }
+    }
+
+}
+
+
+static std::vector<BasicBlock*>* searchEarliestPredicate(BasicBlock* curBB, PostDominatorTree* PDT, BB2BBVectorMapTy& BasicBlock2Predecessors)
+{
+    // do a search backward till a basicblock who is not post dominated by the currentBB, then we add it to the vector
+    // let's assume this vector wont be too big...
+
+    std::vector<BasicBlock*>* allGoodPredicates = new std::vector<BasicBlock*>();
+    std::vector<BasicBlock*>* curPredecessors = BasicBlock2Predecessors[curBB];
+    std::vector<BasicBlock*> seenBBs;
+
+    addAncestorsNotPDominatedBy(curBB, curPredecessors,PDT, BasicBlock2Predecessors, allGoodPredicates, seenBBs);
+    return allGoodPredicates;
+}
+
 
 InstructionGraph::InstructionGraph()
     : FunctionPass(ID), Root(0), ExternalInsNode(new InstructionGraphNode(0)) {
   initializeInstructionGraphPass(*PassRegistry::getPassRegistry());
 }
 
-void InstructionGraph::addToInstructionGraph(Instruction *I) {
+void InstructionGraph::addToInstructionGraph(Instruction *I, std::vector<BasicBlock*>* earliestPred) {
   InstructionGraphNode *Node = getOrInsertInstruction(I);
 
   // If this function has external linkage, anything could call it.
@@ -40,12 +86,19 @@ void InstructionGraph::addToInstructionGraph(Instruction *I) {
       }
       //Node->addDependentInstruction(getOrInsertInstruction(curIns));
   }
-  // if this instruction is branch, we need to propagate control dependencies
-  // basically the successor's ending branch/return will be depending on
-  // this current branch
-  // more aggressive predicating --- if BasicBlock A is a post dominator
-  // of BasicBlock B, then thr control dependence should be from ancestors
-  // of B which is not post dominated by A
+  if(earliestPred!=0)
+  {
+      for(unsigned int predInd = 0; predInd < earliestPred->size(); predInd++ )
+      {
+          BasicBlock* predBB = earliestPred->at(predInd);
+          TerminatorInst* predBBTermInst = predBB->getTerminator();
+          InstructionGraphNode* predBBTermNode = getOrInsertInstruction(predBBTermInst);
+          predBBTermNode->addDependentInstruction(Node);
+      }
+  }
+
+
+/*
   if(isa<TerminatorInst>(*I))
   {
       // the terminator inst of its successors are dependent on it
@@ -65,6 +118,8 @@ void InstructionGraph::addToInstructionGraph(Instruction *I) {
            //Node->addDependentInstruction(getOrInsertInstruction(endOfSuc));
       }
   }
+*/
+
 
   // we need to look at other kinda dependence --- memory?
   if(I->mayReadFromMemory())
@@ -79,8 +134,14 @@ void InstructionGraph::addToInstructionGraph(Instruction *I) {
 }
 
 void InstructionGraph::getAnalysisUsage(AnalysisUsage &AU) const {
-  AU.setPreservesAll();
+    AU.addRequiredTransitive<DominatorTree>();
+    AU.addRequired<PostDominatorTree>();
+    AU.addRequired<LoopInfo>();
+    AU.setPreservesAll();
 }
+
+
+
 
 bool InstructionGraph::runOnFunction(Function &M) {
   Func = &M;
@@ -90,15 +151,65 @@ bool InstructionGraph::runOnFunction(Function &M) {
   //CallsExternalNode = new CallGraphNode(0);
   Root = ExternalInsNode;
 
-  // Add every function to the call graph.
 
+
+
+  // more aggressive predicating --- if BasicBlock A is a post dominator
+  // of BasicBlock B, then thr control dependence should be from ancestors
+  // of B which is not post dominated by A
+  // first we need to construct the bb to predecessor map
+  BB2BBVectorMapTy BasicBlock2Predecessors;
+
+for(Function::iterator BB=M.begin(), BBE = M.end(); BB != BBE; ++BB)
+{
+    TerminatorInst* curBBTerm =  BB->getTerminator();
+    unsigned numSuc = curBBTerm->getNumSuccessors();
+    for(unsigned sucInd=0; sucInd < numSuc; sucInd++)
+    {
+        BasicBlock* curSuc = curBBTerm->getSuccessor(sucInd);
+        std::vector<BasicBlock*>* curSucPredecessors;
+        if(BasicBlock2Predecessors.find(curSuc)==BasicBlock2Predecessors.end())
+        {
+            curSucPredecessors = new std::vector<BasicBlock*>();
+            BasicBlock2Predecessors[curSuc] = curSucPredecessors;
+        }
+        else
+            curSucPredecessors = BasicBlock2Predecessors[curSuc];
+        curSucPredecessors->push_back(&(*BB));
+    }
+}
+
+
+PostDominatorTree* PDT = getAnalysisIfAvailable<PostDominatorTree>();
 for (Function::iterator BB = M.begin(), BBE = M.end(); BB != BBE; ++BB)
+{
+  BasicBlock* curBBPtr = &(*BB);
+  std::vector<BasicBlock*>* earliestPred=0;
+  if(BasicBlock2Predecessors.find(curBBPtr)==BasicBlock2Predecessors.end())
+  {
+      assert (M.getEntryBlock() == curBBPtr);
+
+  }
+  else
+  {
+      // now we shall search for the actual predicate instruction
+      earliestPred = searchEarliestPredicate(curBBPtr, PDT, BasicBlock2Predecessors);
+  }
+  /*errs()<<"bb:"<<BB->getName() << " has "<<" pred \n";
+  for(unsigned k = 0;k < earliestPred->size(); k++)
+  {
+      errs()<< earliestPred->at(k)->getName()<<"\n";
+  }*/
+
   for(BasicBlock::iterator BI = BB->begin(), BE = BB->end(); BI != BE; ++BI)
   {
-       addToInstructionGraph(BI);
+       addToInstructionGraph(BI, earliestPred);
   }
-
-
+  delete earliestPred;
+  errs()<<BB->getName()<<"\t" <<ExternalInsNode->DependentInstructions.size()<<" root dep\n";
+}
+// we should have all the node
+errs()<<InstructionMap.size()<< " instructions added as graph nodes\n";
 
   return false;
 }
