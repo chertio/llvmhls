@@ -15,9 +15,12 @@
 #include <string>
 #define ENDBLOCK "END"
 
+
+
 typedef std::map<BasicBlock*, std::vector<std::string>*> BBMap2outStr;
 
 static void addBarSubTabs(bool addBarSub);
+static bool genCPUCode();
 static void addTabbedLine(std::string& original, std::string next);
 
 
@@ -195,13 +198,12 @@ std::string generateFifoType(Value* valPtr)
 // FIXME: later the actual memory operation would need
 // to add a port for memory access at the function declaration
 // too
-std::string generateVariableType(Value* valPtr)
+std::string generateVariableType(const Value* valPtr)
 {
     std::string varType;
     if(isa<Instruction>(*valPtr))
     {
-        Instruction* ins =0;
-        ins = &(cast<Instruction>(*valPtr));
+        const Instruction* ins  = &(cast<Instruction>(*valPtr));
         // a special case for generating the branches
         // they might be used to communicate control
         // dependencies thus need a type
@@ -209,12 +211,17 @@ std::string generateVariableType(Value* valPtr)
         {
             // got to check the number of successors
             // log2 it to get number of bits
-            TerminatorInst* termIns =&(cast<TerminatorInst>(*ins));
+            const TerminatorInst* termIns =&(cast<TerminatorInst>(*ins));
             int numSuc = termIns->getNumSuccessors();
             int tagWidth = getNumOfBitsForTag(numSuc);
-            varType = "ap_int<";
-            varType += int2Str(tagWidth);
-            varType += ">";
+            if(genCPUCode())
+                varType = "int";
+            else
+            {
+                varType = "ap_int<";
+                varType += int2Str(tagWidth);
+                varType += ">";
+            }
             return varType+" ";
 
         }

@@ -3,7 +3,11 @@
 #include "generatePartitions.h"
 #include "generatePartitionsUtil.h"
 #include "generateCInstruction.h"
+
+int fifoSize = 64;
 static int numTabs =0;
+
+static bool CPU_bar_HLS;
 // for the following lines,add/reduce tabs
 static void addBarSubTabs(bool addBarSub)
 {
@@ -12,6 +16,12 @@ static void addBarSubTabs(bool addBarSub)
     else
         numTabs--;
 }
+
+static bool genCPUCode()
+{
+    return CPU_bar_HLS;
+}
+
 // for everyline in string next, we add appropriate number of tabs
 static void addTabbedLine(std::string& original, std::string next)
 {
@@ -50,7 +60,7 @@ struct FunctionGenerator
     std::vector<std::vector<std::string>*> BBActualStr;
 
     int partGenId;
-    bool CPU_bar_HLS;
+
     bool encloseWhileLoop;
     void init(PartitionGen* p, DAGPartition* pa, bool cbh, int partInd);
     void checkBBListValidityRearrangeDom();
@@ -419,12 +429,33 @@ void FunctionGenerator::generateContentBlock(BasicBlock* curBB,std::vector<std::
     }
     addBarSubTabs(false);
 }
-std::string FunctionGenerator::genFunctionDeclaration()
+static std::string genFunctionDeclarationStr(std::string funcName, std::vector<argPair*>& allArgPair)
 {
-    std::string funDecl = pg->curFunc->getName();
-    funDecl+=int2Str(partGenId);
+
+    std::string funDecl = funcName;
     addTabbedLine(funDecl,"(");
     addBarSubTabs(true);
+    for(unsigned k=0; k<allArgPair.size();k++)
+    {
+        argPair* curP = allArgPair.at(k);
+        // make sure there is no repeat
+        std::string argDec = generateArgStr(curP);
+        if(k!=allArgPair.size()-1)
+                argDec+=",";
+        addTabbedLine(funDecl,argDec);
+    }
+    addBarSubTabs(false);
+    addTabbedLine(funDecl,")");
+
+    return funDecl;
+}
+
+std::string FunctionGenerator::genFunctionDeclaration()
+{
+    std::string funName = pg->curFunc->getName();
+    funName+=int2Str(partGenId);
+    std::vector<argPair*> allArgPair;
+
     for(unsigned k=0; k<functionArgs.size();k++)
     {
         argPair* curP = functionArgs.at(k);
@@ -442,10 +473,7 @@ std::string FunctionGenerator::genFunctionDeclaration()
         }
         if(!added)
         {
-            std::string argDec = generateArgStr(curP);
-            if(!(k==functionArgs.size()-1 && fifoArgs.size()==0))
-                argDec+=",";
-            addTabbedLine(funDecl,argDec);
+            allArgPair.push_back(curP);
         }
 
     }
@@ -453,14 +481,10 @@ std::string FunctionGenerator::genFunctionDeclaration()
     for(unsigned k=0; k<fifoArgs.size(); k++)
     {
         argPair* curP = fifoArgs.at(k);
-        std::string argDec = generateArgStr(curP);
-        if(k!=fifoArgs.size()-1)
-            argDec+=",";
-        addTabbedLine(funDecl,argDec);
-
+        allArgPair.push_back(curP);
     }
-    addBarSubTabs(false);
-    addTabbedLine(funDecl,")");
+    std::string funDecl = genFunctionDeclarationStr(funName,allArgPair);
+
 
     return funDecl;
 }
@@ -580,31 +604,123 @@ void FunctionGenerator::generateCode()
 
 //        partGenId++;
     pg->Out<<"//=========================================================================\n";
-    // clear the functionArgs and fifoArgs vector
-    for(unsigned k =0; k< functionArgs.size(); k++)
+    // we are not deleting these if we are
+    // generating for cpu code
+    // the functionArgs and fifoArgs vector
+    if(!genCPUCode())
     {
-        delete functionArgs.at(k);
-    }
-    for(unsigned k =0; k<fifoArgs.size();k++)
-    {
-        delete fifoArgs.at(k);
+        for(unsigned k =0; k< functionArgs.size(); k++)
+        {
+            delete functionArgs.at(k);
+        }
+
+        for(unsigned k =0; k<fifoArgs.size();k++)
+        {
+            delete fifoArgs.at(k);
+        }
     }
 
 
 
 }
 
+static void release2DVectorArgPair(std::vector<std::vector<argPair*>*>& allArgs)
+{
+    for(unsigned int argInd = 0; argInd < allArgs.size(); argInd++)
+    {
+        std::vector<argPair*>* curArgVecPtr = allArgs[argInd];
+        for(unsigned int i = 0; i < curArgVecPtr->size(); i++)
+        {
+            delete curArgVecPtr->at(i);
+        }
+        delete curArgVecPtr;
+    }
+}
 
+static std::string generateInterFuncFifoDecl(std::map<std::string,int>& fifoArgName2UseTimes,
+                                                std::map<std::string, std::string> fifoArgName2Type)
+{
+
+}
+
+
+static std::string generateCPUDriver(PartitionGen* pg, std::vector<std::vector<argPair*>*>& allFunctionArgs,
+                              std::vector<std::vector<argPair*>*>&allFifoArgs)
+{
+    std::string funcName = pg->curFunc->getName();
+
+    std::vector<argPair*> funcArgInDecl;
+
+    Function::ArgumentListType &Args(pg->curFunc->getArgumentList());
+    for (Function::ArgumentListType::const_iterator i = Args.begin(),
+                                                    e = Args.end();
+         i != e; ++i) {
+        const Value* curArgVal = &(*i);
+
+        argPair* curTopArg = createArg(curArgVal->getName(), generateVariableType(curArgVal), curArgVal->getType()->getScalarSizeInBits(),0);
+        funcArgInDecl.push_back(curTopArg);
+    }
+    std::string driverDecl = genFunctionDeclarationStr(funcName,funcArgInDecl);
+
+    // how do we generate the fifo space?
+    // for every fifo arg, we know how many occurrence there are
+    // among all functions, one would be the src, the others would
+    // be consumer
+    std::map<std::string,int> fifoArgName2UseTimes;
+    std::map<std::string, std::string> fifoArgName2Type;
+    for(unsigned int fifoVecInd = 0; fifoVecInd<allFifoArgs.size(); fifoVecInd++)
+    {
+        std::vector<argPair*>* curPartitionFifo = allFifoArgs[fifoVecInd];
+        for(unsigned int fifoInd = 0; fifoInd<curPartitionFifo->size(); fifoInd++)
+        {
+            argPair* curArgPair = curPartitionFifo->at(fifoInd);
+            if(fifoArgName2UseTimes.find(curArgPair->argName) == fifoArgName2UseTimes.end())
+            {
+                fifoArgName2UseTimes[curArgPair->argName] = 1;
+                fifoArgName2Type[curArgPair->argName] = curArgPair->argType;
+            }
+            else
+                fifoArgName2UseTimes[curArgPair->argName] += 1;
+        }
+    }
+    //
+    std::string cpuFifoSpaceStr = generateInterFuncFifoDecl(fifoArgName2UseTimes,fifoArgName2Type);
+    return driverDecl;
+
+
+}
 
 static void generateCode(PartitionGen* pg, bool CPU_bar_HLS)
 {
+    std::vector<std::vector<argPair*>*> allFunctionArgs;
+    std::vector<std::vector<argPair*>*> allFifoArgs;
     for(unsigned int partInd = 0; partInd < pg->partitions.size(); partInd++)
     {
         DAGPartition* curPart = pg->partitions.at(partInd);
-
         FunctionGenerator curPartFunc;
         curPartFunc.init(pg,curPart,CPU_bar_HLS,partInd);
         curPartFunc.generateCode();
+
+        std::vector<argPair*>* curPartFuncArg = new std::vector<argPair*>(curPartFunc.functionArgs);
+        std::vector<argPair*>* curPartFifoArg = new std::vector<argPair*>(curPartFunc.fifoArgs);
+        allFunctionArgs.push_back(curPartFuncArg);
+        allFifoArgs.push_back(curPartFifoArg);
+    }
+
+    if(pg->CPU_bar_HLS)
+    {
+        // generate top level function
+        // we need to generate the top level function
+        // with the right argument
+        // then for each fifo, we make a very big buffer
+        // then we execute the functions as separate threads
+        pg->Out<<  generateCPUDriver(pg, allFunctionArgs, allFifoArgs);
+
+
+        // release at the end
+        release2DVectorArgPair(allFunctionArgs);
+        release2DVectorArgPair(allFifoArgs);
+
     }
 }
 /*
