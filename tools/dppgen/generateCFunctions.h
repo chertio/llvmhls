@@ -640,7 +640,23 @@ static void release2DVectorArgPair(std::vector<std::vector<argPair*>*>& allArgs)
 static std::string generateInterFuncFifoDecl(std::map<std::string,int>& fifoArgName2UseTimes,
                                                 std::map<std::string, std::string> fifoArgName2Type)
 {
+    // we want to have a struct for each channel
+    assert(fifoArgName2UseTimes.size()==fifoArgName2Type.size());
+    for(std::map<std::string,int>::iterator fifoArgIter = fifoArgName2UseTimes.begin(), fifoArgEnd = fifoArgName2UseTimes.end();
+        fifoArgIter!=fifoArgEnd; ++fifoArgIter)
+    {
+        std::string fifoName = fifoArgIter->first;
+        std::string typeName = fifoArgName2Type[fifoName];
+        // remove that little * at the end --- damn eventually ll need to write the whole thing
+        int starInd = typeName.find('*');
+        assert(starInd!=std::string::npos);
+        string bufferType = typeName.erase(starInd,1);
+        int numberOfFifo = fifoArgName2UseTimes[fifoName]-1;
 
+
+
+
+    }
 }
 
 
