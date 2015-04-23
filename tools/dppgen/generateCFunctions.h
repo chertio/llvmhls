@@ -650,13 +650,14 @@ static std::string generateInterFuncFifoDecl(std::map<std::string,int>& fifoArgN
         // remove that little * at the end --- damn eventually ll need to write the whole thing
         int starInd = typeName.find('*');
         assert(starInd!=std::string::npos);
-        string bufferType = typeName.erase(starInd,1);
+        std::string bufferType = typeName.erase(starInd,1);
         int numberOfFifo = fifoArgName2UseTimes[fifoName]-1;
 
 
 
 
     }
+    return "";
 }
 
 
@@ -730,7 +731,7 @@ static void generateCode(PartitionGen* pg, bool CPU_bar_HLS)
         // with the right argument
         // then for each fifo, we make a very big buffer
         // then we execute the functions as separate threads
-        pg->Out<<  generateCPUDriver(pg, allFunctionArgs, allFifoArgs);
+       // pg->Out<<  generateCPUDriver(pg, allFunctionArgs, allFifoArgs);
 
 
         // release at the end
