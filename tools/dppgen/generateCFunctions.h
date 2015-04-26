@@ -636,6 +636,15 @@ static void release2DVectorArgPair(std::vector<std::vector<argPair*>*>& allArgs)
         delete curArgVecPtr;
     }
 }
+static std::string generateNewAllocate(std::string ptrStr, std::string fifoName)
+{
+    std::string typeName = ptrStr;
+    int starInd = typeName.find('*');
+    assert(starInd!=std::string::npos);
+    std::string bufferType = typeName.erase(starInd,1);
+    std::string allocaStr = ptrStr+" "+fifoName+" = new "+bufferType;
+    return allocaStr;
+}
 
 static std::string generateInterFuncFifoDecl(std::map<std::string,int>& fifoArgName2UseTimes,
                                                 std::map<std::string, std::string> fifoArgName2Type)
@@ -647,15 +656,19 @@ static std::string generateInterFuncFifoDecl(std::map<std::string,int>& fifoArgN
     {
         std::string fifoName = fifoArgIter->first;
         std::string typeName = fifoArgName2Type[fifoName];
-        // remove that little * at the end --- damn eventually ll need to write the whole thing
-        int starInd = typeName.find('*');
-        assert(starInd!=std::string::npos);
-        std::string bufferType = typeName.erase(starInd,1);
         int numberOfFifo = fifoArgName2UseTimes[fifoName]-1;
+        // replace channel_info with fifo_channel
+        // now we need to make the actual fifo for this channel_info
+        std::string channelInfoTypeName = typeName;
+        int ciInd = channelInfoTypeName.find("channel_info");
+        std::string actualFifoType = channelInfoTypeName.replace(ciInd,12,"fifo_channel");
+        std::string allocateNewFifo = generateNewAllocate(actualFifoType, fifoName+"_fifo");
+        //std::string newFifoInit =
 
+        std::string allocateNewCInfo = generateNewAllocate(typeName, fifoName);
 
-
-
+        errs()<<allocateNewCInfo<<"\n";
+        errs()<<allocateNewFifo<<"\n";
     }
     return "";
 }
@@ -732,7 +745,7 @@ static void generateCode(PartitionGen* pg, bool CPU_bar_HLS)
         // then for each fifo, we make a very big buffer
         // then we execute the functions as separate threads
        // pg->Out<<  generateCPUDriver(pg, allFunctionArgs, allFifoArgs);
-
+        generateCPUDriver(pg, allFunctionArgs, allFifoArgs);
 
         // release at the end
         release2DVectorArgPair(allFunctionArgs);

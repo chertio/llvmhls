@@ -34,7 +34,9 @@ struct single_fifo
 		storage[head] = i;
 		space--;
 		head = (head+1)%FIFO_SIZE;
-		//if(space == 0)
+		// wake people up when we've just wrote something
+		// into an empty fifo
+		if(space == FIFO_SIZE-1)
 			pthread_cond_signal(my_cond);
 		pthread_mutex_unlock(my_mutex);
 								
@@ -50,8 +52,8 @@ struct single_fifo
 		T rt_val = storage[tail];
 		space++;
 		tail = (tail+1)%FIFO_SIZE;
-		
-		//if(space==FIFO_SIZE)
+		// wake ppl up when we free up some space
+		if(space==1)
 			pthread_cond_signal(my_cond);
 		pthread_mutex_unlock(my_mutex);
 		return rt_val;		
@@ -96,18 +98,32 @@ struct fifo_channel
 		return all_fifos[fifo_ind].read();
 	}
 };
+// we need a struct to give it to the functions
+template<typename T>
+struct channel_info
+{
+	struct fifo_channel<T>* channel_ptr;
+	int assigned_slot;
+	void init(struct fifo_channel<T>* _channel_ptr, int _assigned_slot)
+	{
+		channel_ptr = _channel_ptr;
+		assigned_slot = _assigned_slot;
+	}
+};
 
 //the push pop primitive
 template<typename T>
-void push(T* channel, T val)
+void push(channel_info<T>* channel, T val)
 {
-	// need to look up the to_fifo struct
-	// we do this by taking the channel and look it up in the map
+	struct fifo_channel<T>* fifo= channel->channel_ptr;
+	fifo->write(val);
 }
 
 template<typename T>
-void pop(T* channel, T& val)
+void pop(channel_info<T>* channel, T& val)
 {
-	// need to look up the 
+	struct fifo_channel<T>* fifo = channel->channel_ptr;
+	int fanout_ind = channel->assigned_slot;
+	val = fifo->read(fanout_ind);
 }
 #endif

@@ -43,7 +43,7 @@ struct argPair
 
 std::string generateArgStr(argPair* ap)
 {
-    return ap->argType + ap->argName;
+    return ap->argType +" "+ ap->argName;
 }
 
 std::string getLLVMTypeStr(Type* valPtrType)
@@ -161,35 +161,7 @@ std::string generateGetElementPtrInstVarDec(Instruction& ins)
     }
     return varType;
 }*/
-std::string generateFifoType(Value* valPtr)
-{
-    std::string varType;
-    if(isa<Instruction>(*valPtr))
-    {
-        Instruction* ins =0;
-        ins = &(cast<Instruction>(*valPtr));
-        if(isa<GetElementPtrInst>(*ins))
-        {
-            varType = "u32* ";
-        }
-        else
-        {
 
-            std::string rawType =getLLVMTypeStr(valPtr->getType());
-            varType = rawType+"* ";
-        }
-    }
-    else
-    {
-        errs()<<"not instruction for fifo args\n";
-        exit(1);
-
-    }
-
-    return varType;
-
-
-}
 
 // the thing about the type generation is that
 // if a pointer value is transported, then they should be
@@ -222,14 +194,64 @@ std::string generateVariableType(const Value* valPtr)
                 varType += int2Str(tagWidth);
                 varType += ">";
             }
-            return varType+" ";
+            return varType;
 
         }
     }
-    return getLLVMTypeStr(valPtr->getType())+" ";
+    return getLLVMTypeStr(valPtr->getType());
 
 
 }
+
+std::string generateFifoType(Value* valPtr)
+{
+    std::string varType;
+
+
+    if(isa<Instruction>(*valPtr))
+    {
+        Instruction* ins =0;
+        ins = &(cast<Instruction>(*valPtr));
+        if(isa<GetElementPtrInst>(*ins))
+        {
+            if(genCPUCode())
+                varType = "u64";
+            else
+                varType = "u32";
+        }
+        else if(isa<TerminatorInst>(*ins))
+        {
+            varType = generateVariableType(ins);
+        }
+        else
+        {
+
+            std::string rawType =getLLVMTypeStr(valPtr->getType());
+            varType = rawType;
+        }
+    }
+    else
+    {
+        errs()<<"not instruction for fifo args\n";
+        exit(1);
+
+    }
+    if(genCPUCode())
+    {
+        // the parameter would be a fifo chanel
+        varType = "struct channel_info<"+varType+">*";
+    }
+    else
+    {
+        varType = varType+"*";
+    }
+
+
+    return varType;
+
+
+}
+
 std::string generatePushOp(std::string varName, std::string channelName)
 {
     std::string rtStr="push ("+channelName+","+varName+");\n";
@@ -245,12 +267,22 @@ std::string generateVariableDeclStr(Instruction* ins, int seqNum)
     std::string varType=generateVariableType(ins);
     if(varType.length()>1)
     {
-        rtStr = varType +rtVarName+";";
+        rtStr = varType+" " +rtVarName+";";
     }
+    /* FIXME  special case*/
     if(isa<GetElementPtrInst>(*ins))
     {
         rtStr +="\n";
-        rtStr +="u32 "+rtVarName+"Raw;";
+        std::string rawType;
+        if(genCPUCode())
+        {
+            rawType = "u64";
+        }
+        else
+        {
+            rawType = "u32";
+        }
+        rtStr +=rawType+" "+rtVarName+"Raw;";
     }
     return rtStr;
 }
@@ -952,7 +984,7 @@ std::string generateControlFlow(TerminatorInst& curIns,bool remoteDst, int seqNu
 
     }
     if(remoteDst)
-        fifoArgs.push_back(createArg(channelName,"char* ",8,1));
+        fifoArgs.push_back(createArg(channelName,generateFifoType(&curIns),8,1));
     return rtStr;
 
     // for branch, we can convert it to switch statement as well
