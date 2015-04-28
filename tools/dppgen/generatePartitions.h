@@ -713,8 +713,15 @@ void PartitionGen::addChannelAndDepPartition(bool &thereIsPartitionReceiving, In
 // we have a data structure to map instruction to InstructionGraphNodes
 // when we do the partitioning, we
 bool PartitionGen::runOnFunction(Function &F) {
+    // we want to make sure there is only one return instruction
+    // coz if thats not the case, we may have multiple stages
+    // all potentially return
 
+    //  There is a pass (Unify Function Exit nodes i.e.,
+    //-mergereturn <http://llvm.org/docs/Passes.html#mergereturn>) that
+    //transform a function to have only 1 return instruction.
 
+    bool seenReturnInst = false;
     curFunc = &F;
 
     int bbCount =0;
@@ -735,6 +742,20 @@ bool PartitionGen::runOnFunction(Function &F) {
 
             bbi->setName(legal);
         }
+        BasicBlock* curBB = &(*bbi);
+        if(isa<ReturnInst>(*(curBB->getTerminator())))
+        {
+            if(seenReturnInst)
+            {
+                errs()<<"multiple return statement in the llvm cfg, dppgen does not work with multiple return blocks\n";
+                errs()<<"There is a pass (Unify Function Exit nodes i.e.,-mergereturn <http://llvm.org/docs/Passes.html#mergereturn>) that transform a function to have only 1 return instruction.\n";
+            }
+            else
+            {
+                seenReturnInst = true;
+            }
+        }
+
     }
 
 
