@@ -29,6 +29,7 @@ static void addTabbedLine(std::string& original, std::string next)
     // get every line
     std::stringstream multiLine(next);
     std::string curLine;
+
     while(std::getline(multiLine,curLine))
     {
         original+="\n";
@@ -432,7 +433,7 @@ void FunctionGenerator::generateContentBlock(BasicBlock* curBB,std::vector<std::
 static std::string genFunctionDeclarationStr(std::string funcName, std::vector<argPair*>& allArgPair)
 {
 
-    std::string funDecl = funcName;
+    std::string funDecl = "void "+funcName;
     addTabbedLine(funDecl,"(");
     addBarSubTabs(true);
     for(unsigned k=0; k<allArgPair.size();k++)
@@ -460,7 +461,7 @@ std::string FunctionGenerator::genFunctionDeclaration()
     {
         argPair* curP = functionArgs.at(k);
         // make sure there is no repeat
-        bool added = false;
+        /*bool added = false;
         for(unsigned ki=0; ki<k; ki++)
         {
             // check if we already seen it
@@ -472,9 +473,9 @@ std::string FunctionGenerator::genFunctionDeclaration()
             }
         }
         if(!added)
-        {
-            allArgPair.push_back(curP);
-        }
+        {*/
+        allArgPair.push_back(curP);
+        //}
 
     }
 
@@ -565,6 +566,24 @@ std::string FunctionGenerator::genFunctionBody(std::string endgroup)
     return funcBody;
 }
 
+void removeDuplicateName(std::vector<argPair*>& functionArgs)
+{
+   for(unsigned int argInd=0; argInd<functionArgs.size(); argInd++)
+   {
+       argPair* curP = functionArgs.at(argInd);
+       for(unsigned ki=argInd+1; ki<functionArgs.size(); ki++)
+       {
+           // check if we already seen it
+           argPair* checkP = functionArgs.at(ki);
+           if(checkP->argName.compare( curP->argName)==0)
+           {
+               functionArgs.erase(functionArgs.begin()+ki);
+               ki--;
+           }
+       }
+   }
+}
+
 void FunctionGenerator::generateCode()
 {
     checkBBListValidityRearrangeDom();
@@ -590,6 +609,9 @@ void FunctionGenerator::generateCode()
 
     }
     std::string endgroup = generateEndBlock(BBList);
+    // remove the duplicate in the functionArg
+    removeDuplicateName(this->functionArgs);
+
     // FIXME: rewrite
     //generate function name
     std::string funcDecl = this->genFunctionDeclaration();
@@ -645,15 +667,21 @@ static std::string generateNewAllocate(std::string ptrStr, std::string fifoName)
     std::string allocaStr = ptrStr+" "+fifoName+" = new "+bufferType;
     return allocaStr;
 }
+static std::string generateConsumerChannelInfoName(std::string fifoName,int seqNum)
+{
+    return fifoName+"_CCH_"+int2Str(seqNum);
+}
 
 static std::string generateInterFuncFifoDecl(std::map<std::string,int>& fifoArgName2UseTimes,
                                                 std::map<std::string, std::string> fifoArgName2Type)
 {
     // we want to have a struct for each channel
     assert(fifoArgName2UseTimes.size()==fifoArgName2Type.size());
+    std::string rtStr="";
     for(std::map<std::string,int>::iterator fifoArgIter = fifoArgName2UseTimes.begin(), fifoArgEnd = fifoArgName2UseTimes.end();
         fifoArgIter!=fifoArgEnd; ++fifoArgIter)
     {
+
         std::string fifoName = fifoArgIter->first;
         std::string typeName = fifoArgName2Type[fifoName];
         int numberOfFifo = fifoArgName2UseTimes[fifoName]-1;
@@ -662,15 +690,184 @@ static std::string generateInterFuncFifoDecl(std::map<std::string,int>& fifoArgN
         std::string channelInfoTypeName = typeName;
         int ciInd = channelInfoTypeName.find("channel_info");
         std::string actualFifoType = channelInfoTypeName.replace(ciInd,12,"fifo_channel");
-        std::string allocateNewFifo = generateNewAllocate(actualFifoType, fifoName+"_fifo");
-        //std::string newFifoInit =
+        std::string actualFifoName = fifoName+"_fifo";
 
-        std::string allocateNewCInfo = generateNewAllocate(typeName, fifoName);
+        std::string allocateNewFifo = generateNewAllocate(actualFifoType, actualFifoName );
+        std::string newFifoInit = actualFifoName+"->init("+int2Str(numberOfFifo)+");";
 
-        errs()<<allocateNewCInfo<<"\n";
-        errs()<<allocateNewFifo<<"\n";
+        std::string allocateNewProducerCInfo = generateNewAllocate(typeName, fifoName);
+        std::string newProducerCInfoInit = fifoName+"->init("+actualFifoName+",-1);";
+        rtStr+=allocateNewFifo;
+        rtStr+="\n";
+        rtStr+=newFifoInit;
+        rtStr+="\n";
+        rtStr+=allocateNewProducerCInfo;
+        rtStr+="\n";
+        rtStr+=newProducerCInfoInit;
+        rtStr+="\n\n";
+
+        // now do the declaration for all the consumer port
+        // the naming scheme: fifoName+seqNum
+        for(unsigned int consumerIntfInd = 0; consumerIntfInd < numberOfFifo; consumerIntfInd++)
+        {
+            std::string curConsumerIntfName = generateConsumerChannelInfoName(fifoName,consumerIntfInd);
+            rtStr+=generateNewAllocate(typeName, curConsumerIntfName);
+            rtStr+="\n";
+            rtStr+=curConsumerIntfName+"->init("+actualFifoName+","+int2Str(consumerIntfInd)+");";
+            rtStr+="\n";
+        }
+        rtStr+="\n\n";
+
+
     }
-    return "";
+
+    return rtStr;
+}
+static std::string generatePackageDecl(int packInd)
+{
+    std::string packDecl = "struct argPack"+int2Str(packInd);
+    return packDecl;
+}
+static std::string generatePackageInstance(std::string packName,int packInd)
+{
+    std::string packIns = packName + " argPackage"+int2Str(packInd);
+    return packIns;
+}
+
+static std::string generateIndiStageArguPackageDec(std::vector<std::vector<argPair*>*>& allFunctionArgs,
+                                                std::vector<std::vector<argPair*>*>&allFifoArgs,
+                                                   std::string& initStr)
+{
+    std::string rtStr="";
+    assert(allFunctionArgs.size()==allFifoArgs.size());
+    // we need to keep track of the seqence number of channel_info
+    // the number stored there is the number of times it has been seen
+    std::map<std::string, int> channelInfo2NumConsumerSeen;
+
+
+    unsigned int numOfPackage = allFunctionArgs.size();
+    for(unsigned int packInd = 0; packInd < numOfPackage; packInd++)
+    {
+        std::string curPackInitStr="";
+        std::vector<argPair*>* curFuncArg = allFunctionArgs.at(packInd);
+        std::vector<argPair*>* curFifoArg = allFifoArgs.at(packInd);
+        std::string packDec = generatePackageDecl(packInd);
+        std::string packField="";
+        addBarSubTabs(true);
+        for(unsigned int funcInd = 0; funcInd<curFuncArg->size(); funcInd++ )
+        {
+            argPair* curArg = curFuncArg->at(funcInd);
+            addTabbedLine(packField,curArg->argType+" "+curArg->argName+";");
+            curPackInitStr += curArg->argName;
+            if(funcInd!=curFuncArg->size()-1 || curFifoArg->size()!=0)
+                curPackInitStr+=",";
+        }
+        for(unsigned int fifoInd = 0; fifoInd < curFifoArg->size();fifoInd++)
+        {
+            argPair* curArg = curFifoArg->at(fifoInd);
+            addTabbedLine(packField,curArg->argType+" "+curArg->argName+";");
+            std::string fieldInitName;
+            if(curArg->dir==1) // write port, the name is the raw argName
+                fieldInitName = curArg->argName;
+            else
+            {
+                int seqNum = 0;
+                if(channelInfo2NumConsumerSeen.find(curArg->argName)==channelInfo2NumConsumerSeen.end())
+                {
+                    channelInfo2NumConsumerSeen[curArg->argName] = 1;
+                }
+                else
+                {
+                    seqNum = channelInfo2NumConsumerSeen[curArg->argName];
+                    channelInfo2NumConsumerSeen[curArg->argName] = seqNum+1;
+                }
+                fieldInitName = generateConsumerChannelInfoName(curArg->argName, seqNum);
+            }
+
+            curPackInitStr += fieldInitName;
+            if(fifoInd != curFifoArg->size()-1)
+                curPackInitStr+=",";
+        }
+        addBarSubTabs(false);
+
+        rtStr+=packDec+"\n{"+packField+"\n};\n";
+        initStr+= generatePackageInstance(packDec,packInd)+" ={ " +curPackInitStr+"};\n";
+    }
+
+    return rtStr;
+
+
+}
+
+
+static std::string generateFuncCallWrapper(std::string rawFuncName,std::vector<std::vector<argPair*>*>& allFunctionArgs,
+                                           std::vector<std::vector<argPair*>*>&allFifoArgs)
+{
+    assert(allFunctionArgs.size()==allFifoArgs.size());
+    int numberOfFunc = allFunctionArgs.size();
+    std::string rtStr="";
+    for(unsigned int funcInd = 0; funcInd<numberOfFunc; funcInd++)
+    {
+        std::string localFuncName =rawFuncName+int2Str(funcInd);
+        std::string localWrapperName = localFuncName+"Wrapper";
+        addTabbedLine(rtStr, "void* "+localWrapperName+"(void* arg)");
+        addTabbedLine(rtStr,"{");
+
+        addBarSubTabs(true);
+        // do whole bunch of assignment
+        std::string packName = generatePackageDecl(funcInd);
+        std::string cast2Name = "localArg_PACKPLACE";
+        addTabbedLine(rtStr,packName+"* "+cast2Name+" = ("+packName+"*)arg;" );
+        std::vector<argPair*>* curFuncArgs = allFunctionArgs.at(funcInd);
+        std::vector<argPair*>* curFifoArgs = allFifoArgs.at(funcInd);
+        std::vector<argPair*> allArgs;
+        allArgs.insert(allArgs.end(),curFuncArgs->begin(),curFuncArgs->end());
+        allArgs.insert(allArgs.end(),curFifoArgs->begin(),curFifoArgs->end());
+
+        std::string funcArgStr = "";
+        for(unsigned int argInd = 0; argInd < allArgs.size(); argInd++)
+        {
+            argPair* curArg = allArgs.at(argInd);
+            std::string varName = curArg->argName;
+
+            addTabbedLine(rtStr,curArg->argType+" "+varName+"="+cast2Name+"->"+varName+";");
+            funcArgStr+= varName;
+            if(argInd!=allArgs.size()-1)
+                funcArgStr+=",";
+        }
+
+        // now really do the function call;
+        addTabbedLine(rtStr,localFuncName+"("+ funcArgStr +");");
+        addBarSubTabs(false);
+        addTabbedLine(rtStr,"}");
+    }
+    return rtStr;
+}
+
+static std::string generateThreadSetup(int threadCount)
+{
+    std::string rtStr = "pthread_t threads["+int2Str(threadCount) +"];\n";
+    rtStr+="pthread_attr_t attr;\n";
+    rtStr+="pthread_attr_init(&attr);\n";
+    rtStr+="pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);\n";
+    return rtStr;
+
+}
+static std::string generateThreadJoin(int threadCount)
+{
+    std::string rtStr="";
+    rtStr+= "int i;\n";
+    std::string loopWait = "for (i=0; i<"+int2Str(threadCount)+"; i++) pthread_join(threads[i], NULL);";
+    rtStr+=loopWait;
+
+    return rtStr;
+}
+
+static std::string generateIndividualThreadLaunch(int threadInd,std::string origFuncName)
+{
+    std::string rtStr="";
+    addTabbedLine(rtStr, "pthread_create(&threads["+int2Str(threadInd)+"], &attr, "+origFuncName+"Wrapper,"+ "argPackage"+int2Str(threadInd)+");");
+    return rtStr;
 }
 
 
@@ -713,9 +910,38 @@ static std::string generateCPUDriver(PartitionGen* pg, std::vector<std::vector<a
                 fifoArgName2UseTimes[curArgPair->argName] += 1;
         }
     }
-    //
+
     std::string cpuFifoSpaceStr = generateInterFuncFifoDecl(fifoArgName2UseTimes,fifoArgName2Type);
-    return driverDecl;
+    //errs()<< cpuFifoSpaceStr<<"\n";
+    // now we generate the calling of function
+    // note we have to package the argument of the threads into a void*
+    std::string indiStageArguPackageInsInit="";
+    std::string indiStageArguPackageDec = generateIndiStageArguPackageDec(allFunctionArgs,allFifoArgs,indiStageArguPackageInsInit);
+    errs()<< indiStageArguPackageDec<<"\n";
+    errs()<< indiStageArguPackageInsInit<<"\n";
+    std::string functionCallThreadWrappers = generateFuncCallWrapper(funcName,allFunctionArgs,allFifoArgs);
+    std::string rtStr="";
+    addTabbedLine(rtStr,indiStageArguPackageDec);
+    addTabbedLine(rtStr, functionCallThreadWrappers);
+    // add the wrapper for each function: the function generated
+    // here would be run in thread
+    addTabbedLine(rtStr, driverDecl);
+    addTabbedLine(rtStr,"{");
+    addBarSubTabs(true);
+
+    addTabbedLine(rtStr,cpuFifoSpaceStr);
+    addTabbedLine(rtStr,indiStageArguPackageInsInit);
+    addTabbedLine(rtStr,generateThreadSetup(pg->partitions.size()));
+    // now generate the launch of threads
+    for(unsigned int threadInd = 0; threadInd < pg->partitions.size(); threadInd++)
+    {
+        addTabbedLine(rtStr, generateIndividualThreadLaunch(threadInd,funcName+int2Str(threadInd)));
+    }
+    addTabbedLine(rtStr, generateThreadJoin(pg->partitions.size()));
+    addBarSubTabs(false);
+    addTabbedLine(rtStr,"}");
+
+    return rtStr;
 
 
 }
@@ -745,7 +971,9 @@ static void generateCode(PartitionGen* pg, bool CPU_bar_HLS)
         // then for each fifo, we make a very big buffer
         // then we execute the functions as separate threads
        // pg->Out<<  generateCPUDriver(pg, allFunctionArgs, allFifoArgs);
-        generateCPUDriver(pg, allFunctionArgs, allFifoArgs);
+
+
+        pg->Out<< generateCPUDriver(pg, allFunctionArgs, allFifoArgs);
 
         // release at the end
         release2DVectorArgPair(allFunctionArgs);

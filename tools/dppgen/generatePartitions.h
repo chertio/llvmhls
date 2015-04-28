@@ -300,12 +300,14 @@ using namespace llvm;
         //DagPartitionMapTy* dagNodeToPartition;
         PartitionGen* top;
 
+        Instruction* rInsn;
         void init(PartitionGen* tt )
         {
             containMemory = false;
             containLongLatCyc = false;
             cycleDetectCovered = false;
             top = tt;
+            rInsn= NULL;
         }
         void print()
         {
@@ -345,7 +347,8 @@ using namespace llvm;
                 for(unsigned int insInd = 0; insInd< curNode->dagNodeContent->size(); insInd++)
                 {
                     Instruction* curIns = curNode->dagNodeContent->at(insInd)->getInstruction();
-
+                    if(isa<ReturnInst>(*curIns))
+                        rInsn= curIns;
                     addBBInsToMap(*insBBs,curIns);
                     unsigned int numOp = curIns->getNumOperands();
                     for(unsigned int opInd = 0; opInd < numOp; opInd++)
