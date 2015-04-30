@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #define FIFO_SIZE 2
+#define u64 long
 template<typename T>
 struct single_fifo
 {

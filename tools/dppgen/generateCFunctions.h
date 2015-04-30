@@ -63,7 +63,7 @@ struct FunctionGenerator
     int partGenId;
 
     bool encloseWhileLoop;
-    void init(PartitionGen* p, DAGPartition* pa, bool cbh, int partInd);
+    void init(PartitionGen* p, DAGPartition* pa, int partInd);
     void checkBBListValidityRearrangeDom();
     std::string genFunctionDeclaration();
     void generateFlowOnlyBlock(BasicBlock* curBB, std::vector<std::string>* curBBStrArray);
@@ -232,13 +232,13 @@ struct InstructionGenerator
 
 };
 
-void FunctionGenerator::init(PartitionGen* p, DAGPartition* pa, bool cbh, int partInd)
+void FunctionGenerator::init(PartitionGen* p, DAGPartition* pa,  int partInd)
 {
     pg = p;
     srcBBs = pg->srcBBsInPartition[pa];
     insBBs = pg->insBBsInPartition[pa];
     BBList = pg->allBBsInPartition[pa];
-    CPU_bar_HLS = cbh;
+
     myPartition = pa;
     partGenId = partInd;
 }
@@ -430,10 +430,18 @@ void FunctionGenerator::generateContentBlock(BasicBlock* curBB,std::vector<std::
     }
     addBarSubTabs(false);
 }
-static std::string genFunctionDeclarationStr(std::string funcName, std::vector<argPair*>& allArgPair)
+static std::string genFunctionDeclarationStr(std::string funcName, std::vector<argPair*>& allArgPair, Type* rInsnType)
 {
 
-    std::string funDecl = "void "+funcName;
+    std::string rtType ="void";
+    if(rInsnType)
+    {
+
+
+        rtType = getLLVMTypeStr(rInsnType);
+
+    }
+    std::string funDecl = rtType+" "+funcName;
     addTabbedLine(funDecl,"(");
     addBarSubTabs(true);
     for(unsigned k=0; k<allArgPair.size();k++)
@@ -484,7 +492,15 @@ std::string FunctionGenerator::genFunctionDeclaration()
         argPair* curP = fifoArgs.at(k);
         allArgPair.push_back(curP);
     }
-    std::string funDecl = genFunctionDeclarationStr(funName,allArgPair);
+    Type* rtType=0;
+    if(this->myPartition->rInsn)
+    {
+        Instruction* rt = this->myPartition->rInsn;
+        assert(isa<ReturnInst>(*rt));
+        ReturnInst* rtInst = &(cast<ReturnInst>(*rt));
+        rtType = rtInst->getReturnValue()->getType();
+    }
+    std::string funDecl = genFunctionDeclarationStr(funName,allArgPair,rtType);
 
 
     return funDecl;
@@ -664,7 +680,7 @@ static std::string generateNewAllocate(std::string ptrStr, std::string fifoName)
     int starInd = typeName.find('*');
     assert(starInd!=std::string::npos);
     std::string bufferType = typeName.erase(starInd,1);
-    std::string allocaStr = ptrStr+" "+fifoName+" = new "+bufferType;
+    std::string allocaStr = ptrStr+" "+fifoName+" = new "+bufferType+";";
     return allocaStr;
 }
 static std::string generateConsumerChannelInfoName(std::string fifoName,int seqNum)
@@ -799,15 +815,23 @@ static std::string generateIndiStageArguPackageDec(std::vector<std::vector<argPa
 
 }
 
+static std::string generateReturnVarName(Function* func)
+{
+    std::string rtStr = func->getName();
+    rtStr += "ReturnVal";
+    return rtStr;
+}
+
 
 static std::string generateFuncCallWrapper(std::string rawFuncName,std::vector<std::vector<argPair*>*>& allFunctionArgs,
-                                           std::vector<std::vector<argPair*>*>&allFifoArgs)
+                                           std::vector<std::vector<argPair*>*>&allFifoArgs, PartitionGen* pg)
 {
     assert(allFunctionArgs.size()==allFifoArgs.size());
     int numberOfFunc = allFunctionArgs.size();
     std::string rtStr="";
     for(unsigned int funcInd = 0; funcInd<numberOfFunc; funcInd++)
     {
+
         std::string localFuncName =rawFuncName+int2Str(funcInd);
         std::string localWrapperName = localFuncName+"Wrapper";
         addTabbedLine(rtStr, "void* "+localWrapperName+"(void* arg)");
@@ -837,7 +861,13 @@ static std::string generateFuncCallWrapper(std::string rawFuncName,std::vector<s
         }
 
         // now really do the function call;
-        addTabbedLine(rtStr,localFuncName+"("+ funcArgStr +");");
+        DAGPartition* curPart = pg->partitions.at(funcInd);
+        std::string assign2RetVal = "";
+        if(curPart->rInsn && pg->curFunc->getReturnType()->getTypeID()!=Type::VoidTyID)
+        {
+            assign2RetVal="*"+generateReturnVarName(pg->curFunc)+"=";
+        }
+        addTabbedLine(rtStr,assign2RetVal+localFuncName+"("+ funcArgStr +");");
         addBarSubTabs(false);
         addTabbedLine(rtStr,"}");
     }
@@ -866,10 +896,16 @@ static std::string generateThreadJoin(int threadCount)
 static std::string generateIndividualThreadLaunch(int threadInd,std::string origFuncName)
 {
     std::string rtStr="";
-    addTabbedLine(rtStr, "pthread_create(&threads["+int2Str(threadInd)+"], &attr, "+origFuncName+"Wrapper,"+ "argPackage"+int2Str(threadInd)+");");
+    rtStr+= "pthread_create(&threads["+int2Str(threadInd)+"], &attr, "+origFuncName+"Wrapper,"+ "&argPackage"+int2Str(threadInd)+");";
     return rtStr;
 }
-
+static std::string generateAllocateReturnSpace(Function* func)
+{
+    std::string varName = generateReturnVarName(func);
+    std::string varType = getLLVMTypeStr(func->getReturnType());
+    std::string rtStr = varName+" = ("+varType+"*)malloc(sizeof("+varType+"));\n";
+    return rtStr;
+}
 
 static std::string generateCPUDriver(PartitionGen* pg, std::vector<std::vector<argPair*>*>& allFunctionArgs,
                               std::vector<std::vector<argPair*>*>&allFifoArgs)
@@ -887,7 +923,7 @@ static std::string generateCPUDriver(PartitionGen* pg, std::vector<std::vector<a
         argPair* curTopArg = createArg(curArgVal->getName(), generateVariableType(curArgVal), curArgVal->getType()->getScalarSizeInBits(),0);
         funcArgInDecl.push_back(curTopArg);
     }
-    std::string driverDecl = genFunctionDeclarationStr(funcName,funcArgInDecl);
+    std::string driverDecl = genFunctionDeclarationStr(funcName,funcArgInDecl,pg->curFunc->getReturnType());
 
     // how do we generate the fifo space?
     // for every fifo arg, we know how many occurrence there are
@@ -910,7 +946,11 @@ static std::string generateCPUDriver(PartitionGen* pg, std::vector<std::vector<a
                 fifoArgName2UseTimes[curArgPair->argName] += 1;
         }
     }
-
+    std::string allocateReturnSpace = "";
+    if(pg->curFunc->getReturnType()->getTypeID()!=Type::VoidTyID)
+    {
+        allocateReturnSpace = generateAllocateReturnSpace(pg->curFunc);
+    }
     std::string cpuFifoSpaceStr = generateInterFuncFifoDecl(fifoArgName2UseTimes,fifoArgName2Type);
     //errs()<< cpuFifoSpaceStr<<"\n";
     // now we generate the calling of function
@@ -919,8 +959,9 @@ static std::string generateCPUDriver(PartitionGen* pg, std::vector<std::vector<a
     std::string indiStageArguPackageDec = generateIndiStageArguPackageDec(allFunctionArgs,allFifoArgs,indiStageArguPackageInsInit);
     errs()<< indiStageArguPackageDec<<"\n";
     errs()<< indiStageArguPackageInsInit<<"\n";
-    std::string functionCallThreadWrappers = generateFuncCallWrapper(funcName,allFunctionArgs,allFifoArgs);
+    std::string functionCallThreadWrappers = generateFuncCallWrapper(funcName,allFunctionArgs,allFifoArgs,pg);
     std::string rtStr="";
+
     addTabbedLine(rtStr,indiStageArguPackageDec);
     addTabbedLine(rtStr, functionCallThreadWrappers);
     // add the wrapper for each function: the function generated
@@ -930,6 +971,7 @@ static std::string generateCPUDriver(PartitionGen* pg, std::vector<std::vector<a
     addBarSubTabs(true);
 
     addTabbedLine(rtStr,cpuFifoSpaceStr);
+    addTabbedLine(rtStr,allocateReturnSpace);
     addTabbedLine(rtStr,indiStageArguPackageInsInit);
     addTabbedLine(rtStr,generateThreadSetup(pg->partitions.size()));
     // now generate the launch of threads
@@ -938,6 +980,10 @@ static std::string generateCPUDriver(PartitionGen* pg, std::vector<std::vector<a
         addTabbedLine(rtStr, generateIndividualThreadLaunch(threadInd,funcName+int2Str(threadInd)));
     }
     addTabbedLine(rtStr, generateThreadJoin(pg->partitions.size()));
+    if(pg->curFunc->getReturnType()->getTypeID()!=Type::VoidTyID)
+    {
+        addTabbedLine(rtStr,"return *"+generateReturnVarName(pg->curFunc)+";\n");
+    }
     addBarSubTabs(false);
     addTabbedLine(rtStr,"}");
 
@@ -946,15 +992,29 @@ static std::string generateCPUDriver(PartitionGen* pg, std::vector<std::vector<a
 
 }
 
-static void generateCode(PartitionGen* pg, bool CPU_bar_HLS)
+static void generateCode(PartitionGen* pg, bool _CPU_bar_HLS)
 {
     std::vector<std::vector<argPair*>*> allFunctionArgs;
     std::vector<std::vector<argPair*>*> allFifoArgs;
+    CPU_bar_HLS = _CPU_bar_HLS;
+
+    if(genCPUCode())
+    {
+        pg->Out<<"#include \"comm.h\"\n";
+        // also we need to allocate space for return value
+        if(pg->curFunc->getReturnType()->getTypeID()!=Type::VoidTyID)
+        {
+            std::string returnTypeStr = getLLVMTypeStr(pg->curFunc->getReturnType());
+            pg->Out<<returnTypeStr+"* "+ generateReturnVarName(pg->curFunc)+";\n";
+        }
+
+    }
+
     for(unsigned int partInd = 0; partInd < pg->partitions.size(); partInd++)
     {
         DAGPartition* curPart = pg->partitions.at(partInd);
         FunctionGenerator curPartFunc;
-        curPartFunc.init(pg,curPart,CPU_bar_HLS,partInd);
+        curPartFunc.init(pg,curPart,partInd);
         curPartFunc.generateCode();
 
         std::vector<argPair*>* curPartFuncArg = new std::vector<argPair*>(curPartFunc.functionArgs);
@@ -963,7 +1023,7 @@ static void generateCode(PartitionGen* pg, bool CPU_bar_HLS)
         allFifoArgs.push_back(curPartFifoArg);
     }
 
-    if(pg->CPU_bar_HLS)
+    if(genCPUCode())
     {
         // generate top level function
         // we need to generate the top level function

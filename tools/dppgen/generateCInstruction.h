@@ -390,7 +390,7 @@ std::string generateGettingRemoteBranchTag(TerminatorInst& curIns, int seqNum, s
 
     // the name of the argument is gonna be the name of the channel
     // type of the channel is gonna be char?
-    p.push_back(createArg(channelStr,generateVariableType(&curIns)+"*",8,0));
+    p.push_back(createArg(channelStr,generateFifoType(&curIns),8,0));
 
     unsigned numSuc = curIns.getNumSuccessors();
     assert(numSuc < 255 && numSuc>0);
