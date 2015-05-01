@@ -378,7 +378,35 @@ using namespace llvm;
 
             // start from each srcBBs, search backward until dominator,
             // everything in between is to be needed, -- if they are not srcBB nor insBBs
-            // their terminator output would be needed
+            // their terminator output would be needed? not necessariy!
+            // if a properly contained BB (BB_z) -- meaning either src or ins BB
+            // postdominate some BB (BB_x) which has nothing in it...BB_x
+            // can be ommited -- all the edges going to BB_x can directly go
+            // to BB_z
+            // how do we detect this?
+            // originally, we start from the dominator, then search to every BB
+            // adding everything in the path, this dominator's terminator is
+            // necessarily produced by an earlier stage due to the transitive dominance
+            // now -- we can start searching from dominator to a destination BB,
+            // if at a certain point, a particular BB is properly postdominated
+            // by the destination BB, then we can directly go from the precedessors
+            // of this BB to the destination BB -- without adding any BBs in between
+            //
+            // how do we know where to branch to?
+            // we shall have a map, the first ommited BB would be the key
+            // pointing to the postdominator, this postdominator (destination)
+            // can be changed, for instance, originally we set the postdominator
+            // to be A, then later we search for B and found the omitted BB
+            // for A --- then either A dominate B or B dominate A, we will
+            // make the earlier one the value of our table, and then add
+            // entries for the path between A and B/B and A
+            //
+            // so we have map from successorBB to destinationBB
+            // so that in this partition, if somebody is branching to a successorBB,
+            // we branch to the destinationBB instead.
+            // to generate this, we ll need to replace earlier entries with later entries
+            std::map<BasicBlock*,BasicBlock*>* partitionBranchRemap = new std::map<BasicBlock*,BasicBlock*>();
+
 
             // in the case of two BBs, if one BB is never reaching another BB
             // without going through dominator, then when this BB exits, we can
@@ -425,6 +453,8 @@ using namespace llvm;
             // a BB (BB1) fans out to some other BBs then those BBs loop back to BB1
             // BB1 to those BBs and back will not be part of our control graph
             // but they should
+            // this is fixed below as we start searchinf from every block's
+            // successor
             for(BBMapIter bmi = insBBs->begin(), bme = insBBs->end(); bmi!=bme; ++bmi)
             {
                 BasicBlock* curBB=bmi->first;

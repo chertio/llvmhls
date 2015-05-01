@@ -938,6 +938,11 @@ static std::string generateCPUDriver(PartitionGen* pg, std::vector<std::vector<a
             argPair* curArgPair = curPartitionFifo->at(fifoInd);
             if(fifoArgName2UseTimes.find(curArgPair->argName) == fifoArgName2UseTimes.end())
             {
+                if(curArgPair->dir!=1)
+                {
+                    errs()<<"read from a later stage:\n";
+                    errs()<<curArgPair->argName<<"\n";
+                }
                 fifoArgName2UseTimes[curArgPair->argName] = 1;
                 fifoArgName2Type[curArgPair->argName] = curArgPair->argType;
             }
