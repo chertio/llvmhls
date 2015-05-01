@@ -630,7 +630,7 @@ std::string generateCmpOperations(CmpInst& curIns, bool remoteDst, int seqNum,st
 
 }
 
-std::string generateSelectOperations(SelectInst& curIns,bool remoteDst,int seqNum,std::vector<argPair*>& functionArgs, std::vector<argPair*>& fifoArgs)
+std::string generateSelectOperations(SelectInst& curIns,bool remoteDst,int seqNum, std::vector<argPair*>& fifoArgs,std::vector<argPair*>& functionArgs)
 {
     std::string rtStr="";
     int channelType =  1;
@@ -671,7 +671,7 @@ std::string generateSelectOperations(SelectInst& curIns,bool remoteDst,int seqNu
 
 
 std::string generatePhiNode(PHINode& curIns,bool remoteDst,int seqNum,
-                                  BBMap2outStr& preAssign,std::vector<argPair*>& functionArgs, std::vector<argPair*>& fifoArgs)
+                                  BBMap2outStr& preAssign, std::vector<argPair*>& fifoArgs,std::vector<argPair*>& functionArgs)
 {
     std::string rtStr="";
     int channelType =  1;
@@ -742,7 +742,10 @@ std::string generateMemoryOperations(Instruction& curIns, bool remoteDst, int se
         if(curIns.getOpcode()==Instruction::GetElementPtr)
         {
             varNamePush += "Raw";
-            addTabbedLine( rtStr, varNamePush+"=(u32)"+varName+";");
+            std::string typeCast = "u32";
+            if(genCPUCode())
+                typeCast = "u64";
+            addTabbedLine( rtStr, varNamePush+"=("+typeCast+")"+varName+";");
         }
         addTabbedLine(rtStr,generatePushOp(varNamePush,channelStr));
     }
@@ -760,7 +763,7 @@ std::string generateSimpleAssign(Instruction& curIns, std::string varName)
 }
 
 
-std::string generateCastOperations(Instruction& curIns, bool remoteDst, int seqNum,std::vector<argPair*>& functionArgs, std::vector<argPair*>& fifoArgs)
+std::string generateCastOperations(Instruction& curIns, bool remoteDst, int seqNum, std::vector<argPair*>& fifoArgs,std::vector<argPair*>& functionArgs)
 {
     std::string rtStr="";
     int channelType =  1;
@@ -997,7 +1000,7 @@ std::string generateReturn(ReturnInst& curIns, std::vector<argPair*>& functionAr
     std::string returnStatement="return ";
     if(curIns.getReturnValue()==0)
     {
-        returnStatement = returnStatement+"void;\n";
+        returnStatement = returnStatement+";\n";
     }
     else
     {

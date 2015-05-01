@@ -434,10 +434,8 @@ static std::string genFunctionDeclarationStr(std::string funcName, std::vector<a
 {
 
     std::string rtType ="void";
-    if(rInsnType)
+    if(rInsnType && rInsnType->getTypeID()!=Type::VoidTyID)
     {
-
-
         rtType = getLLVMTypeStr(rInsnType);
 
     }
@@ -486,7 +484,6 @@ std::string FunctionGenerator::genFunctionDeclaration()
         //}
 
     }
-
     for(unsigned k=0; k<fifoArgs.size(); k++)
     {
         argPair* curP = fifoArgs.at(k);
@@ -498,7 +495,8 @@ std::string FunctionGenerator::genFunctionDeclaration()
         Instruction* rt = this->myPartition->rInsn;
         assert(isa<ReturnInst>(*rt));
         ReturnInst* rtInst = &(cast<ReturnInst>(*rt));
-        rtType = rtInst->getReturnValue()->getType();
+        if(rtInst->getReturnValue())
+            rtType = rtInst->getReturnValue()->getType();
     }
     std::string funDecl = genFunctionDeclarationStr(funName,allArgPair,rtType);
 
@@ -603,6 +601,8 @@ void removeDuplicateName(std::vector<argPair*>& functionArgs)
 void FunctionGenerator::generateCode()
 {
     checkBBListValidityRearrangeDom();
+
+
     for(unsigned int curBBInd = 0; curBBInd < BBList->size(); curBBInd++)
     {
         BasicBlock* curBB = BBList->at(curBBInd);
@@ -624,6 +624,7 @@ void FunctionGenerator::generateCode()
         // all the per bb stuff is done
 
     }
+
     std::string endgroup = generateEndBlock(BBList);
     // remove the duplicate in the functionArg
     removeDuplicateName(this->functionArgs);
@@ -632,7 +633,6 @@ void FunctionGenerator::generateCode()
     //generate function name
     std::string funcDecl = this->genFunctionDeclaration();
     std::string funcBody = this->genFunctionBody(endgroup);
-
 
     pg->Out<<funcDecl;
     pg->Out<<funcBody;
@@ -759,7 +759,6 @@ static std::string generateIndiStageArguPackageDec(std::vector<std::vector<argPa
     // we need to keep track of the seqence number of channel_info
     // the number stored there is the number of times it has been seen
     std::map<std::string, int> channelInfo2NumConsumerSeen;
-
 
     unsigned int numOfPackage = allFunctionArgs.size();
     for(unsigned int packInd = 0; packInd < numOfPackage; packInd++)
@@ -946,19 +945,18 @@ static std::string generateCPUDriver(PartitionGen* pg, std::vector<std::vector<a
                 fifoArgName2UseTimes[curArgPair->argName] += 1;
         }
     }
+
+
     std::string allocateReturnSpace = "";
     if(pg->curFunc->getReturnType()->getTypeID()!=Type::VoidTyID)
     {
         allocateReturnSpace = generateAllocateReturnSpace(pg->curFunc);
     }
     std::string cpuFifoSpaceStr = generateInterFuncFifoDecl(fifoArgName2UseTimes,fifoArgName2Type);
-    //errs()<< cpuFifoSpaceStr<<"\n";
     // now we generate the calling of function
     // note we have to package the argument of the threads into a void*
     std::string indiStageArguPackageInsInit="";
     std::string indiStageArguPackageDec = generateIndiStageArguPackageDec(allFunctionArgs,allFifoArgs,indiStageArguPackageInsInit);
-    errs()<< indiStageArguPackageDec<<"\n";
-    errs()<< indiStageArguPackageInsInit<<"\n";
     std::string functionCallThreadWrappers = generateFuncCallWrapper(funcName,allFunctionArgs,allFifoArgs,pg);
     std::string rtStr="";
 
