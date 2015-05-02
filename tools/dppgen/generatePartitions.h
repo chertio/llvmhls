@@ -182,6 +182,127 @@ using namespace llvm;
         }
     }
 
+    static void recursiveAdjustBranchMap(BasicBlock* current, BasicBlock* target, std::map<BasicBlock*,BasicBlock*>* partitionBranchRemap)
+    {
+        if(partitionBranchRemap->find(current)==partitionBranchRemap->end())
+            (*partitionBranchRemap)[current] == target;
+        else
+        {
+            // we are to see who dominates who
+            BasicBlock* storedTarget = (*partitionBranchRemap)[current];
+            if(storedTarget!=target)
+            {
+                if(PDT->dominates(storedTarget,target))
+                {
+                    // if the stored target post dominates the target
+                    // we shall branch to target, and for every successor
+                    // of target, they get mapped to storedTarget
+                    // -- now they may have alredy been mapped to some stored target
+                    // this is really a recursive process eh...
+                    (*partitionBranchRemap)[current]= target;
+                    TerminatorInst* targetTerm = target->getTerminator();
+                    for(unsigned int sucInd = 0; sucInd<targetTerm->getNumSuccessors();sucInd++)
+                    {
+                         BasicBlock* curSuc = targetTerm->getSuccessor(sucInd);
+                         recursiveAdjustBranchMap(curSuc,storedTarget,partitionBranchRemap);
+                    }
+                }
+                else if((PDT->dominates(target,storedTarget)))
+                {
+                    // for every successor of target, they goto stored target
+                }
+                else
+                {
+                    errs()<<"problem, this shouldn't happen.....\n";
+                    exit(1);
+                }
+            }
+        }
+
+    }
+
+    static bool searchToBasicBlock(std::vector<BasicBlock*>& storage, BasicBlock* current, BasicBlock* target, BasicBlock* domInter ,
+                                   PostDominatorTree* PDT, std::map<BasicBlock*,BasicBlock*>* partitionBranchRemap)
+    {
+        //errs()<<" search to bb starting "<<current->getName()<<" towards "<<target->getName()<<"\n";
+        storage.push_back(current);
+
+        if(PDT->dominates(target,current))
+        {
+            recursiveAdjustBranchMap(BasicBlock* current, BasicBlock* target, std::map<BasicBlock*,BasicBlock*>* partitionBranchRemap);
+            /*if(partitionBranchRemap->find(current)==partitionBranchRemap->end())
+                (*partitionBranchRemap)[current] == target;
+            else
+            {
+                // we are to see who dominates who
+                BasicBlock* storedTarget = (*partitionBranchRemap)[current];
+                if(storedTarget!=target)
+                {
+                    if(PDT->dominates(storedTarget,target))
+                    {
+                        // if the stored target post dominates the target
+                        // we shall branch to target, and for every successor
+                        // of target, they get mapped to storedTarget
+                        // -- now they may have alredy been mapped to some stored target
+                        // this is really a recursive process eh...
+                        (*partitionBranchRemap)[current]= target;
+                        TerminatorInst* targetTerm = target->getTerminator();
+                        for(unsigned int sucInd = 0; sucInd<targetTerm->getNumSuccessors();sucInd++)
+                        {
+
+                        }
+                    }
+                    else if((PDT->dominates(target,storedTarget)))
+                    {
+                        // for every successor of target, they goto stored target
+                    }
+                    else
+                    {
+                        errs()<<"problem, this shouldn't happen.....\n";
+                        exit(1);
+                    }
+                }
+            }*/
+
+            return true;
+        }
+        bool keepCurrent = false;
+        for(unsigned int ind = 0; ind < current->getTerminator()->getNumSuccessors(); ind++)
+        {
+            BasicBlock* curSuc = current->getTerminator()->getSuccessor(ind);
+            if(std::find(storage.begin(),storage.end(),curSuc) != storage.end())
+            {
+                //curSuc already in the array, try the next one
+                continue;
+            }
+            // if this path goes through dominator then its disregarded
+            if(curSuc == domInter)
+                continue;
+            bool found = searchToBasicBlock(storage, curSuc, target,domInter);
+            if(found)
+            {
+                //storage.push_back(curSuc);
+                keepCurrent = true;
+            }
+        }
+        if(!keepCurrent)
+            storage.pop_back();
+        return keepCurrent;
+    }
+    static void addPathBBsToBBMap(BBMap2Ins& dstBBs, BasicBlock* startBB, std::vector<BasicBlock*>& AllBBs,BasicBlock* domInter,
+                                  PostDominatorTree* PDT, std::map<BasicBlock*,BasicBlock*>* partitionBranchRemap)
+    {
+        std::vector<BasicBlock*> curPathStorage;
+        for(BBMapIter bmi = dstBBs.begin(), bme=dstBbs.end(); bmi!=bme; ++bmi)
+        {
+            BasicBlock* dest=bmi->first;
+            // want to find the path from dominator to dest
+            // in every step in the way, if dest postdominates
+
+        }
+    }
+
+
     static void addPathBBsToBBMap(BBMap2Ins& dstBBs, BasicBlock* startBB, std::vector<BasicBlock*>& AllBBs,BasicBlock* domInter)
     {
         std::vector<BasicBlock*> curPathStorage;
