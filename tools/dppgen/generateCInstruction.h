@@ -497,7 +497,7 @@ std::string generateGetElementPtrInstruction(GetElementPtrInst& gepi, std::strin
     std::string rtStr = varName+"= "+ptrStr+"+"+offSetStr+";";
     return rtStr;
 }
-std::string generateEndBlock(std::vector<BasicBlock*>* BBList )
+std::string generateEndBlock(std::vector<BasicBlock*>* BBList,std::map<BasicBlock*,BasicBlock*>* dstRemap )
 {
     std::vector<BasicBlock*> outsideBBs;
 
@@ -509,6 +509,8 @@ std::string generateEndBlock(std::vector<BasicBlock*>* BBList )
         for(unsigned int sucInd = 0; sucInd < bTerm->getNumSuccessors(); sucInd++)
         {
             BasicBlock* curSuc = bTerm->getSuccessor(sucInd);
+            if(dstRemap->find(curSuc)!=dstRemap->end())
+                curSuc = (*dstRemap)[curSuc];
             if(std::find(BBList->begin(),BBList->end(),curSuc) == BBList->end()  )
             {
                 // add the curSuc to outsideBBs if it is not already there

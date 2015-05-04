@@ -166,13 +166,6 @@ bool InstructionGraph::runOnFunction(Function &M) {
 
 
 
-
-  // more aggressive predicating --- if BasicBlock A is a post dominator
-  // of BasicBlock B, then thr control dependence should be from ancestors
-  // of B which is not post dominated by A
-  // first we need to construct the bb to predecessor map
-  BB2BBVectorMapTy BasicBlock2Predecessors;
-
 for(Function::iterator BB=M.begin(), BBE = M.end(); BB != BBE; ++BB)
 {
     TerminatorInst* curBBTerm =  BB->getTerminator();

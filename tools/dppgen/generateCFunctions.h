@@ -626,8 +626,8 @@ void FunctionGenerator::generateCode()
         // all the per bb stuff is done
 
     }
-
-    std::string endgroup = generateEndBlock(BBList);
+    std::map<BasicBlock*,BasicBlock*>* dstRemap = &(myPartition->partitionBranchRemap);
+    std::string endgroup = generateEndBlock(BBList,dstRemap);
     // remove the duplicate in the functionArg
     removeDuplicateName(this->functionArgs);
 

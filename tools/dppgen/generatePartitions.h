@@ -258,6 +258,28 @@ using namespace llvm;
         }
     }
 
+    static void addPhiOwner2Vector(std::vector<Instruction*>* curBBInsns, std::vector<BasicBlock*>* add2Vector)
+    {
+        for(unsigned int insInd = 0; insInd < curBBInsns->size(); insInd++)
+        {
+            Instruction* curIns = curBBInsns->at(insInd);
+            if(isa<PHINode>(*curIns))
+            {
+                PHINode* curPhiIns = (PHINode*)(curIns);
+                for(unsigned int inBlockInd = 0; inBlockInd<curPhiIns->getNumIncomingValues();inBlockInd++)
+                {
+                    BasicBlock* curPred = curPhiIns->getIncomingBlock(inBlockInd);
+                    if(std::find(add2Vector->begin(),add2Vector->end(),curPred)==add2Vector->end())
+                    {
+                        //errs()<<"add real coz of phi "<<curPred->getName()<<"\n";
+                        add2Vector->push_back(curPred);
+                    }
+                }
+            }
+        }
+
+    }
+
     struct DAGNode{
         std::vector<InstructionGraphNode*>* dagNodeContent;
         bool singleIns;
@@ -392,17 +414,23 @@ using namespace llvm;
         }
         void trimBBList()
         {
+            BB2BBVectorMapTy* predMap = top->getAnalysis<InstructionGraph>().getPredecessorMap();
             PostDominatorTree* PDT = top->getAnalysisIfAvailable<PostDominatorTree>();
-            DominatorTree* DT= top->getAnalysisIfAvailable<DominatorTree>();
+            //DominatorTree* DT= top->getAnalysisIfAvailable<DominatorTree>();
             // we can iterate through every block
             // in the allBBs list
             // if a basicblock A  is of no instruction --- only exist for flow
-            // purpose, we then look at to see if it is post dominated
-            // by any real BBs, if it is, then, we find the dominator
-            // among the set of BBs post dominate A, it must be one of
-            // the BBs in the set --> and now any branch going to A would
-            // be going to this guy
-            // of course , dominator should not be discarded
+            // purpose, we then look at to see if it should be discarded
+            // how do we do it?
+            // all these are assumed to be redundant
+            // we then have a queue of keepers -- starting from all realBBs,
+            // we iterate until this queue is empty,
+            // we take an iterm off this queue
+            // traverse backward from it(currentR), for the path, if we
+            // see a non real BB(nRBB), we check if currentR postdominate nRBB
+            // if the answr is no, then nRBB is a keeper, the path is done,
+            // and nRBB is added to the keeper queue,
+
             std::vector<BasicBlock*>* allBBs = (top->allBBsInPartition)[this];
             BBMap2Ins*  srcBBs = (top->srcBBsInPartition)[this];
             BBMap2Ins*  insBBs = (top->insBBsInPartition)[this];
@@ -411,23 +439,31 @@ using namespace llvm;
             {
                 BasicBlock* curBB=bmi->first;
                 allRealBBs.push_back(curBB);
+
             }
             for(BBMapIter bmi = insBBs->begin(), bme = insBBs->end(); bmi!=bme; ++bmi)
             {
                 BasicBlock* curBB=bmi->first;
                 if(srcBBs->find(curBB)==srcBBs->end()) // if curBB was not in srcBB
                     allRealBBs.push_back(curBB);
+
+                // now if this is generating a result based on incoming edges
+                // then the basic block incoming edge should be counted as real
+                // and always be preserved.
+                std::vector<Instruction*>* curBBInsns = (*insBBs)[curBB];
+                addPhiOwner2Vector(curBBInsns, &allRealBBs);
+
+
             }
             std::vector<BasicBlock*> toRemove;
 
             for(unsigned int bbInd =0; bbInd < allBBs->size(); bbInd++)
             {
                 BasicBlock* curBB = allBBs->at(bbInd);
-                if(curBB==dominator)
+                // we wanna keep dominator and all the realBBs
+                if(curBB==dominator || std::find(allRealBBs.begin(),allRealBBs.end(),curBB)!=allRealBBs.end())
                     continue;
-                else if(srcBBs->find(curBB)!=srcBBs->end() || insBBs->find(curBB)!=insBBs->end() )
-                    continue;
-                else
+                else // these are all flow only blocks ---> if they are
                 {
                     std::vector<BasicBlock*> postDominators;
                     errs()<<"=====================" <<curBB->getName() << "  \n";
@@ -952,6 +988,7 @@ bool PartitionGen::runOnFunction(Function &F) {
 
 
     InstructionGraphNode* rootNode = getAnalysis<InstructionGraph>().getRoot();
+
     std::vector<DAGNode*> collectedDagNode;
     // iterate through the sccs in our graph, each scc is a vector of
     // instructions -- some time a single instruction

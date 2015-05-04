@@ -49,7 +49,18 @@ class InstructionGraph : public FunctionPass {
   */
 
   void addToInstructionGraph(Instruction *I, std::vector<BasicBlock*>* earliestPred);
-  BB2BBVectorMapTy BasicBlockMap2PredAcceptors;
+  //BB2BBVectorMapTy BasicBlockMap2PredAcceptors;
+
+
+
+  // more aggressive predicating --- if BasicBlock A is a post dominator
+  // of BasicBlock B, then thr control dependence should be from ancestors
+  // of B which is not post dominated by A
+  // first we need to construct the bb to predecessor map
+  BB2BBVectorMapTy BasicBlock2Predecessors;
+
+
+
 public:
   static char ID; // Class identification, replacement for typeinfo
   //===---------------------------------------------------------------------
@@ -89,6 +100,12 @@ public:
   /// as the externalcallingnode.
   InstructionGraphNode *getRoot() { return Root; }
   const InstructionGraphNode *getRoot() const { return Root; }
+
+
+  BB2BBVectorMapTy* getPredecessorMap()
+  {
+      return &BasicBlock2Predecessors;
+  }
 
   //===---------------------------------------------------------------------
   // Functions to keep a call graph up to date with a function that has been
