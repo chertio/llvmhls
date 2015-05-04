@@ -115,11 +115,13 @@ struct InstructionGenerator
             // any successor
             unsigned int numSuc = cast<TerminatorInst>(*insn).getNumSuccessors();
             assert(numSuc < 255);
+            std::map<BasicBlock*,BasicBlock*>* destRemap= &(owner->myPartition->partitionBranchRemap);
+
             if(remoteSrc)
             {
                 // apparently we will need a remote src -- we need an argument
 
-                rtStr = generateGettingRemoteBranchTag(cast<TerminatorInst>(*insn),seqNum, owner->fifoArgs);
+                rtStr = generateGettingRemoteBranchTag(cast<TerminatorInst>(*insn),seqNum, owner->fifoArgs,destRemap);
                 //errs()<<rtStr;
 
             }
@@ -127,7 +129,7 @@ struct InstructionGenerator
             {
                 // we generate the local non return terminator
                 // and possibly write the tag into the channel
-                rtStr = generateControlFlow(cast<TerminatorInst>(*insn),remoteDst,seqNum, owner->fifoArgs, owner->functionArgs);
+                rtStr = generateControlFlow(cast<TerminatorInst>(*insn),remoteDst,seqNum, owner->fifoArgs, owner->functionArgs,destRemap);
 
 
 

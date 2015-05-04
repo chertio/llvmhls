@@ -134,6 +134,20 @@ using namespace llvm;
         //errs()<<" outo merge";
     }
 
+    static BasicBlock* findDominator(BasicBlock* originalDominator,std::vector<BasicBlock*>* allBBs, DominatorTree* DT)
+    {
+        BasicBlock* dominator = originalDominator;
+        for(unsigned int BBind = 0; BBind < allBBs->size(); BBind++)
+        {
+            BasicBlock* curBB = allBBs->at(BBind);
+            if(dominator!=0)
+                dominator = DT->findNearestCommonDominator(dominator, curBB);
+            else
+                dominator = curBB;
+        }
+        return dominator;
+    }
+
     static BasicBlock* findDominator(BasicBlock* originalDominator,BBMap2Ins* mapOfBBs,DominatorTree* DT )
     {
         BasicBlock* dominator = originalDominator;
@@ -182,124 +196,44 @@ using namespace llvm;
         }
     }
 
-    static void recursiveAdjustBranchMap(BasicBlock* current, BasicBlock* target, std::map<BasicBlock*,BasicBlock*>* partitionBranchRemap)
+    static bool recurseSearchRealBB(BasicBlock* curBB, BasicBlock* blockBB, BasicBlock* curTgt,std::vector<BasicBlock*>& seenBBs)
     {
-        if(partitionBranchRemap->find(current)==partitionBranchRemap->end())
-            (*partitionBranchRemap)[current] == target;
-        else
-        {
-            // we are to see who dominates who
-            BasicBlock* storedTarget = (*partitionBranchRemap)[current];
-            if(storedTarget!=target)
-            {
-                if(PDT->dominates(storedTarget,target))
-                {
-                    // if the stored target post dominates the target
-                    // we shall branch to target, and for every successor
-                    // of target, they get mapped to storedTarget
-                    // -- now they may have alredy been mapped to some stored target
-                    // this is really a recursive process eh...
-                    (*partitionBranchRemap)[current]= target;
-                    TerminatorInst* targetTerm = target->getTerminator();
-                    for(unsigned int sucInd = 0; sucInd<targetTerm->getNumSuccessors();sucInd++)
-                    {
-                         BasicBlock* curSuc = targetTerm->getSuccessor(sucInd);
-                         recursiveAdjustBranchMap(curSuc,storedTarget,partitionBranchRemap);
-                    }
-                }
-                else if((PDT->dominates(target,storedTarget)))
-                {
-                    // for every successor of target, they goto stored target
-                }
-                else
-                {
-                    errs()<<"problem, this shouldn't happen.....\n";
-                    exit(1);
-                }
-            }
-        }
-
-    }
-
-    static bool searchToBasicBlock(std::vector<BasicBlock*>& storage, BasicBlock* current, BasicBlock* target, BasicBlock* domInter ,
-                                   PostDominatorTree* PDT, std::map<BasicBlock*,BasicBlock*>* partitionBranchRemap)
-    {
-        //errs()<<" search to bb starting "<<current->getName()<<" towards "<<target->getName()<<"\n";
-        storage.push_back(current);
-
-        if(PDT->dominates(target,current))
-        {
-            recursiveAdjustBranchMap(BasicBlock* current, BasicBlock* target, std::map<BasicBlock*,BasicBlock*>* partitionBranchRemap);
-            /*if(partitionBranchRemap->find(current)==partitionBranchRemap->end())
-                (*partitionBranchRemap)[current] == target;
-            else
-            {
-                // we are to see who dominates who
-                BasicBlock* storedTarget = (*partitionBranchRemap)[current];
-                if(storedTarget!=target)
-                {
-                    if(PDT->dominates(storedTarget,target))
-                    {
-                        // if the stored target post dominates the target
-                        // we shall branch to target, and for every successor
-                        // of target, they get mapped to storedTarget
-                        // -- now they may have alredy been mapped to some stored target
-                        // this is really a recursive process eh...
-                        (*partitionBranchRemap)[current]= target;
-                        TerminatorInst* targetTerm = target->getTerminator();
-                        for(unsigned int sucInd = 0; sucInd<targetTerm->getNumSuccessors();sucInd++)
-                        {
-
-                        }
-                    }
-                    else if((PDT->dominates(target,storedTarget)))
-                    {
-                        // for every successor of target, they goto stored target
-                    }
-                    else
-                    {
-                        errs()<<"problem, this shouldn't happen.....\n";
-                        exit(1);
-                    }
-                }
-            }*/
-
+        if(curBB == curTgt)
             return true;
-        }
-        bool keepCurrent = false;
-        for(unsigned int ind = 0; ind < current->getTerminator()->getNumSuccessors(); ind++)
+        if(curBB == blockBB)
+            return false;
+        if(std::find(seenBBs.begin(),seenBBs.end(),curBB) != seenBBs.end())
+            return false;
+        seenBBs.push_back(curBB);
+        // now traverse the successor of curBB
+        TerminatorInst* ti = curBB->getTerminator();
+        bool found = false;
+        for(unsigned int sucInd = 0; sucInd < ti->getNumSuccessors(); sucInd++)
         {
-            BasicBlock* curSuc = current->getTerminator()->getSuccessor(ind);
-            if(std::find(storage.begin(),storage.end(),curSuc) != storage.end())
-            {
-                //curSuc already in the array, try the next one
-                continue;
-            }
-            // if this path goes through dominator then its disregarded
-            if(curSuc == domInter)
-                continue;
-            bool found = searchToBasicBlock(storage, curSuc, target,domInter);
-            if(found)
-            {
-                //storage.push_back(curSuc);
-                keepCurrent = true;
-            }
-        }
-        if(!keepCurrent)
-            storage.pop_back();
-        return keepCurrent;
-    }
-    static void addPathBBsToBBMap(BBMap2Ins& dstBBs, BasicBlock* startBB, std::vector<BasicBlock*>& AllBBs,BasicBlock* domInter,
-                                  PostDominatorTree* PDT, std::map<BasicBlock*,BasicBlock*>* partitionBranchRemap)
-    {
-        std::vector<BasicBlock*> curPathStorage;
-        for(BBMapIter bmi = dstBBs.begin(), bme=dstBbs.end(); bmi!=bme; ++bmi)
-        {
-            BasicBlock* dest=bmi->first;
-            // want to find the path from dominator to dest
-            // in every step in the way, if dest postdominates
+            BasicBlock* curSuc = ti->getSuccessor(sucInd);
 
+            found = recurseSearchRealBB(curSuc,blockBB,curTgt,seenBBs);
+            if(found)
+                return true;
         }
+        return false;
+
+    }
+    // startBB is generally a flow only BB, pBlock is one of its postdominators/also a real BB
+    static bool searchRealBBsWithoutBlock(BasicBlock* startBB, BasicBlock* pBlock, std::vector<BasicBlock*>& postDoms)
+    {
+        for(unsigned int rBBInd = 0; rBBInd < postDoms.size(); rBBInd++)
+        {
+            BasicBlock* curPDom = postDoms.at(rBBInd);
+            if(pBlock == curPDom)
+                    continue;
+            // now we try to search for curPDom
+            std::vector<BasicBlock*> seenBBs;
+            bool found = recurseSearchRealBB(startBB,pBlock,curPDom,seenBBs);
+            if(found)
+                return true;
+        }
+        return false;
     }
 
 
@@ -420,8 +354,15 @@ using namespace llvm;
         //DagNodeMapTy* insToDagNode;
         //DagPartitionMapTy* dagNodeToPartition;
         PartitionGen* top;
-
+        // return instruction if it belongs here
         Instruction* rInsn;
+
+        // so we have map from successorBB to destinationBB
+        // so that in this partition, if somebody is branching to a successorBB,
+        // we branch to the destinationBB instead.
+        // to generate this, we ll need to replace earlier entries with later entries
+        std::map<BasicBlock*,BasicBlock*> partitionBranchRemap;
+        BasicBlock* dominator;
         void init(PartitionGen* tt )
         {
             containMemory = false;
@@ -429,6 +370,7 @@ using namespace llvm;
             cycleDetectCovered = false;
             top = tt;
             rInsn= NULL;
+            dominator=0;
         }
         void print()
         {
@@ -447,6 +389,103 @@ using namespace llvm;
             containLongLatCyc |= (dagNode->sccLat >= LONGLATTHRESHOLD);
             // each dagNode maps to  one partition
             nodeToPartitionMap[dagNode] = this;
+        }
+        void trimBBList()
+        {
+            PostDominatorTree* PDT = top->getAnalysisIfAvailable<PostDominatorTree>();
+            DominatorTree* DT= top->getAnalysisIfAvailable<DominatorTree>();
+            // we can iterate through every block
+            // in the allBBs list
+            // if a basicblock A  is of no instruction --- only exist for flow
+            // purpose, we then look at to see if it is post dominated
+            // by any real BBs, if it is, then, we find the dominator
+            // among the set of BBs post dominate A, it must be one of
+            // the BBs in the set --> and now any branch going to A would
+            // be going to this guy
+            // of course , dominator should not be discarded
+            std::vector<BasicBlock*>* allBBs = (top->allBBsInPartition)[this];
+            BBMap2Ins*  srcBBs = (top->srcBBsInPartition)[this];
+            BBMap2Ins*  insBBs = (top->insBBsInPartition)[this];
+            std::vector<BasicBlock*> allRealBBs;
+            for(BBMapIter bmi = srcBBs->begin(), bme = srcBBs->end(); bmi!=bme; ++bmi)
+            {
+                BasicBlock* curBB=bmi->first;
+                allRealBBs.push_back(curBB);
+            }
+            for(BBMapIter bmi = insBBs->begin(), bme = insBBs->end(); bmi!=bme; ++bmi)
+            {
+                BasicBlock* curBB=bmi->first;
+                if(srcBBs->find(curBB)==srcBBs->end()) // if curBB was not in srcBB
+                    allRealBBs.push_back(curBB);
+            }
+            std::vector<BasicBlock*> toRemove;
+
+            for(unsigned int bbInd =0; bbInd < allBBs->size(); bbInd++)
+            {
+                BasicBlock* curBB = allBBs->at(bbInd);
+                if(curBB==dominator)
+                    continue;
+                else if(srcBBs->find(curBB)!=srcBBs->end() || insBBs->find(curBB)!=insBBs->end() )
+                    continue;
+                else
+                {
+                    std::vector<BasicBlock*> postDominators;
+                    errs()<<"=====================" <<curBB->getName() << "  \n";
+                    // now we check to see if curBB is post dominated by any realBB
+                    for(unsigned int realBBInd = 0; realBBInd < allRealBBs.size(); realBBInd++)
+                    {
+                        BasicBlock* curRealBB = allRealBBs.at(realBBInd);
+                        errs()<<curRealBB->getName()<<"\n";
+                        if(PDT->dominates(curRealBB,curBB))
+                            postDominators.push_back(curRealBB);
+                    }
+                    if(postDominators.size()!=0)
+                    {
+                        // we check if there is any way to reach other realBBs without going through
+                        // a particular
+                        for(unsigned int pdInd =0; pdInd < postDominators.size(); pdInd++)
+                        {
+                            BasicBlock* pBlock = postDominators.at(pdInd);
+                            bool apathToAllPost = searchRealBBsWithoutBlock(curBB, pBlock, postDominators);
+                            if(!apathToAllPost)
+                            {
+                                partitionBranchRemap[curBB] = pBlock;
+                                toRemove.push_back(curBB);
+                                //errs()<<curBB->getName()<<" can be removed\n";
+                                //errs()<<pBlock->getName()<<" is obstacle\n";
+                                //exit(1);
+                            }
+                        }
+
+                        /*BasicBlock* localDom = findDominator(0,&postDominators,DT);
+                        if(std::find(postDominators.begin(),postDominators.end(),localDom) == postDominators.end())
+                        {
+                            errs()<<"problem as post dominators doesnt include a dominator\n";
+                            errs()<<curBB->getName()<<":\n";
+                            for(unsigned int kk = 0; kk<postDominators.size(); kk++)
+                            {
+                                errs()<<postDominators.at(kk)->getName()<<"\n";
+                            }
+                            exit(1);
+                        }*/
+                        // now anybody going to curBB can directly goto localDom
+                        //partitionBranchRemap[curBB] = localDom;
+                        //toRemove.push_back(curBB);
+                    }
+
+
+                }
+            }
+            // now actually remove it
+            for(unsigned int trind = 0; trind < toRemove.size(); trind++)
+            {
+                BasicBlock* bb2Remove = toRemove.at(trind);
+                std::vector<BasicBlock*>::iterator found = std::find(allBBs->begin(),allBBs->end(),bb2Remove);
+                errs()<<(*found)->getName()<<" removed " <<"\n";
+                allBBs->erase(found);
+
+            }
+
         }
 
         void generateBBList()
@@ -487,7 +526,7 @@ using namespace llvm;
             // dominator for src and ins BBs
             // this will be the first basicblock we need to convert
             // then we shall see where each bb diverge?
-            BasicBlock* dominator=0;
+
             DominatorTree* DT= top->getAnalysisIfAvailable<DominatorTree>();
             dominator = findDominator(dominator,sourceBBs,DT);
             dominator = findDominator(dominator,insBBs,DT);
@@ -522,11 +561,7 @@ using namespace llvm;
             // make the earlier one the value of our table, and then add
             // entries for the path between A and B/B and A
             //
-            // so we have map from successorBB to destinationBB
-            // so that in this partition, if somebody is branching to a successorBB,
-            // we branch to the destinationBB instead.
-            // to generate this, we ll need to replace earlier entries with later entries
-            std::map<BasicBlock*,BasicBlock*>* partitionBranchRemap = new std::map<BasicBlock*,BasicBlock*>();
+
 
 
             // in the case of two BBs, if one BB is never reaching another BB
@@ -645,7 +680,10 @@ using namespace llvm;
                           }
                         }
                     }
+                    dominator = findDominator(dominator,AllBBs,DT);
+
                 }
+
             }
 
             // now all the basicblocks are added into the allBBs
@@ -791,7 +829,7 @@ void PartitionGen::generateControlFlowPerPartition()
         DAGPartition* curPart = partitions.at(partInd);
 
         curPart->generateBBList();
-
+        curPart->trimBBList();
         errs()<<"done part "<<partInd <<"\n";
         errs()<<"[\n";
         std::vector<BasicBlock*>* AllBBs

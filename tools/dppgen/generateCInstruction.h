@@ -381,7 +381,7 @@ argPair* createArg(std::string channelName, std::string type, int size, int dir)
 }
 
 
-std::string generateGettingRemoteBranchTag(TerminatorInst& curIns, int seqNum, std::vector<argPair*>& p)
+std::string generateGettingRemoteBranchTag(TerminatorInst& curIns, int seqNum, std::vector<argPair*>& p,std::map<BasicBlock*,BasicBlock*>* dstRemap)
 {
     std::string rtStr="";
     int channelType =  0;
@@ -402,6 +402,9 @@ std::string generateGettingRemoteBranchTag(TerminatorInst& curIns, int seqNum, s
     if(numSuc==1)
     {
         BasicBlock* curSuc = curIns.getSuccessor(0);
+        if(dstRemap->find(curSuc)!=dstRemap->end())
+            curSuc = (*dstRemap)[curSuc];
+
         std::string sucName =  curSuc->getName();
         addTabbedLine(rtStr,"goto "+sucName+";");
         /*
@@ -414,6 +417,9 @@ std::string generateGettingRemoteBranchTag(TerminatorInst& curIns, int seqNum, s
     for(unsigned int sucCount=0; sucCount<numSuc; sucCount++ )
     {
         BasicBlock* curSuc = curIns.getSuccessor(sucCount);
+        if(dstRemap->find(curSuc)!=dstRemap->end())
+            curSuc = (*dstRemap)[curSuc];
+
         allTgt.push_back(   curSuc->getName() );
     }
     rtStr = rtStr+generateGenericSwitchStatement(varName,0,0,&allTgt,ENDBLOCK);
@@ -879,7 +885,7 @@ std:: string generateBinaryOperations(BinaryOperator& curIns, bool remoteDst,int
     return rtStr;
 }
 
-std::string generateControlFlow(TerminatorInst& curIns,bool remoteDst, int seqNum, std::vector<argPair*>& fifoArgs, std::vector<argPair*>& functionArgs)
+std::string generateControlFlow(TerminatorInst& curIns,bool remoteDst, int seqNum, std::vector<argPair*>& fifoArgs, std::vector<argPair*>& functionArgs, std::map<BasicBlock*,BasicBlock*>* dstRemap)
 {
     // we currently deal with br and switch only
     assert(isa<BranchInst>(curIns) || isa<SwitchInst>(curIns) );
@@ -888,7 +894,13 @@ std::string generateControlFlow(TerminatorInst& curIns,bool remoteDst, int seqNu
     if(isa<BranchInst>(curIns))
     {
         BranchInst& bi = cast<BranchInst>(curIns);
-        std::string firstSucName= bi.getSuccessor(0)->getName();
+        BasicBlock* firstSuc = bi.getSuccessor(0);
+        if(dstRemap->find(firstSuc)!=dstRemap->end())
+        {
+            firstSuc = (*dstRemap)[firstSuc];
+        }
+
+        std::string firstSucName= firstSuc->getName();
         if(bi.isUnconditional())
         {
             if(remoteDst)
@@ -932,8 +944,12 @@ std::string generateControlFlow(TerminatorInst& curIns,bool remoteDst, int seqNu
             addBarSubTabs(true);
             if(remoteDst)
                 addTabbedLine(rtStr,generatePushOp("1",channelName));
-
-            std::string secondSucName = bi.getSuccessor(1)->getName();
+            BasicBlock* secondSuc = bi.getSuccessor(1);
+            if(dstRemap->find(secondSuc)!=dstRemap->end())
+            {
+                secondSuc = (*dstRemap)[secondSuc];
+            }
+            std::string secondSucName = secondSuc->getName();
             addTabbedLine(rtStr,"goto "+secondSucName+";");
             addBarSubTabs(false);
             addTabbedLine(rtStr,"}");
@@ -952,6 +968,11 @@ std::string generateControlFlow(TerminatorInst& curIns,bool remoteDst, int seqNu
         for(unsigned int sucInd=0; sucInd < si.getNumSuccessors(); sucInd++)
         {
             BasicBlock* curBB = si.getSuccessor(sucInd);
+            if(dstRemap->find(curBB)!=dstRemap->end())
+                curBB = (*dstRemap)[curBB];
+
+
+
             ConstantInt* curCaseVal = si.findCaseDest(curBB);
             if(curCaseVal==NULL)
             {

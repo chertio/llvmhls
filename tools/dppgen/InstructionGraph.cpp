@@ -11,35 +11,48 @@
 using namespace llvm;
 static void addAncestorsNotPDominatedBy(BasicBlock* tgtBB, std::vector<BasicBlock*>* curPredecessors,
                                         PostDominatorTree* PDT, BB2BBVectorMapTy& BasicBlock2Predecessors,
-                                        std::vector<BasicBlock*>* allGoodPredicates, std::vector<BasicBlock*>& seenBBs)
+                                        std::vector<BasicBlock*>* allGoodPredicates, std::vector<BasicBlock*>& seenBBs,LoopInfo* li)
 {
     //errs()<<"get tgtBB's earliest" <<tgtBB->getName()<<"\n";
     for(unsigned int predInd=0; predInd < curPredecessors->size(); predInd++ )
     {
         BasicBlock* BB = curPredecessors->at(predInd);
-
+        // if this block is already part of the known predicate or it has been examined before
         if(std::find(allGoodPredicates->begin(),allGoodPredicates->end(),BB)!=allGoodPredicates->end() ||
-           std::find(seenBBs.begin(),seenBBs.end(),BB)!=seenBBs.end())
+           std::find(seenBBs.begin(),seenBBs.end(),BB)!=seenBBs.end()
+                )
             continue;
         seenBBs.push_back(BB);
+        std::vector<BasicBlock*>* directProcessor = BasicBlock2Predecessors[tgtBB];
+        // also if the predicate is in an outer loop compared to the curBB, and
+        // it is not a direct predecessor, we skip it
+        if(std::find(directProcessor->begin(),directProcessor->end(),BB)==directProcessor->end()&&li->getLoopDepth(tgtBB) > li->getLoopDepth(BB))
+            continue;
+
         // note: a basic block does not properly dominates itself
         if(!PDT->properlyDominates(tgtBB,BB)  || (BasicBlock2Predecessors.find(BB)==BasicBlock2Predecessors.end()))
         {
             // add BB to the allGoodPredicates, and end this search path
             allGoodPredicates->push_back(BB);
         }
+        // tgtBB is inner loop, but BB is direct predecessor, we make it predicate
+        // we are not propogating too far out of the loop
+        else if(std::find(directProcessor->begin(),directProcessor->end(),BB)!=directProcessor->end()&&li->getLoopDepth(tgtBB) > li->getLoopDepth(BB))
+        {
+            allGoodPredicates->push_back(BB);
+        }
         // we still have ancestors
         else
         {
             std::vector<BasicBlock*>* nextStepPred = BasicBlock2Predecessors[BB];
-            addAncestorsNotPDominatedBy(tgtBB,nextStepPred,PDT,BasicBlock2Predecessors,allGoodPredicates,seenBBs);
+            addAncestorsNotPDominatedBy(tgtBB,nextStepPred,PDT,BasicBlock2Predecessors,allGoodPredicates,seenBBs,li);
         }
     }
 
 }
 
 
-static std::vector<BasicBlock*>* searchEarliestPredicate(BasicBlock* curBB, PostDominatorTree* PDT, BB2BBVectorMapTy& BasicBlock2Predecessors)
+static std::vector<BasicBlock*>* searchEarliestPredicate(BasicBlock* curBB, PostDominatorTree* PDT, BB2BBVectorMapTy& BasicBlock2Predecessors,LoopInfo* li)
 {
     // do a search backward till a basicblock who is not post dominated by the currentBB, then we add it to the vector
     // let's assume this vector wont be too big...
@@ -48,7 +61,7 @@ static std::vector<BasicBlock*>* searchEarliestPredicate(BasicBlock* curBB, Post
     std::vector<BasicBlock*>* curPredecessors = BasicBlock2Predecessors[curBB];
     std::vector<BasicBlock*> seenBBs;
 
-    addAncestorsNotPDominatedBy(curBB, curPredecessors,PDT, BasicBlock2Predecessors, allGoodPredicates, seenBBs);
+    addAncestorsNotPDominatedBy(curBB, curPredecessors,PDT, BasicBlock2Predecessors, allGoodPredicates, seenBBs, li);
     return allGoodPredicates;
 }
 
@@ -181,6 +194,7 @@ for(Function::iterator BB=M.begin(), BBE = M.end(); BB != BBE; ++BB)
 
 
 PostDominatorTree* PDT = getAnalysisIfAvailable<PostDominatorTree>();
+LoopInfo* LI = getAnalysisIfAvailable<LoopInfo>();
 for (Function::iterator BB = M.begin(), BBE = M.end(); BB != BBE; ++BB)
 {
   BasicBlock* curBBPtr = &(*BB);
@@ -193,7 +207,7 @@ for (Function::iterator BB = M.begin(), BBE = M.end(); BB != BBE; ++BB)
   else
   {
       // now we shall search for the actual predicate instruction
-      earliestPred = searchEarliestPredicate(curBBPtr, PDT, BasicBlock2Predecessors);
+      earliestPred = searchEarliestPredicate(curBBPtr, PDT, BasicBlock2Predecessors,LI);
   }
   /*errs()<<"bb:"<<BB->getName() << " has "<<" pred \n";
   for(unsigned k = 0;k < earliestPred->size(); k++)
