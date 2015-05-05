@@ -887,23 +887,32 @@ std:: string generateBinaryOperations(BinaryOperator& curIns, bool remoteDst,int
     return rtStr;
 }
 
-std::string generateControlFlow(TerminatorInst& curIns,bool remoteDst, int seqNum, std::vector<argPair*>& fifoArgs, std::vector<argPair*>& functionArgs, std::map<BasicBlock*,BasicBlock*>* dstRemap)
+std::string generateControlFlow(TerminatorInst& curIns,bool remoteDst, int seqNum, std::vector<argPair*>& fifoArgs,
+                                std::vector<argPair*>& functionArgs, std::map<BasicBlock*,BasicBlock*>* dstRemap,
+                                bool artificialUnconditional)
 {
     // we currently deal with br and switch only
     assert(isa<BranchInst>(curIns) || isa<SwitchInst>(curIns) );
     std::string rtStr="";
     std::string channelName = generateChannelString(0, seqNum, curIns.getParent()->getName());
-    if(isa<BranchInst>(curIns))
+
+    BasicBlock* firstSuc = curIns.getSuccessor(0);
+    if(dstRemap->find(firstSuc)!=dstRemap->end())
+    {
+        firstSuc = (*dstRemap)[firstSuc];
+    }
+
+    std::string firstSucName= firstSuc->getName();
+
+    if(artificialUnconditional)
+    {
+        addTabbedLine( rtStr,"goto "+firstSucName +";");
+    }
+    else if(isa<BranchInst>(curIns))
     {
         BranchInst& bi = cast<BranchInst>(curIns);
-        BasicBlock* firstSuc = bi.getSuccessor(0);
-        if(dstRemap->find(firstSuc)!=dstRemap->end())
-        {
-            firstSuc = (*dstRemap)[firstSuc];
-        }
 
-        std::string firstSucName= firstSuc->getName();
-        if(bi.isUnconditional())
+        if(bi.isUnconditional() )
         {
             if(remoteDst)
             {

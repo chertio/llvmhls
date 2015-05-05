@@ -408,10 +408,59 @@ using namespace llvm;
             }
         }
     }
+    static void search4NextKeeper(BasicBlock* brSuccessor, std::vector<BasicBlock*>&allKeepers, std::vector<BasicBlock*>&curBranchKeeper,
+                                  std::vector<BasicBlock*>&seenBBs, std::vector<BasicBlock*>&allBBs )
+    {
+        // seen it before, we return
+        if(std::find(seenBBs.begin(),seenBBs.end(), brSuccessor)!=seenBBs.end())
+            return;
+        seenBBs.push_back(brSuccessor);
+        // if this is outside current partition, its sort of a keeper...
+        bool toAdd = false;
+        if(std::find(allBBs.begin(),allBBs.end(),brSuccessor)==allBBs.end())
+        {
+            toAdd = true;
+        }
+        else if(std::find(allKeepers.begin(),allKeepers.end(),brSuccessor)!=allKeepers.end())
+        {
+            // we found a keeper
+            toAdd = true;
+        }
 
+        if(toAdd)
+        {
+            if(std::find(curBranchKeeper.begin() ,curBranchKeeper.end() ,brSuccessor)==curBranchKeeper.end())
+            {
+                curBranchKeeper.push_back(brSuccessor);
+            }
+        }
+        else
+        {
+            // start next hop
+            TerminatorInst* termIns = brSuccessor->getTerminator();
+            int numOutEdge = termIns->getNumSuccessors();
+            if(numOutEdge==0)
+            {
+                // this is going nowhere, so it must be a keeper right?
+                // lets say if it is not a keeper, it is a flow only block
+                // why would a bb with no output be a flow only block? it cant
+                // so it is not true -- this cannot happen
+                errs()<<"a non-keeper exit block\n";
+                exit(1);
+            }
+            for(unsigned int brInd = 0; brInd<numOutEdge; brInd++)
+            {
+                BasicBlock* nextSuccessor = termIns->getSuccessor(brInd);
+                search4NextKeeper( nextSuccessor, allKeepers, curBranchKeeper, seenBBs, allBBs );
+            }
+
+        }
+    }
 
 
     struct DAGPartition{
+
+        std::vector<BasicBlock*> singleSucBBs;
         // a partition contains a set of dagNode
         std::vector<DAGNode*> partitionContent;
 
@@ -501,13 +550,17 @@ using namespace llvm;
                 addPhiOwner2Vector(curBBInsns, &allRealBBs);
 
             }
-            std::vector<BasicBlock*> toRemove;
+            std::vector<BasicBlock*> toRemove = (*allBBs);
+
+
             // queue for blocks to keep
             std::vector<BasicBlock*> toKeep;
             std::vector<BasicBlock*> allKeepers;
             toKeep.insert(toKeep.begin(),allRealBBs.begin(),allRealBBs.end());
+
             while(toKeep.size()>0)
             {
+
                 BasicBlock* curSeed = toKeep.back();
                 toKeep.pop_back();
                 allKeepers.push_back(curSeed);
@@ -528,71 +581,57 @@ using namespace llvm;
                 }
 
             }
-            errs()<<"======keeper=====\n";
+
+            // we now try to build the remap
+            // we start from one keeper, look for the next keeper in dfs way
+            // realize every keeper is a divergent point
+            // from a outgoing edge of an keeper, there can be only one keeper
+            //this->partitionBranchRemap
+            //errs()<<"======keeper=====\n";
             for(unsigned int keeperInd = 0; keeperInd < allKeepers.size();keeperInd++)
             {
-                errs()<<allKeepers.at(keeperInd)->getName()<<" ";
-            }
-            errs()<<"================\n";
-            /*
-            for(unsigned int bbInd =0; bbInd < allBBs->size(); bbInd++)
-            {
-                BasicBlock* curBB = allBBs->at(bbInd);
-                // we wanna keep dominator and all the realBBs
-                if(curBB==dominator || std::find(allRealBBs.begin(),allRealBBs.end(),curBB)!=allRealBBs.end())
-                    continue;
-                else // these are all flow only blocks ---> if they are
+                BasicBlock* curKeeper = allKeepers.at(keeperInd);
+                //errs()<<curKeeper->getName()<<" ";
+                TerminatorInst* termIns = curKeeper->getTerminator();
+                int numOutEdge = termIns->getNumSuccessors();
+
+                for(unsigned int brInd = 0; brInd<numOutEdge; brInd++)
                 {
-                    std::vector<BasicBlock*> postDominators;
-                    errs()<<"=====================" <<curBB->getName() << "  \n";
-                    // now we check to see if curBB is post dominated by any realBB
-                    for(unsigned int realBBInd = 0; realBBInd < allRealBBs.size(); realBBInd++)
-                    {
-                        BasicBlock* curRealBB = allRealBBs.at(realBBInd);
-                        errs()<<curRealBB->getName()<<"\n";
-                        if(PDT->dominates(curRealBB,curBB))
-                            postDominators.push_back(curRealBB);
-                    }
-                    if(postDominators.size()!=0)
-                    {
-                        // we check if there is any way to reach other realBBs without going through
-                        // a particular
-                        for(unsigned int pdInd =0; pdInd < postDominators.size(); pdInd++)
-                        {
-                            BasicBlock* pBlock = postDominators.at(pdInd);
-                            bool apathToAllPost = searchRealBBsWithoutBlock(curBB, pBlock, postDominators);
-                            if(!apathToAllPost)
-                            {
-                                partitionBranchRemap[curBB] = pBlock;
-                                toRemove.push_back(curBB);
-                                //errs()<<curBB->getName()<<" can be removed\n";
-                                //errs()<<pBlock->getName()<<" is obstacle\n";
-                                //exit(1);
-                            }
-                        }
+                    std::vector<BasicBlock*> curBranchKeeper;
+                    // from this edge, we find next keeper
+                    BasicBlock* brSuccessor = termIns->getSuccessor(brInd);
+                    std::vector<BasicBlock*> seenBBs;
+                    search4NextKeeper( brSuccessor, allKeepers, curBranchKeeper, seenBBs, *allBBs );
 
-                        //BasicBlock* localDom = findDominator(0,&postDominators,DT);
-                        //if(std::find(postDominators.begin(),postDominators.end(),localDom) == postDominators.end())
-                        //{
-                        //    errs()<<"problem as post dominators doesnt include a dominator\n";
-                        //    errs()<<curBB->getName()<<":\n";
-                        //    for(unsigned int kk = 0; kk<postDominators.size(); kk++)
-                        //    {
-                        //        errs()<<postDominators.at(kk)->getName()<<"\n";
-                        //    }
-                        //    exit(1);
-                        //}
-                        // now anybody going to curBB can directly goto localDom
-                        //partitionBranchRemap[curBB] = localDom;
-                        //toRemove.push_back(curBB);
+                    if(curBranchKeeper.size()>1)
+                    {
+                        errs()<<"more than one dest\n";
+                        exit(1);
                     }
-
+                    else if(curBranchKeeper.size()==0)
+                    {
+                        // this is an error coz if a keeper is branching somwhere but
+                        // got nothing, something is wrong
+                        errs()<<"no dest from keeper\n";
+                        exit(1);
+                    }
+                    else
+                    {
+                        this->partitionBranchRemap[brSuccessor] = curBranchKeeper.at(0);
+                    }
 
                 }
+                // now remove this keeper from toRemove
+                std::vector<BasicBlock*>::iterator rmKeeperIter = std::find(toRemove.begin(),toRemove.end(),curKeeper);
+                if(rmKeeperIter==toRemove.end())
+                {
+                    errs()<<"somehow not found\n";
+                    exit(1);
+                }
+                    // must be found
+                toRemove.erase(rmKeeperIter);
+
             }
-
-
-            */
             // now actually remove it
             for(unsigned int trind = 0; trind < toRemove.size(); trind++)
             {
@@ -600,8 +639,41 @@ using namespace llvm;
                 std::vector<BasicBlock*>::iterator found = std::find(allBBs->begin(),allBBs->end(),bb2Remove);
                 errs()<<(*found)->getName()<<" removed " <<"\n";
                 allBBs->erase(found);
-
             }
+            // we shall build a map of basicblocks who now only have
+            // one successor -- meaning they do not need to get remote branchtag
+            // traverse every block, check their destination (with remap)
+            // if it is a single
+
+            for(unsigned int allBBInd=0; allBBInd<allBBs->size(); allBBInd++)
+            {
+                BasicBlock* curBB = allBBs->at(allBBInd);
+                TerminatorInst* curTermInst = curBB->getTerminator();
+                if(!isa<ReturnInst>(*curTermInst))
+                {
+                    int numSuc = curTermInst->getNumSuccessors();
+                    bool sameDestDu2Remap = true;
+                    BasicBlock* firstDst = curTermInst->getSuccessor(0);
+                    if(partitionBranchRemap.find(firstDst)!=partitionBranchRemap.end())
+                        firstDst = partitionBranchRemap[firstDst];
+                    for(unsigned int i = 1; i<numSuc; i++)
+                    {
+                        BasicBlock* curDst = curTermInst->getSuccessor(i);
+                        if(partitionBranchRemap.find(curDst)!=partitionBranchRemap.end())
+                            curDst = partitionBranchRemap[curDst];
+                        if(curDst!=firstDst)
+                        {
+                            sameDestDu2Remap = false;
+                            break;
+                        }
+
+                    }
+                    if(sameDestDu2Remap)
+                        singleSucBBs.push_back(curBB);
+                }
+            }
+
+
 
         }
 
@@ -717,6 +789,10 @@ using namespace llvm;
                 //searchToGroupAndAdd(curBB,dominator,*sourceBBs,curPathStorage,*AllBBs);
                 // same thing for insBB
                 //searchToGroupAndAdd(curBB,dominator,*insBBs,curPathStorage,*AllBBs);
+
+                // now we shall look at the phi
+                std::vector<Instruction*>* curBBInsns = bmi->second;
+                addPhiOwner2Vector(curBBInsns, AllBBs);
 
             }
 

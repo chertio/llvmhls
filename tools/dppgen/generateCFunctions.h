@@ -113,14 +113,18 @@ struct InstructionGenerator
         {
             // as a terminator, we should check if this dude has
             // any successor
-            unsigned int numSuc = cast<TerminatorInst>(*insn).getNumSuccessors();
+            TerminatorInst& curTermInst = cast<TerminatorInst>(*insn);
+            unsigned int numSuc = curTermInst.getNumSuccessors();
             assert(numSuc < 255);
             std::map<BasicBlock*,BasicBlock*>* destRemap= &(owner->myPartition->partitionBranchRemap);
+
+
 
             if(remoteSrc)
             {
                 // apparently we will need a remote src -- we need an argument
-
+                // but, if all the destinations are the same then we dont need the remote src
+                //---we always know where to goto.
                 rtStr = generateGettingRemoteBranchTag(cast<TerminatorInst>(*insn),seqNum, owner->fifoArgs,destRemap);
                 //errs()<<rtStr;
 
@@ -129,11 +133,12 @@ struct InstructionGenerator
             {
                 // we generate the local non return terminator
                 // and possibly write the tag into the channel
-                rtStr = generateControlFlow(cast<TerminatorInst>(*insn),remoteDst,seqNum, owner->fifoArgs, owner->functionArgs,destRemap);
+                bool artificialUnconditional = false;
+                std::vector<BasicBlock*>& endWithUncond = owner->myPartition->singleSucBBs;
+                if(std::find(endWithUncond.begin(),endWithUncond.end(), insn->getParent())!=endWithUncond.end())
+                    artificialUnconditional = true;
 
-
-
-
+                rtStr = generateControlFlow(cast<TerminatorInst>(*insn),remoteDst,seqNum, owner->fifoArgs, owner->functionArgs,destRemap,artificialUnconditional);
             }
         }
         // if this is return, it should be pretty easy.
@@ -304,7 +309,12 @@ void FunctionGenerator::generateFlowOnlyBlock(BasicBlock* curBB, std::vector<std
     int seqNum = curTerm->getParent()->getInstList().size()-1;
     addBarSubTabs(true);
     struct InstructionGenerator ig;
-    ig.init(curTerm,seqNum,true,false,this);
+    std::vector<BasicBlock*>& endWithUncondBBs = this->myPartition->singleSucBBs;
+    bool remoteSrc = true;
+    if(std::find(endWithUncondBBs.begin(),endWithUncondBBs.end(),curBB)!=endWithUncondBBs.end())
+        remoteSrc = false;
+
+    ig.init(curTerm,seqNum,remoteSrc,false,this);
     std::string termStr = ig.generateStatement();
     addBarSubTabs(false);
     //std::string termStr = generateSingleStatement(curTerm,true,false,seqNum,partitionDecStr,functionArgs, fifoArgs);
@@ -329,6 +339,7 @@ void FunctionGenerator::generateContentBlock(BasicBlock* curBB,std::vector<std::
         // it is possible that this instruction is not in srcBB nor insBB
         // then this is not converted to c, but if this is the terminator
         // we need t read the branch tag unless its return
+        // or if there is only one successor
         if(srcIns!=0 && (std::find(srcIns->begin(),srcIns->end(), insPt)==srcIns->end()) &&
            actualIns!=0 && (std::find(actualIns->begin(),actualIns->end(),insPt)==actualIns->end())
          )
@@ -336,7 +347,11 @@ void FunctionGenerator::generateContentBlock(BasicBlock* curBB,std::vector<std::
             if(insPt->isTerminator() && !isa<ReturnInst>(*insPt) )
             {
                 struct InstructionGenerator ig;
-                ig.init(insPt,instructionSeq,true,false,this);
+                bool remoteSrc = true;
+                std::vector<BasicBlock*>& endWithUncond = myPartition->singleSucBBs;
+                if(std::find(endWithUncond.begin(),endWithUncond.end(),curBB)!=endWithUncond.end())
+                    remoteSrc = false;
+                ig.init(insPt,instructionSeq,remoteSrc,false,this);
                 std::string srcInsStr = ig.generateStatement();
                 //std::string srcInsStr = generateSingleStatement(insPt,true,false,instructionSeq,partitionDecStr, functionArgs,fifoArgs);
                 curBBStrArray->push_back(srcInsStr);
@@ -402,11 +417,13 @@ void FunctionGenerator::generateContentBlock(BasicBlock* curBB,std::vector<std::
                     if(myPartition == destPart)
                         continue;
                     std::vector<BasicBlock*>* destPartBBs = pg->allBBsInPartition[destPart];
-
+                    std::vector<BasicBlock*>& destSingleSucBBs = destPart->singleSucBBs;
                     if(std::find(destPartBBs->begin(),destPartBBs->end(),curBB)!=destPartBBs->end())
                     {
-                        // add the branchtage channel
-                        pg->addChannelAndDepPartition(thereIsPartitionReceiving,insPt,channelStr,destPart,0,instructionSeq);
+                        // so they have it, but do they have multiple successors there?
+                        // if we cant find it in the single successor vector then we add the dependency
+                        if(std::find(destSingleSucBBs.begin(),destSingleSucBBs.end(),curBB )==destSingleSucBBs.end())
+                            pg->addChannelAndDepPartition(thereIsPartitionReceiving,insPt,channelStr,destPart,0,instructionSeq);
                     }
                 }
             }
