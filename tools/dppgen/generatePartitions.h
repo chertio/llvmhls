@@ -196,7 +196,7 @@ using namespace llvm;
         }
     }
 
-    static bool recurseSearchRealBB(BasicBlock* curBB, BasicBlock* blockBB, BasicBlock* curTgt,std::vector<BasicBlock*>& seenBBs)
+    /*static bool recurseSearchRealBB(BasicBlock* curBB, BasicBlock* blockBB, BasicBlock* curTgt,std::vector<BasicBlock*>& seenBBs)
     {
         if(curBB == curTgt)
             return true;
@@ -234,7 +234,7 @@ using namespace llvm;
                 return true;
         }
         return false;
-    }
+    }*/
 
 
     static void addPathBBsToBBMap(BBMap2Ins& dstBBs, BasicBlock* startBB, std::vector<BasicBlock*>& AllBBs,BasicBlock* domInter)
@@ -364,6 +364,53 @@ using namespace llvm;
 
 
     };
+
+
+    static void searchToFindKeeper(BasicBlock* curSeed, BasicBlock* curPred, BB2BBVectorMapTy* predMap,
+                                   std::vector<BasicBlock*>& toKeep, std::vector<BasicBlock*>& allKeepers,
+                                   std::vector<BasicBlock*>& seenBBs, PostDominatorTree* PDT, std::vector<BasicBlock*>* allBBs )
+    {
+        if(std::find(seenBBs.begin(), seenBBs.end(),curPred)!=seenBBs.end())
+        {
+            //already seen
+            return;
+        }
+        // if not even in the partition, we dont care
+        if(std::find(allBBs->begin(),allBBs->end(),curPred)==allBBs->end())
+            return;
+
+        // if it is already a keeper, then we stop
+        if(std::find(toKeep.begin(),toKeep.end(),curPred)!=toKeep.end()  ||
+                std::find(allKeepers.begin(),allKeepers.end(),curPred)!=allKeepers.end())
+        {
+            return;
+        }
+
+        if(! PDT->dominates(curSeed,curPred))
+        {
+            // this is a keeper
+            toKeep.push_back(curPred);
+            return;
+        }
+        else
+        {
+            // not a keeper, we continue
+            seenBBs.push_back(curPred);
+            if(predMap->find(curPred)!=predMap->end())
+            {
+                std::vector<BasicBlock*>* nextPreds = (*predMap)[curPred];
+
+                for(unsigned int cPred = 0; cPred < nextPreds->size(); cPred++)
+                {
+                    BasicBlock* nextPred = nextPreds->at(cPred);
+                    searchToFindKeeper(curSeed, nextPred,predMap, toKeep, allKeepers, seenBBs,PDT,allBBs );
+                }
+            }
+        }
+    }
+
+
+
     struct DAGPartition{
         // a partition contains a set of dagNode
         std::vector<DAGNode*> partitionContent;
@@ -453,10 +500,41 @@ using namespace llvm;
                 std::vector<Instruction*>* curBBInsns = (*insBBs)[curBB];
                 addPhiOwner2Vector(curBBInsns, &allRealBBs);
 
-
             }
             std::vector<BasicBlock*> toRemove;
+            // queue for blocks to keep
+            std::vector<BasicBlock*> toKeep;
+            std::vector<BasicBlock*> allKeepers;
+            toKeep.insert(toKeep.begin(),allRealBBs.begin(),allRealBBs.end());
+            while(toKeep.size()>0)
+            {
+                BasicBlock* curSeed = toKeep.back();
+                toKeep.pop_back();
+                allKeepers.push_back(curSeed);
+                // search backwards from curSeed, until there is a keeper
+                // all everything is seen
+                std::vector<BasicBlock*> seenBBs;
+                seenBBs.push_back(curSeed);
 
+                if(predMap->find(curSeed)!=predMap->end())
+                {
+                    std::vector<BasicBlock*>* curPreds = (*predMap)[curSeed];
+
+                    for(unsigned int cPred = 0; cPred < curPreds->size(); cPred++)
+                    {
+                        BasicBlock* curPred = curPreds->at(cPred);
+                        searchToFindKeeper(curSeed, curPred,predMap, toKeep, allKeepers, seenBBs,PDT, allBBs );
+                    }
+                }
+
+            }
+            errs()<<"======keeper=====\n";
+            for(unsigned int keeperInd = 0; keeperInd < allKeepers.size();keeperInd++)
+            {
+                errs()<<allKeepers.at(keeperInd)->getName()<<" ";
+            }
+            errs()<<"================\n";
+            /*
             for(unsigned int bbInd =0; bbInd < allBBs->size(); bbInd++)
             {
                 BasicBlock* curBB = allBBs->at(bbInd);
@@ -493,17 +571,17 @@ using namespace llvm;
                             }
                         }
 
-                        /*BasicBlock* localDom = findDominator(0,&postDominators,DT);
-                        if(std::find(postDominators.begin(),postDominators.end(),localDom) == postDominators.end())
-                        {
-                            errs()<<"problem as post dominators doesnt include a dominator\n";
-                            errs()<<curBB->getName()<<":\n";
-                            for(unsigned int kk = 0; kk<postDominators.size(); kk++)
-                            {
-                                errs()<<postDominators.at(kk)->getName()<<"\n";
-                            }
-                            exit(1);
-                        }*/
+                        //BasicBlock* localDom = findDominator(0,&postDominators,DT);
+                        //if(std::find(postDominators.begin(),postDominators.end(),localDom) == postDominators.end())
+                        //{
+                        //    errs()<<"problem as post dominators doesnt include a dominator\n";
+                        //    errs()<<curBB->getName()<<":\n";
+                        //    for(unsigned int kk = 0; kk<postDominators.size(); kk++)
+                        //    {
+                        //        errs()<<postDominators.at(kk)->getName()<<"\n";
+                        //    }
+                        //    exit(1);
+                        //}
                         // now anybody going to curBB can directly goto localDom
                         //partitionBranchRemap[curBB] = localDom;
                         //toRemove.push_back(curBB);
@@ -512,6 +590,9 @@ using namespace llvm;
 
                 }
             }
+
+
+            */
             // now actually remove it
             for(unsigned int trind = 0; trind < toRemove.size(); trind++)
             {
