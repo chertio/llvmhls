@@ -482,26 +482,33 @@ std::string FunctionGenerator::genFunctionDeclaration()
     funName+=int2Str(partGenId);
     std::vector<argPair*> allArgPair;
 
-    for(unsigned k=0; k<functionArgs.size();k++)
+    if(genCPUCode())
     {
-        argPair* curP = functionArgs.at(k);
-        // make sure there is no repeat
-        /*bool added = false;
-        for(unsigned ki=0; ki<k; ki++)
+        for(unsigned k=0; k<functionArgs.size();k++)
         {
-            // check if we already seen it
-            argPair* checkP = functionArgs.at(ki);
-            if(checkP->argName.compare( curP->argName)==0)
+            argPair* curP = functionArgs.at(k);
+            // make sure there is no repeat
+            /*bool added = false;
+            for(unsigned ki=0; ki<k; ki++)
             {
-                added = true;
-                break;
+                // check if we already seen it
+                argPair* checkP = functionArgs.at(ki);
+                if(checkP->argName.compare( curP->argName)==0)
+                {
+                    added = true;
+                    break;
+                }
             }
-        }
-        if(!added)
-        {*/
-        allArgPair.push_back(curP);
-        //}
+            if(!added)
+            {*/
+            allArgPair.push_back(curP);
+            //}
 
+        }
+    }
+    else if(functionArgs.size()>0)// we just have a setting port for each of the accelearators
+    {
+        allArgPair.push_back(createArg("settings","u32*",32,0));
     }
     for(unsigned k=0; k<fifoArgs.size(); k++)
     {
@@ -578,12 +585,36 @@ std::string FunctionGenerator::genBBsContent(std::string endgroup)
     return contentStr;
 
 }
+std::string generateReadSettingCast(argPair* fArg)
+{
+    std::string rtStr = "";
+    std::string rawName = fArg->argName+"_Raw";
+    std::string readSettings = "u32 "+rawName+"= *settings;\n";
+    std::string castValue = fArg->argType+" "+fArg->argName+" = ("+fArg->argType+")"+rawName+";\n";
+    addTabbedLine(rtStr, readSettings+castValue);
+    return rtStr;
+
+}
+
 
 std::string FunctionGenerator::genFunctionBody(std::string endgroup)
 {
     std::string funcBody = "";
     addTabbedLine(funcBody, "{");
     addBarSubTabs(true);
+
+    if(!genCPUCode())
+    {
+        // need to get all the raw data and cast them to the right
+        // type from settings port
+        for(unsigned int fargInd = 0; fargInd<functionArgs.size(); fargInd++)
+        {
+            argPair* curFuncArg = functionArgs.at(fargInd);
+            addTabbedLine(funcBody,generateReadSettingCast(curFuncArg));
+
+        }
+    }
+
     addTabbedLine(funcBody,genVarDecl());
 
     // now do the actual computation
@@ -660,11 +691,11 @@ void FunctionGenerator::generateCode()
 
 
 //        partGenId++;
-    pg->Out<<"//=========================================================================\n";
+    pg->Out<<"\n//=========================================================================\n";
     // we are not deleting these if we are
     // generating for cpu code
     // the functionArgs and fifoArgs vector
-    if(!genCPUCode())
+    /*if(!genCPUCode())
     {
         for(unsigned k =0; k< functionArgs.size(); k++)
         {
@@ -675,7 +706,7 @@ void FunctionGenerator::generateCode()
         {
             delete fifoArgs.at(k);
         }
-    }
+    }*/
 
 
 
@@ -1014,6 +1045,15 @@ static std::string generateCPUDriver(PartitionGen* pg, std::vector<std::vector<a
 
 }
 
+
+static std::string generateHLSDriver(PartitionGen* pg, std::vector<std::vector<argPair*>*>& allFunctionArgs,
+                              std::vector<std::vector<argPair*>*>&allFifoArgs)
+{
+    return "";
+}
+
+
+
 static void generateCode(PartitionGen* pg, bool _CPU_bar_HLS)
 {
     std::vector<std::vector<argPair*>*> allFunctionArgs;
@@ -1057,11 +1097,16 @@ static void generateCode(PartitionGen* pg, bool _CPU_bar_HLS)
 
         pg->Out<< generateCPUDriver(pg, allFunctionArgs, allFifoArgs);
 
-        // release at the end
-        release2DVectorArgPair(allFunctionArgs);
-        release2DVectorArgPair(allFifoArgs);
 
     }
+    else
+    {
+        pg->Out<<generateHLSDriver(pg, allFunctionArgs, allFifoArgs);
+    }
+    // release at the end
+    release2DVectorArgPair(allFunctionArgs);
+    release2DVectorArgPair(allFifoArgs);
+
 }
 /*
 static std::string generateCPUCodePerPartition(PartitionGen* pg, DAGPartition* pa)
