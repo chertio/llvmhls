@@ -8,5 +8,6 @@ add_llvm_tool(dppgen
   generateCInstruction.h
   generateCFunctions.h
   generatePartitions.h
+  generateHLSEnv.h
   )
 set_target_properties(dppgen PROPERTIES ENABLE_EXPORTS 1)

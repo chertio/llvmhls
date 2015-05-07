@@ -1049,6 +1049,12 @@ static std::string generateCPUDriver(PartitionGen* pg, std::vector<std::vector<a
 static std::string generateHLSDriver(PartitionGen* pg, std::vector<std::vector<argPair*>*>& allFunctionArgs,
                               std::vector<std::vector<argPair*>*>&allFifoArgs)
 {
+    // what does the top level do?
+    // we have the same function signature
+    // 1. we initialize all the ips
+    // 2. we convert all the function parameters to u32
+    // 3. we start all accelerators and feed them the function argument through
+
     return "";
 }
 
@@ -1101,6 +1107,7 @@ static void generateCode(PartitionGen* pg, bool _CPU_bar_HLS)
     }
     else
     {
+        pg->Out<<"\n//=========================================================================\n";
         pg->Out<<generateHLSDriver(pg, allFunctionArgs, allFifoArgs);
     }
     // release at the end
