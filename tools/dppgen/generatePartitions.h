@@ -675,6 +675,32 @@ using namespace llvm;
 
 
 
+
+        }
+        // this is to be invoked right after the srcBB and insBB are established
+        void optimizeBBByDup(BBMap2Ins* srcBBs, BBMap2Ins* insBBs)
+        {
+            // now is there any way we can reduce the communication/or allow memory
+            // optimization by duplicating simple counters
+            // how do we do this?
+            // we go through every srcBB, check, this srcBB probably belongs to a dependency cycle
+            // -- if this srcBB feeds to an address, we want the address to be generated locally?
+            // -- find the cycle,if it does not involve memory access, let's move it over
+            // and check how many local src ins belong to this cycle, all them
+            // get to become insBB
+            // for now let's just dump out the involved instructions
+            for(BBMapIter bmi = srcBBs->begin(), bme = srcBBs->end(); bmi!=bme; ++bmi)
+            {
+                BasicBlock* curBB=bmi->first;
+                std::vector<Instruction*>* curBBSrcInsns = bmi->second;
+                // now for each of these instructions, we do a dfs to see if they fan out to local
+                // instructions accessing memory
+                // if yes, we search backwards to find the scc it depends on
+                // how do we check if it is a counter structure?
+                // there is a circle formed by an add instruction and a phiNode
+            }
+
+
         }
 
         void generateBBList()
