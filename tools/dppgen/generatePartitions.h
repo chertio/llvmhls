@@ -457,6 +457,58 @@ using namespace llvm;
         }
     }
 
+    bool localDescendentAccessMemory(Instruction* curStep, std::vector<Instruction*>& seen, BBMap2Ins* curPartitionInsns)
+    {
+        if(std::find(seen.begin(),seen.end(),curStep)!=seen.end())
+            return false;
+        seen.push_back(curStep);
+
+
+        BasicBlock* instOwner = curStep->getParent();
+        if(curPartitionInsns->find(instOwner) == curPartitionInsns->end())
+            return false;
+        std::vector<Instruction*>* insWithSameOwner = curPartitionInsns->at(instOwner);
+        if(std::find(insWithSameOwner->begin(),insWithSameOwner->end(),curStep)==insWithSameOwner->end() )
+            return false;
+
+        // if is in current
+        if(curStep->mayReadOrWriteMemory())
+            return true;
+        bool found = false;
+        for(Value::use_iterator curUser = curStep->use_begin(), endUser = curStep->use_end(); curUser != endUser; ++curUser )
+        {
+            if(isa<Instruction>(*curUser))
+            {
+                Instruction* curIns = cast<Instruction*>(curUser);
+                found = localDescendentAccessMemory(curIns,seen, curPartitionInsns);
+                if(found)
+                    return true;
+            }
+        }
+
+        return false;
+    }
+
+    void addDuplicatedInstruction(std::vector<Instruction*>& duplicatedInstruction, Instruction* curIns,
+                                  Insn2DagNodeMap& dnm, BBMap2Ins* srcBBs)
+    {
+        // find the dagNode corresponding to the instruction
+        // it contains one scc of
+        DAGNode* ownerNode = dnm[curIns];
+        std::vector<InstructionGraphNode*>* allIGN =  ownerNode->dagNodeContent;
+        // check if any instruction in allIGN contains memory, if there is , we dont
+        // duplicate if there isnt
+        for(unsigned int insInd = 0; insInd = allIGN->size(); insInd++)
+        {
+            InstructionGraphNode* curIGN = allIGN->at(insInd);
+            Instruction* curInsn = curIGN->getInstruction();
+            if(curInsn->mayReadOrWriteMemory())
+                return;
+
+
+        }
+
+    }
 
     struct DAGPartition{
 
@@ -691,13 +743,43 @@ using namespace llvm;
             // for now let's just dump out the involved instructions
             for(BBMapIter bmi = srcBBs->begin(), bme = srcBBs->end(); bmi!=bme; ++bmi)
             {
-                BasicBlock* curBB=bmi->first;
                 std::vector<Instruction*>* curBBSrcInsns = bmi->second;
                 // now for each of these instructions, we do a dfs to see if they fan out to local
                 // instructions accessing memory
                 // if yes, we search backwards to find the scc it depends on
                 // how do we check if it is a counter structure?
                 // there is a circle formed by an add instruction and a phiNode
+
+                for(unsigned int insInd = 0; insInd < curBBSrcInsns->size(); insInd++)
+                {
+                    Instruction* curIns = curBBSrcInsns->at(insInd);
+                    if(curIns->mayReadOrWriteMemory())
+                        continue;
+                    bool found = false;
+                    std::vector<Instruction*> seenBBs;
+                    for(Value::use_iterator curUser = curIns->use_begin(), endUser = curIns->use_end();
+                        curUser != endUser; ++curUser )
+                    {
+                        if(isa<Instruction>(*curUser))
+                        {
+                            Instruction* nextInsn = (cast<Instruction*>(curUser));
+                            found = localDescendentAccessMemory(nextInsn,seenBBs,insBBs);
+                            if(found)
+                                break;
+                        }
+                    }
+                    if(found)
+                    {
+                        // curIns fanning out to some memory instruction
+                        // lets search backward --- this can be using the instruction graph structure
+                        std::vector<Instruction*> duplicatedInstruction;
+
+                        addDuplicatedInstruction(duplicatedInstruction, curIns,top->dagNodeMap,srcBBs);
+
+                    }
+
+
+                }
             }
 
 
@@ -858,27 +940,6 @@ using namespace llvm;
                  */
                 if(li->getLoopDepth(dominator)!=0)
                 {
-                    /*Function* topFunc = top->curFunc;
-                    //FIXME: all the vectors prolly should be changed to
-                    //maps
-                    std::vector<BasicBlock*> bbsOutsideLoop;
-                    for(Function::iterator bmi = topFunc->begin(),bme=topFunc->end(); bmi!=bme; ++bmi)
-                    {
-                        BasicBlock* curBB = &(*bmi);
-                        if(li->getLoopDepth(curBB)==0)
-                        {
-                            bbsOutsideLoop.push_back(curBB);
-                        }
-                    }
-                    // now we want to keep all path leading to any of these blocks
-                    std::vector<BasicBlock*> cpAllBBs = *AllBBs;
-                    for(unsigned int existingBBInd = 0; existingBBInd < cpAllBBs.size(); existingBBInd++)
-                    {
-                        BasicBlock* startBB = cpAllBBs.at(existingBBInd);
-                        addPathBBs2AnyMember(bbsOutsideLoop,startBB,*AllBBs);
-                    }*/
-
-
                     // actual implementation, all the strongly connected basic blocks involving
                     // anybody in the AllBBs need to be included
 
