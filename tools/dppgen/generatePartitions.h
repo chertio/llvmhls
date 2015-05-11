@@ -457,30 +457,32 @@ using namespace llvm;
         }
     }
 
-    bool localDescendentAccessMemory(Instruction* curStep, std::vector<Instruction*>& seen, BBMap2Ins* curPartitionInsns)
+    bool localDescendentAccessMemory(Instruction& curStep, std::vector<Instruction*>& seen, BBMap2Ins* curPartitionInsns)
     {
-        if(std::find(seen.begin(),seen.end(),curStep)!=seen.end())
+        if(std::find(seen.begin(),seen.end(),&curStep)!=seen.end())
             return false;
-        seen.push_back(curStep);
+        seen.push_back(&curStep);
 
 
-        BasicBlock* instOwner = curStep->getParent();
+        errs()<<"\n--------------------\n";
+        errs()<<curStep;
+        errs()<<"\n--------------------\n";
+        // if is in current
+        BasicBlock* instOwner = curStep.getParent();
         if(curPartitionInsns->find(instOwner) == curPartitionInsns->end())
             return false;
         std::vector<Instruction*>* insWithSameOwner = curPartitionInsns->at(instOwner);
-        if(std::find(insWithSameOwner->begin(),insWithSameOwner->end(),curStep)==insWithSameOwner->end() )
+        if(std::find(insWithSameOwner->begin(),insWithSameOwner->end(),&curStep)==insWithSameOwner->end() )
             return false;
-
-        // if is in current
-        if(curStep->mayReadOrWriteMemory())
+        if(curStep.mayReadOrWriteMemory())
             return true;
         bool found = false;
-        for(Value::use_iterator curUser = curStep->use_begin(), endUser = curStep->use_end(); curUser != endUser; ++curUser )
+        for(Value::use_iterator curUser = curStep.use_begin(), endUser = curStep.use_end(); curUser != endUser; ++curUser )
         {
             if(isa<Instruction>(*curUser))
             {
-                Instruction* curIns = cast<Instruction*>(curUser);
-                found = localDescendentAccessMemory(curIns,seen, curPartitionInsns);
+
+                found = localDescendentAccessMemory(*curUser,seen, curPartitionInsns);
                 if(found)
                     return true;
             }
@@ -498,14 +500,19 @@ using namespace llvm;
         std::vector<InstructionGraphNode*>* allIGN =  ownerNode->dagNodeContent;
         // check if any instruction in allIGN contains memory, if there is , we dont
         // duplicate if there isnt
-        for(unsigned int insInd = 0; insInd = allIGN->size(); insInd++)
+        if(ownerNode->hasMemory)
+            return;
+        if(ownerNode->sccLat < 5 && !ownerNode->singleIns)
         {
-            InstructionGraphNode* curIGN = allIGN->at(insInd);
-            Instruction* curInsn = curIGN->getInstruction();
-            if(curInsn->mayReadOrWriteMemory())
-                return;
+            // this is a potential candidate
 
+            for(unsigned int insInd = 0; insInd = allIGN->size(); insInd++)
+            {
+                InstructionGraphNode* curIGN = allIGN->at(insInd);
+                Instruction* curInsn = curIGN->getInstruction();
+                errs()<<*curInsn;
 
+            }
         }
 
     }
@@ -730,8 +737,10 @@ using namespace llvm;
 
         }
         // this is to be invoked right after the srcBB and insBB are established
-        void optimizeBBByDup(BBMap2Ins* srcBBs, BBMap2Ins* insBBs)
+        void optimizeBBByDup()
         {
+            BBMap2Ins* srcBBs = top->srcBBsInPartition[this];
+            BBMap2Ins* insBBs = top->insBBsInPartition[this];
             // now is there any way we can reduce the communication/or allow memory
             // optimization by duplicating simple counters
             // how do we do this?
@@ -762,14 +771,15 @@ using namespace llvm;
                     {
                         if(isa<Instruction>(*curUser))
                         {
-                            Instruction* nextInsn = (cast<Instruction*>(curUser));
-                            found = localDescendentAccessMemory(nextInsn,seenBBs,insBBs);
+                            found = localDescendentAccessMemory(const_cast<Instruction>(*curUser),seenBBs,insBBs);
                             if(found)
                                 break;
                         }
                     }
                     if(found)
                     {
+
+                        errs()<<" found =============------------------======================\n";
                         // curIns fanning out to some memory instruction
                         // lets search backward --- this can be using the instruction graph structure
                         std::vector<Instruction*> duplicatedInstruction;
@@ -1109,6 +1119,7 @@ void PartitionGen::generateControlFlowPerPartition()
         DAGPartition* curPart = partitions.at(partInd);
 
         curPart->generateBBList();
+        curPart->optimizeBBByDup();
         curPart->trimBBList();
         errs()<<"done part "<<partInd <<"\n";
         errs()<<"[\n";
