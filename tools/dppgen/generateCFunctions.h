@@ -431,13 +431,16 @@ void FunctionGenerator::generateContentBlock(BasicBlock* curBB,std::vector<std::
                     DAGPartition* destPart = pg->partitions.at(sid);
                     if(myPartition == destPart)
                         continue;
-                    std::vector<BasicBlock*>* destPartBBs = pg->allBBsInPartition[destPart];
-                    std::vector<BasicBlock*>& destSingleSucBBs = destPart->singleSucBBs;
-
 
                     if(partitionContainsActualIns(insPt,pg,destPart))
                         continue;
 
+                    std::vector<BasicBlock*>* destPartBBs = pg->allBBsInPartition[destPart];
+                    std::vector<BasicBlock*>& destSingleSucBBs = destPart->singleSucBBs;
+
+
+                    // partition contains this block, and this block is not such that it only
+                    // has a single successor, we need to propagate this through
                     if(std::find(destPartBBs->begin(),destPartBBs->end(),curBB)!=destPartBBs->end())
                     {
                         // so they have it, but do they have multiple successors there?
@@ -452,23 +455,35 @@ void FunctionGenerator::generateContentBlock(BasicBlock* curBB,std::vector<std::
             }
             else
             {
-                //FIXME: this wont work any more.... got to do the stupid search for every partition
-                //because this may be the source ins of some ins again -- or we can just make
-                // the query return array
                 for(Value::use_iterator curUser = insPt->use_begin(), endUser = insPt->use_end(); curUser != endUser; ++curUser )
                 {
                     // now we look at each use, these instruction belows to some DAGNode which belongs to some
                     // DAGPartition
                     assert(isa<Instruction>(*curUser));
-                    DAGPartition* curUsePart = pg->getPartitionFromIns(cast<Instruction>(*curUser));
+                    //DAGPartition* curUsePart = pg->getPartitionFromIns(cast<Instruction>(*curUser));
 
-                    if(curUsePart == myPartition)
-                        continue;
+                    std::vector<DAGPartition*>* curUseOwners=pg->getPartitionFromIns(cast<Instruction>(*curUser));
+                    // we will iterate through each partition in the vector
+                    for(unsigned int s = 0; s < curUseOwners->size(); s++)
+                    {
+                        DAGPartition* curUsePart = curUseOwners->at(s);
+                        if(curUsePart == myPartition)
+                            continue;
+                        // if the remote partition also contains the
+                        // insPt as its own actual partition, we dont add
+                        // dependency
+                        if(partitionContainsActualIns(insPt,pg,curUsePart))
+                            continue;
 
-                    //if(partitionContainsActualIns(insPt,pg,curUsePart))
+                        // they has insPt as the src instructions, not the actual instruction
+                        // so we are sending our token
+                        pg->addChannelAndDepPartition(thereIsPartitionReceiving,insPt,channelStr,curUsePart,1,instructionSeq);
+
+                    }
+                    //AGPartition* curUsePart = curUseOwners->at(0);
+                    //if(curUsePart == myPartition)
                     //    continue;
-                    // now lets check the actualIns of the use partition, they may have duplicated it
-                    pg->addChannelAndDepPartition(thereIsPartitionReceiving,insPt,channelStr,curUsePart,1,instructionSeq);
+
 
                 }
             }

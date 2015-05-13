@@ -45,7 +45,7 @@ using namespace llvm;
 
 
     typedef std::map<const Instruction *, DAGNode *> Insn2DagNodeMap;
-    typedef std::map<const DAGNode*, DAGPartition*> DagNode2PartitionMap;
+    typedef std::map<const DAGNode*, std::vector<DAGPartition*>*> DagNode2PartitionMap;
 
     // this is used for srcBB and insBB things
     // the basic block here is a basic block in a partition, which contains a subset
@@ -353,13 +353,20 @@ using namespace llvm;
         AU.addRequired<LoopInfo>();
         AU.setPreservesAll();
       }
-      DAGPartition* getPartitionFromIns(Instruction* ins)
+      /*DAGPartition* getPartitionFromIns(Instruction* ins)
       {
           //multiple partition contain the same dagnode
           DAGNode* node = dagNodeMap[const_cast<Instruction*>(ins)];
           DAGPartition* part = dagPartitionMap[const_cast<DAGNode*>(node)];
           return part;
-      }
+      }*/
+      std::vector<DAGPartition*>* getPartitionFromIns(Instruction* ins)
+        {
+            DAGNode* node = dagNodeMap[const_cast<Instruction*>(ins)];
+            std::vector<DAGPartition*>* part = dagPartitionMap[const_cast<DAGNode*>(node)];
+            return part;
+        }
+
       void addChannelAndDepPartition(bool &thereIsPartitionReceiving, Instruction* insPt,
                                                    std::string& channelStr, DAGPartition* destPart, int channelType, int seqNum);
 
@@ -504,6 +511,8 @@ using namespace llvm;
         if(ownerNode->sccLat < 5 && !ownerNode->singleIns)
         {
             // this is a potential candidate
+            // how do we determine if we want to duplicate?
+            //
             errs()<<"Duplicated ones:\n";
             for(unsigned int insInd = 0; insInd < allIGN->size(); insInd++)
             {
@@ -564,8 +573,19 @@ using namespace llvm;
             dagNode->covered=true;
             containMemory |= dagNode->hasMemory;
             containLongLatCyc |= (dagNode->sccLat >= LONGLATTHRESHOLD);
-            // each dagNode maps to  one partition
-            nodeToPartitionMap[dagNode] = this;
+            // each dagNode maps to at least one partition
+            // but maybe duplicated , this is used to search
+            // for the partition from which the operand originate
+            // and thus build channels
+            std::vector<DAGPartition*>* listOfDp;
+            if(nodeToPartitionMap.find(dagNode) == nodeToPartitionMap.end())
+            {
+                listOfDp = new std::vector<DAGPartition*>();
+                nodeToPartitionMap[dagNode] = listOfDp;
+            }
+            else
+                listOfDp = nodeToPartitionMap[dagNode];
+            listOfDp->push_back(this);
         }
         void trimBBList()
         {
@@ -1170,7 +1190,11 @@ bool PartitionGen::DFSFindPartitionCycle(DAGPartition* dp)
         for(unsigned int di =0 ; di<depNodes.size(); di++)
         {
             DAGNode* nextNode=depNodes.at(di);
-            DAGPartition* nextHop = dagPartitionMap[nextNode];
+            std::vector<DAGPartition*>* nextHopPartitions = dagPartitionMap[nextNode];
+            // the first partition this node is assigned to is the one used
+            // in forming acyclic partition, later ones are duplicated nodes
+            // which do not affect acyclicness of the pipeline
+            DAGPartition* nextHop = nextHopPartitions->front();
             if(nextHop==dp)
                 continue;
             if(DFSFindPartitionCycle(nextHop))
