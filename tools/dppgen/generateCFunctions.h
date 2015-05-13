@@ -321,6 +321,21 @@ void FunctionGenerator::generateFlowOnlyBlock(BasicBlock* curBB, std::vector<std
     curBBStrArray->push_back(termStr);
 
 }
+
+bool partitionContainsActualIns(Instruction* insPt, PartitionGen* pg, DAGPartition* destPart)
+{
+    BasicBlock* curBB = insPt->getParent();
+    BBMap2Ins* destPartInsBBs = pg->insBBsInPartition[destPart];
+    if(destPartInsBBs->find(curBB)!=destPartInsBBs->end())
+    {
+
+        std::vector<Instruction*>* insnsInBB = (*destPartInsBBs)[curBB];
+        if(std::find(insnsInBB->begin(),insnsInBB->end(),insPt)!=insnsInBB->end())
+            return true;
+    }
+    return false;
+}
+
 void FunctionGenerator::generateContentBlock(BasicBlock* curBB,std::vector<std::string>* curBBStrArray)
 {
     std::vector<Instruction*>* srcIns = 0;
@@ -418,10 +433,18 @@ void FunctionGenerator::generateContentBlock(BasicBlock* curBB,std::vector<std::
                         continue;
                     std::vector<BasicBlock*>* destPartBBs = pg->allBBsInPartition[destPart];
                     std::vector<BasicBlock*>& destSingleSucBBs = destPart->singleSucBBs;
+
+
+                    if(partitionContainsActualIns(insPt,pg,destPart))
+                        continue;
+
                     if(std::find(destPartBBs->begin(),destPartBBs->end(),curBB)!=destPartBBs->end())
                     {
                         // so they have it, but do they have multiple successors there?
                         // if we cant find it in the single successor vector then we add the dependency
+
+                        //FIXME: with duplicate, they may have it in the actualIns also -- check that
+
                         if(std::find(destSingleSucBBs.begin(),destSingleSucBBs.end(),curBB )==destSingleSucBBs.end())
                             pg->addChannelAndDepPartition(thereIsPartitionReceiving,insPt,channelStr,destPart,0,instructionSeq);
                     }
@@ -429,6 +452,9 @@ void FunctionGenerator::generateContentBlock(BasicBlock* curBB,std::vector<std::
             }
             else
             {
+                //FIXME: this wont work any more.... got to do the stupid search for every partition
+                //because this may be the source ins of some ins again -- or we can just make
+                // the query return array
                 for(Value::use_iterator curUser = insPt->use_begin(), endUser = insPt->use_end(); curUser != endUser; ++curUser )
                 {
                     // now we look at each use, these instruction belows to some DAGNode which belongs to some
@@ -438,6 +464,10 @@ void FunctionGenerator::generateContentBlock(BasicBlock* curBB,std::vector<std::
 
                     if(curUsePart == myPartition)
                         continue;
+
+                    //if(partitionContainsActualIns(insPt,pg,curUsePart))
+                    //    continue;
+                    // now lets check the actualIns of the use partition, they may have duplicated it
                     pg->addChannelAndDepPartition(thereIsPartitionReceiving,insPt,channelStr,curUsePart,1,instructionSeq);
 
                 }

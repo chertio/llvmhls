@@ -355,6 +355,7 @@ using namespace llvm;
       }
       DAGPartition* getPartitionFromIns(Instruction* ins)
       {
+          //multiple partition contain the same dagnode
           DAGNode* node = dagNodeMap[const_cast<Instruction*>(ins)];
           DAGPartition* part = dagPartitionMap[const_cast<DAGNode*>(node)];
           return part;
@@ -457,32 +458,30 @@ using namespace llvm;
         }
     }
 
-    bool localDescendentAccessMemory(Instruction& curStep, std::vector<Instruction*>& seen, BBMap2Ins* curPartitionInsns)
+    bool localDescendentAccessMemory(Instruction* curStep, std::vector<Instruction*>& seen, BBMap2Ins* curPartitionInsns)
     {
-        if(std::find(seen.begin(),seen.end(),&curStep)!=seen.end())
+        if(std::find(seen.begin(),seen.end(),curStep)!=seen.end())
             return false;
-        seen.push_back(&curStep);
+        seen.push_back(curStep);
 
 
-        errs()<<"\n--------------------\n";
-        errs()<<curStep;
-        errs()<<"\n--------------------\n";
+
         // if is in current
-        BasicBlock* instOwner = curStep.getParent();
+        BasicBlock* instOwner = curStep->getParent();
         if(curPartitionInsns->find(instOwner) == curPartitionInsns->end())
             return false;
         std::vector<Instruction*>* insWithSameOwner = curPartitionInsns->at(instOwner);
-        if(std::find(insWithSameOwner->begin(),insWithSameOwner->end(),&curStep)==insWithSameOwner->end() )
+        if(std::find(insWithSameOwner->begin(),insWithSameOwner->end(),curStep)==insWithSameOwner->end() )
             return false;
-        if(curStep.mayReadOrWriteMemory())
+        if(curStep->mayReadOrWriteMemory())
             return true;
         bool found = false;
-        for(Value::use_iterator curUser = curStep.use_begin(), endUser = curStep.use_end(); curUser != endUser; ++curUser )
+        for(Value::use_iterator curUser = curStep->use_begin(), endUser = curStep->use_end(); curUser != endUser; ++curUser )
         {
             if(isa<Instruction>(*curUser))
             {
 
-                found = localDescendentAccessMemory(*curUser,seen, curPartitionInsns);
+                found = localDescendentAccessMemory(cast<Instruction>(*curUser),seen, curPartitionInsns);
                 if(found)
                     return true;
             }
@@ -505,14 +504,15 @@ using namespace llvm;
         if(ownerNode->sccLat < 5 && !ownerNode->singleIns)
         {
             // this is a potential candidate
-
-            for(unsigned int insInd = 0; insInd = allIGN->size(); insInd++)
+            errs()<<"Duplicated ones:\n";
+            for(unsigned int insInd = 0; insInd < allIGN->size(); insInd++)
             {
                 InstructionGraphNode* curIGN = allIGN->at(insInd);
                 Instruction* curInsn = curIGN->getInstruction();
-                errs()<<*curInsn;
+                errs()<<*curInsn<<"\n";
 
             }
+            errs()<<"Duplicated ones: end\n";
         }
 
     }
@@ -737,10 +737,11 @@ using namespace llvm;
 
         }
         // this is to be invoked right after the srcBB and insBB are established
-        void optimizeBBByDup()
+        void optimizeBBByDup(BBMap2Ins* srcBBs,BBMap2Ins* insBBs)
         {
-            BBMap2Ins* srcBBs = top->srcBBsInPartition[this];
-            BBMap2Ins* insBBs = top->insBBsInPartition[this];
+            errs()<<"Starting optimization\n";
+             //= top->srcBBsInPartition[this];
+             //= top->insBBsInPartition[this];
             // now is there any way we can reduce the communication/or allow memory
             // optimization by duplicating simple counters
             // how do we do this?
@@ -753,6 +754,12 @@ using namespace llvm;
             for(BBMapIter bmi = srcBBs->begin(), bme = srcBBs->end(); bmi!=bme; ++bmi)
             {
                 std::vector<Instruction*>* curBBSrcInsns = bmi->second;
+                BasicBlock* curSrcBB = bmi->first;
+                std::vector<Instruction*>* curBBActualInsns = 0;
+                if(insBBs->find(curSrcBB)!=insBBs->end())
+                    curBBActualInsns = (*insBBs)[curSrcBB];
+
+                errs()<<"cur source ins: \n";
                 // now for each of these instructions, we do a dfs to see if they fan out to local
                 // instructions accessing memory
                 // if yes, we search backwards to find the scc it depends on
@@ -762,6 +769,10 @@ using namespace llvm;
                 for(unsigned int insInd = 0; insInd < curBBSrcInsns->size(); insInd++)
                 {
                     Instruction* curIns = curBBSrcInsns->at(insInd);
+                    // if this instruction is also in actual ins, then we dont care
+                    if(curBBActualInsns!=0 && std::find(curBBActualInsns->begin(),curBBActualInsns->end(),curIns)!=curBBActualInsns->end())
+                        continue;
+                    errs()<<"\t"<<*curIns<<"\n";
                     if(curIns->mayReadOrWriteMemory())
                         continue;
                     bool found = false;
@@ -771,7 +782,7 @@ using namespace llvm;
                     {
                         if(isa<Instruction>(*curUser))
                         {
-                            found = localDescendentAccessMemory(const_cast<Instruction>(*curUser),seenBBs,insBBs);
+                            found = localDescendentAccessMemory(cast<Instruction>(*curUser),seenBBs,insBBs);
                             if(found)
                                 break;
                         }
@@ -791,6 +802,7 @@ using namespace llvm;
 
                 }
             }
+            errs()<<"end optimization\n";
 
 
         }
@@ -830,6 +842,7 @@ using namespace llvm;
                     }
                 }
             }
+            optimizeBBByDup(sourceBBs,insBBs);
             // dominator for src and ins BBs
             // this will be the first basicblock we need to convert
             // then we shall see where each bb diverge?
@@ -1119,7 +1132,7 @@ void PartitionGen::generateControlFlowPerPartition()
         DAGPartition* curPart = partitions.at(partInd);
 
         curPart->generateBBList();
-        curPart->optimizeBBByDup();
+        //curPart->optimizeBBByDup();
         curPart->trimBBList();
         errs()<<"done part "<<partInd <<"\n";
         errs()<<"[\n";
