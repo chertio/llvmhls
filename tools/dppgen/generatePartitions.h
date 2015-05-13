@@ -508,6 +508,9 @@ using namespace llvm;
         // duplicate if there isnt
         if(ownerNode->hasMemory)
             return;
+        // we can traverse back and duplicate as many as possible?
+        // stop when we reach the null node or we hit memory?
+
         if(ownerNode->sccLat < 5 && !ownerNode->singleIns)
         {
             // this is a potential candidate
@@ -523,6 +526,11 @@ using namespace llvm;
             }
             errs()<<"Duplicated ones: end\n";
         }
+
+    }
+
+    void addSrcIns(Instruction* actualIns, BBMap2Ins* srcIns)
+    {
 
     }
 
@@ -816,6 +824,9 @@ using namespace llvm;
                         std::vector<Instruction*> duplicatedInstruction;
 
                         addDuplicatedInstruction(duplicatedInstruction, curIns,top->dagNodeMap,srcBBs);
+
+
+                        // TODO: we need to adjust the srcBBs coz now we have more insBBs
 
                     }
 
