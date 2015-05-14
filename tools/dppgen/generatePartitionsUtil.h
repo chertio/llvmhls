@@ -17,12 +17,47 @@ int instructionLatencyLookup(Instruction* ins)
     // load and store assigned a value of 10, and 10 means one pipeline stage,
     if(ins->mayReadFromMemory())
         return 1;
-    if(ins->getOpcode()==Instruction::Mul)
-        return 5;
-    if(ins->getOpcode()==Instruction::Br)
-        return 0;
+    switch(ins->getOpcode())
+    {
+        case Instruction::Mul:
+            return 5;
+        case Instruction::Br:
+            return 0;
+        case Instruction::Trunc:
+        case Instruction::ZExt:
+        case Instruction::SExt:
+        case Instruction::BitCast:
+            return 0;
+    default:
+        return 1;
+    }
     return 1;
 }
+bool instructionExpensive(Instruction* ins)
+{
+    if(ins->mayReadFromMemory())
+        return true;
+    switch(ins->getOpcode())
+    {
+
+    case Instruction::UDiv:
+    case Instruction::SDiv:
+    case Instruction::FDiv:
+    case Instruction::FAdd:
+    case Instruction::FSub:
+    case Instruction::Mul:
+    case Instruction::FMul:
+    case Instruction::URem:
+    case Instruction::SRem:
+    case Instruction::FRem:
+            return true;
+        default:
+            return false;
+
+    }
+    return false;
+}
+
 std::string int2Str(int in)
 {
 

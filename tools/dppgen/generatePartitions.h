@@ -285,6 +285,7 @@ using namespace llvm;
         bool singleIns;
         int sccLat;
         bool hasMemory;
+        bool expensive;
         bool covered;
         int seqNum;
         void init()
@@ -292,6 +293,7 @@ using namespace llvm;
             singleIns = false;
             sccLat = 0;
             hasMemory = false;
+            expensive = false;
             covered = false;
             seqNum = -1;
         }
@@ -509,29 +511,36 @@ using namespace llvm;
         if(ownerNode->hasMemory)
             return;
         // we can traverse back and duplicate as many as possible?
-        // stop when we reach the null node or we hit memory?
+        // stop when we reach the null node or we hit expensive?
+        if(ownerNode->expensive)
+            return;
+        errs()<<"Duplicated ones:\n";
 
-        if(ownerNode->sccLat < 5 && !ownerNode->singleIns)
+        for(unsigned int insInd = 0; insInd < allIGN->size(); insInd++)
         {
-            // this is a potential candidate
-            // how do we determine if we want to duplicate?
-            //
-            errs()<<"Duplicated ones:\n";
-            for(unsigned int insInd = 0; insInd < allIGN->size(); insInd++)
-            {
-                InstructionGraphNode* curIGN = allIGN->at(insInd);
-                Instruction* curInsn = curIGN->getInstruction();
-                errs()<<*curInsn<<"\n";
+            InstructionGraphNode* curIGN = allIGN->at(insInd);
+            Instruction* curInsn = curIGN->getInstruction();
+            errs()<<*curInsn<<"\n";
 
-            }
-            errs()<<"Duplicated ones: end\n";
         }
+        errs()<<"Duplicated ones: end\n";
+
 
     }
 
-    void addSrcIns(Instruction* actualIns, BBMap2Ins* srcIns)
+    void addSrcIns(Instruction* actualIns, BBMap2Ins* sourceBBs)
     {
+        unsigned int numOp = actualIns->getNumOperands();
+        for(unsigned int opInd = 0; opInd < numOp; opInd++)
+        {
+            Value* curOp = actualIns->getOperand(opInd);
+            if(isa<Instruction>(*curOp))
+            {
+                Instruction* srcIns = &(cast<Instruction>(*curOp));
 
+                addBBInsToMap(*sourceBBs,srcIns);
+            }
+        }
     }
 
     struct DAGPartition{
@@ -850,7 +859,7 @@ using namespace llvm;
             BBMap2Ins* sourceBBs = new BBMap2Ins;
             BBMap2Ins* insBBs = new BBMap2Ins;
 
-            std::vector<Instruction*> srcInstructions;
+            //std::vector<Instruction*> srcInstructions;
             for(unsigned int nodeInd = 0; nodeInd < partitionContent.size(); nodeInd++)
             {
                 DAGNode* curNode = partitionContent.at(nodeInd);
@@ -860,17 +869,18 @@ using namespace llvm;
                     if(isa<ReturnInst>(*curIns))
                         rInsn= curIns;
                     addBBInsToMap(*insBBs,curIns);
-                    unsigned int numOp = curIns->getNumOperands();
+                    /*unsigned int numOp = curIns->getNumOperands();
                     for(unsigned int opInd = 0; opInd < numOp; opInd++)
                     {
                         Value* curOp = curIns->getOperand(opInd);
                         if(isa<Instruction>(*curOp))
                         {
                             Instruction* srcIns = &(cast<Instruction>(*curOp));
-                            srcInstructions.push_back(srcIns);
+                            //srcInstructions.push_back(srcIns);
                             addBBInsToMap(*sourceBBs,srcIns);
                         }
-                    }
+                    }*/
+                    addSrcIns(curIns,sourceBBs);
                 }
             }
             optimizeBBByDup(sourceBBs,insBBs);
@@ -1317,6 +1327,8 @@ bool PartitionGen::runOnFunction(Function &F) {
           {
               Instruction* curIns = (*I)->getInstruction();
               curDagNode->sccLat += instructionLatencyLookup(curIns);
+              if(instructionExpensive(curIns))
+                  curDagNode->expensive = true;
               if(curIns->mayReadOrWriteMemory())
               {
 
