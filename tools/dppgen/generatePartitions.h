@@ -279,6 +279,32 @@ using namespace llvm;
         }
 
     }
+    static void findAllSrcIns(Instruction* actualIns, std::vector<Instruction*>& srcInsns)
+    {
+        unsigned int numOp = actualIns->getNumOperands();
+        for(unsigned int opInd = 0; opInd < numOp; opInd++)
+        {
+            Value* curOp = actualIns->getOperand(opInd);
+            if(isa<Instruction>(*curOp))
+            {
+                Instruction* srcIns = &(cast<Instruction>(*curOp));
+                if(std::find(srcInsns.begin(),srcInsns.end(),srcIns)==srcInsns.end())
+                    srcInsns.push_back(srcIns);
+            }
+        }
+    }
+    static bool BBMap2InsContains(BBMap2Ins* curBBMap, Instruction* ins )
+    {
+        BasicBlock* containerBB = ins->getParent();
+        if(curBBMap->find(containerBB)!=curBBMap->end())
+        {
+            std::vector<Instruction*>* curBBContainedIns = curBBMap->at(containerBB);
+            if(std::find(curBBContainedIns->begin(),curBBContainedIns->end(),ins)!=curBBContainedIns->end())
+                return true;
+        }
+        return false;
+    }
+
 
     struct DAGNode{
         std::vector<InstructionGraphNode*>* dagNodeContent;
@@ -499,47 +525,129 @@ using namespace llvm;
         return false;
     }
 
-    void addDuplicatedInstruction(std::vector<Instruction*>& duplicatedInstruction, Instruction* curIns,
-                                  Insn2DagNodeMap& dnm, BBMap2Ins* srcBBs)
+    void addDuplicatedInstruction(Instruction* curSrcInsn,
+                                  Insn2DagNodeMap& dnm, BBMap2Ins* srcBBs, BBMap2Ins* insBBs, PartitionGen* pg, DAGPartition* dp)
     {
+
+        int costDup=0;
+        int commSave=0;
         // find the dagNode corresponding to the instruction
         // it contains one scc of
-        DAGNode* ownerNode = dnm[curIns];
-        std::vector<InstructionGraphNode*>* allIGN =  ownerNode->dagNodeContent;
-        // check if any instruction in allIGN contains memory, if there is , we dont
-        // duplicate if there isnt
-        if(ownerNode->hasMemory)
-            return;
-        // we can traverse back and duplicate as many as possible?
-        // stop when we reach the null node or we hit expensive?
-        if(ownerNode->expensive)
-            return;
-        errs()<<"Duplicated ones:\n";
+        DAGNode* ownerNode = dnm[curSrcInsn];
 
-        for(unsigned int insInd = 0; insInd < allIGN->size(); insInd++)
+        // all the srcIns -- some of these will be duplicated
+        //std::vector<Instruction*> allSrcInsns4cost;
+        /*std::vector<Instruction*> allActualInsns4cost;
+        for(BBMapIter actualInsIter = insBBs->begin(), actualInsEnd = insBBs->end(); actualInsIter!=actualInsEnd;
+            actualInsIter++)
         {
-            InstructionGraphNode* curIGN = allIGN->at(insInd);
-            Instruction* curInsn = curIGN->getInstruction();
-            errs()<<*curInsn<<"\n";
+            std::vector<Instruction*>* curBBActualInsns = actualInsIter->second;
+            allActualInsns4cost.insert(allActualInsns4cost.begin(),curBBActualInsns->begin(),curBBActualInsns->end());
+        }*/
+
+
+        // if an instruction is in src but not in actual,
+        // when it gets moved to actual, there is an decrease in comm, and potential increase in comm
+        // as well, the potential in comm comes from the fan in for this new incorporated node
+        // so if we add a dagNode, we will compute the net change in comm by checking the net change in
+        // fan in
+
+        errs()<<"Duplicated ones:\n";
+        std::vector<DAGNode*> seen;
+        std::vector<DAGNode*> heap;
+        // do a bfs backward
+        heap.push_back(ownerNode);
+        while(heap.size()!=0)
+        {
+            DAGNode* curNode = heap.back();
+            heap.pop_back();
+            seen.push_back(curNode);
+            // check if any instruction in allIGN contains memory, if there is , we dont
+            // duplicate if there isnt
+            if(curNode->hasMemory)
+                continue;
+            // we can traverse back and duplicate as many as possible?
+            // stop when we reach the null node or we hit expensive?
+            if(curNode->expensive)
+                continue;
+
+            std::vector<InstructionGraphNode*>* allIGN =  curNode->dagNodeContent;
+            int tmpDupCost = 0;
+            int tmpCommSave = 0;
+            std::vector<Instruction*> tmpAddedIns;
+
+            std::vector<Instruction*> allSrcIns4CurNode;
+            for(unsigned int insInd = 0; insInd < allIGN->size(); insInd++)
+            {
+                InstructionGraphNode* curIGN = allIGN->at(insInd);
+                Instruction* curInsn = curIGN->getInstruction();
+                if(curInsn)
+                {
+                    errs()<<"seen "<<*curInsn<<"\n";
+                    //if(std::find(duplicatedInstruction.begin(),duplicatedInstruction.end(),curInsn)==duplicatedInstruction.end())
+                    //{
+                    //    duplicatedInstruction.push_back(curInsn);
+
+                    if(!BBMap2InsContains(insBBs,curInsn))
+                    {
+                        tmpDupCost++;
+                        tmpAddedIns.push_back(curInsn);
+                    }
+                    //}
+                    // we look at all the source instruction of this insn, and determine their node
+                    findAllSrcIns(curInsn,allSrcIns4CurNode);
+                }
+
+            }
+            // now we look at the instruction added into tmpAddedIns, if they are not in actualIns
+            // we add dupCost, and increase tmpCommSave
+            for(unsigned int tmpInsInd = 0; tmpInsInd < tmpAddedIns.size(); tmpInsInd++)
+            {
+                Instruction* curTmpIns = tmpAddedIns.at(tmpInsInd);
+                if( BBMap2InsContains(srcBBs, curTmpIns ))
+                    tmpCommSave++;
+                addBBInsToMap(*insBBs,curTmpIns);
+
+                errs()<<"\t\tduplicated ins: "<<*curTmpIns<<"\n";
+            }
+            DagNode2PartitionMap& dag2PartMap = pg->dagPartitionMap;
+            std::vector<DAGPartition*>* allOwner = dag2PartMap[curNode];
+            allOwner->push_back(dp);
+
+
+            for(unsigned int srcInsInd =0; srcInsInd < allSrcIns4CurNode.size(); srcInsInd++)
+            {
+                // add to srcBBs
+                Instruction* curSrcIns = allSrcIns4CurNode.at(srcInsInd);
+                if(!BBMap2InsContains(srcBBs,curSrcIns))
+                    tmpCommSave--;
+                addBBInsToMap(*srcBBs,curSrcIns);
+                DAGNode* nextNode = dnm[curSrcIns];
+                if(std::find(seen.begin(),seen.end(),nextNode)==seen.end())
+                    heap.push_back(nextNode);
+            }
+            errs()<<"duplicate cost: "<<tmpDupCost<<"\n";
+            errs()<<"comm save: "<<tmpCommSave<<"\n";
+            costDup+=tmpDupCost;
+            commSave+=tmpCommSave;
 
         }
         errs()<<"Duplicated ones: end\n";
-
+        errs()<<"total dup cost: "<<costDup<<"\n";
+        errs()<<"total comm save: "<<commSave<<"\n";
 
     }
 
     void addSrcIns(Instruction* actualIns, BBMap2Ins* sourceBBs)
     {
-        unsigned int numOp = actualIns->getNumOperands();
-        for(unsigned int opInd = 0; opInd < numOp; opInd++)
-        {
-            Value* curOp = actualIns->getOperand(opInd);
-            if(isa<Instruction>(*curOp))
-            {
-                Instruction* srcIns = &(cast<Instruction>(*curOp));
 
-                addBBInsToMap(*sourceBBs,srcIns);
-            }
+        std::vector<Instruction*> allSrcIns;
+        findAllSrcIns(actualIns,allSrcIns);
+        for(unsigned int insInd = 0; insInd < allSrcIns.size(); insInd++)
+        {
+            Instruction* srcIns = allSrcIns.at(insInd);
+            addBBInsToMap(*sourceBBs,srcIns);
+
         }
     }
 
@@ -830,9 +938,9 @@ using namespace llvm;
                         errs()<<" found =============------------------======================\n";
                         // curIns fanning out to some memory instruction
                         // lets search backward --- this can be using the instruction graph structure
-                        std::vector<Instruction*> duplicatedInstruction;
+                        //std::vector<Instruction*> duplicatedInstruction;
 
-                        addDuplicatedInstruction(duplicatedInstruction, curIns,top->dagNodeMap,srcBBs);
+                        addDuplicatedInstruction(curIns,top->dagNodeMap,srcBBs,insBBs,top,this);
 
 
                         // TODO: we need to adjust the srcBBs coz now we have more insBBs
@@ -1173,7 +1281,6 @@ void PartitionGen::generateControlFlowPerPartition()
         DAGPartition* curPart = partitions.at(partInd);
 
         curPart->generateBBList();
-        //curPart->optimizeBBByDup();
         curPart->trimBBList();
         errs()<<"done part "<<partInd <<"\n";
         errs()<<"[\n";

@@ -406,10 +406,18 @@ void FunctionGenerator::generateContentBlock(BasicBlock* curBB,std::vector<std::
                 curBBStrArray->push_back(ig.generateStatement());
             }
         }
-
-        // this instruction is the actual
         if(actualIns!=0 && !(std::find(actualIns->begin(),actualIns->end(),insPt)==actualIns->end()))
         {
+            //onething to note: it may not be this partition's job to send
+            // this instruction is the actual
+            bool iAmSender = true;
+
+            std::vector<DAGPartition*>* allOwners=pg->getPartitionFromIns(insPt);
+            DAGPartition* realOwner = allOwners->at(0);
+            if(realOwner!=myPartition)
+                iAmSender = false;
+            // we check the first member of the dag 2 partition map
+            // if it is not me, then I aint sender
 
             // this instruction is the actual, let's see if this ins is used by
             // instruction in other partition --
@@ -417,74 +425,79 @@ void FunctionGenerator::generateContentBlock(BasicBlock* curBB,std::vector<std::
             // if it is then we should also add an entry in the channel list
             // also if this is an terminator, it may not have any use, but we may
             // still send brTag
-
             bool thereIsPartitionReceiving = false;
             std::string channelStr;
-            // special case for terminator
-            if(insPt->isTerminator()&& !isa<ReturnInst>(*insPt))
+
+
+            if(iAmSender)
             {
-                // are there other partitions having the same basicblock
-                // we will need to pass the branch tag over as long as it is
-                // the case
-                for(unsigned sid = 0; sid < pg->partitions.size(); sid++)
+                // special case for terminator
+                if(insPt->isTerminator()&& !isa<ReturnInst>(*insPt))
                 {
-                    DAGPartition* destPart = pg->partitions.at(sid);
-                    if(myPartition == destPart)
-                        continue;
-
-                    if(partitionContainsActualIns(insPt,pg,destPart))
-                        continue;
-
-                    std::vector<BasicBlock*>* destPartBBs = pg->allBBsInPartition[destPart];
-                    std::vector<BasicBlock*>& destSingleSucBBs = destPart->singleSucBBs;
-
-
-                    // partition contains this block, and this block is not such that it only
-                    // has a single successor, we need to propagate this through
-                    if(std::find(destPartBBs->begin(),destPartBBs->end(),curBB)!=destPartBBs->end())
+                    // are there other partitions having the same basicblock
+                    // we will need to pass the branch tag over as long as it is
+                    // the case
+                    for(unsigned sid = 0; sid < pg->partitions.size(); sid++)
                     {
-                        // so they have it, but do they have multiple successors there?
-                        // if we cant find it in the single successor vector then we add the dependency
+                        DAGPartition* destPart = pg->partitions.at(sid);
+                        if(myPartition == destPart)
+                            continue;
 
-                        //FIXME: with duplicate, they may have it in the actualIns also -- check that
+                        if(partitionContainsActualIns(insPt,pg,destPart))
+                            continue;
 
-                        if(std::find(destSingleSucBBs.begin(),destSingleSucBBs.end(),curBB )==destSingleSucBBs.end())
-                            pg->addChannelAndDepPartition(thereIsPartitionReceiving,insPt,channelStr,destPart,0,instructionSeq);
+                        std::vector<BasicBlock*>* destPartBBs = pg->allBBsInPartition[destPart];
+                        std::vector<BasicBlock*>& destSingleSucBBs = destPart->singleSucBBs;
+
+
+                        // partition contains this block, and this block is not such that it only
+                        // has a single successor, we need to propagate this through
+                        if(std::find(destPartBBs->begin(),destPartBBs->end(),curBB)!=destPartBBs->end())
+                        {
+                            // so they have it, but do they have multiple successors there?
+                            // if we cant find it in the single successor vector then we add the dependency
+
+                            if(std::find(destSingleSucBBs.begin(),destSingleSucBBs.end(),curBB )==destSingleSucBBs.end())
+                                pg->addChannelAndDepPartition(thereIsPartitionReceiving,insPt,channelStr,destPart,0,instructionSeq);
+
+
+                        }
                     }
                 }
-            }
-            else
-            {
-                for(Value::use_iterator curUser = insPt->use_begin(), endUser = insPt->use_end(); curUser != endUser; ++curUser )
+                else
                 {
-                    // now we look at each use, these instruction belows to some DAGNode which belongs to some
-                    // DAGPartition
-                    assert(isa<Instruction>(*curUser));
-                    //DAGPartition* curUsePart = pg->getPartitionFromIns(cast<Instruction>(*curUser));
-
-                    std::vector<DAGPartition*>* curUseOwners=pg->getPartitionFromIns(cast<Instruction>(*curUser));
-                    // we will iterate through each partition in the vector
-                    for(unsigned int s = 0; s < curUseOwners->size(); s++)
+                    for(Value::use_iterator curUser = insPt->use_begin(), endUser = insPt->use_end(); curUser != endUser; ++curUser )
                     {
-                        DAGPartition* curUsePart = curUseOwners->at(s);
-                        if(curUsePart == myPartition)
-                            continue;
-                        // if the remote partition also contains the
-                        // insPt as its own actual partition, we dont add
-                        // dependency
-                        if(partitionContainsActualIns(insPt,pg,curUsePart))
-                            continue;
+                        // now we look at each use, these instruction belows to some DAGNode which belongs to some
+                        // DAGPartition
+                        assert(isa<Instruction>(*curUser));
+                        //DAGPartition* curUsePart = pg->getPartitionFromIns(cast<Instruction>(*curUser));
 
-                        // they has insPt as the src instructions, not the actual instruction
-                        // so we are sending our token
-                        pg->addChannelAndDepPartition(thereIsPartitionReceiving,insPt,channelStr,curUsePart,1,instructionSeq);
+                        // now multiple guy can use this value
+                        std::vector<DAGPartition*>* curUseOwners=pg->getPartitionFromIns(cast<Instruction>(*curUser));
+                        // we will iterate through each partition in the vector
+                        for(unsigned int s = 0; s < curUseOwners->size(); s++)
+                        {
+                            DAGPartition* curUsePart = curUseOwners->at(s);
+                            if(curUsePart == myPartition)
+                                continue;
+                            // if the remote partition also contains the
+                            // insPt as its own actual partition, we dont add
+                            // dependency
+                            if(partitionContainsActualIns(insPt,pg,curUsePart))
+                                continue;
+
+                            // they has insPt as the src instructions, not the actual instruction
+                            // so we are sending our token
+                            pg->addChannelAndDepPartition(thereIsPartitionReceiving,insPt,channelStr,curUsePart,1,instructionSeq);
+
+                        }
+                        //AGPartition* curUsePart = curUseOwners->at(0);
+                        //if(curUsePart == myPartition)
+                        //    continue;
+
 
                     }
-                    //AGPartition* curUsePart = curUseOwners->at(0);
-                    //if(curUsePart == myPartition)
-                    //    continue;
-
-
                 }
             }
             InstructionGenerator ig;
